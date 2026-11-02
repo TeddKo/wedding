@@ -267,7 +267,7 @@
 
 <ul class="gallery" bind:this={list}>
   {#each { length: n } as _, i}
-    <li class="cell" class:armed class:in={shown} style:--d="{delayOf(i)}ms">
+    <li class="cell" class:real class:armed class:in={shown} style:--d="{delayOf(i)}ms">
       {#if real}
         {@const it = items[i]}
         <a
@@ -339,7 +339,8 @@
 
 <style>
   .gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .cell { aspect-ratio: 1; overflow: hidden; position: relative; }
+  .cell { aspect-ratio: 1; position: relative; }
+  .cell.real { overflow: hidden; }
   .cell.armed { opacity: 0; transform: scale(0.82); }
   .cell.armed.in { opacity: 1; transform: none; transition: opacity 0.6s ease var(--d), transform 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) var(--d); }
   .thumb { display: block; width: 100%; height: 100%; cursor: zoom-in; overflow: hidden; }

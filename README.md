@@ -1,6 +1,24 @@
 # 모바일 청첩장 (Halloween gothic)
 
-Astro 정적 사이트. 배포 주소 예정: `https://teddko.github.io/wedding/`
+Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://teddko.github.io/wedding/`
+
+## 구조 (인터랙션 = Svelte 아일랜드)
+
+콘텐츠는 모두 서버 HTML 에 들어 있고 아일랜드는 그 위에 연출만 얹는다. JS 가 꺼져도 이름, 날짜, 장소, 인사말, 달력, 링크가 그대로 보인다.
+
+| 컴포넌트 | 하이드레이션 | 역할 |
+|---|---|---|
+| `IntroGate.svelte` | load | 밀랍 인장 탭 -> 금빛 균열(SVG draw) -> 3D 문(Spring) -> 박쥐 떼 -> 촛불 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
+| `AmbientCanvas.svelte` | idle | 캔버스 1장: 안개, 불씨, 달 앞을 지나는 박쥐. 숨김/화면 밖 정지, 저사양 자동 감량 |
+| `CoverHero.svelte` | load | 금빛 잉크로 쓰이는 이름, 달 상승 + 스크롤 패럴랙스, 촛불 스프링 일렁임, 날짜 카운트업 |
+| `CalendarDday.svelte` | idle | 날짜 칸 캐스케이드, 31일 잭오랜턴, 플립카드 D-day(KST), `.ics` |
+| `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
+| `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
+| `ActionButtons.svelte` | idle | 복사/카카오 공유 버튼: 리플, 스프링 토스트 "복사됨", 공유 시 불씨 폭죽 |
+
+- 모션 감소(`prefers-reduced-motion`): 모든 연출이 즉시 정적 상태로 바뀌고 rAF 루프는 돌지 않는다.
+- 인트로는 JS 가 있을 때만 보인다(`<html class="js gated">` 를 head 인라인 스크립트가 붙이고, 4.5초 안에 섬이 못 뜨면 스스로 걷어낸다).
+- 공유 상태(`src/lib/stage.svelte.ts`)로 인트로가 끝난 뒤에야 본문 연출이 시작된다.
 
 ## 개발
 
@@ -24,7 +42,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 ## 사진
 
 `src/assets/photos/` 에 `jpg/png/webp` 를 넣으면 파일명 순으로 자동 사용된다.
-첫 장은 커버, 전체는 3열 갤러리와 라이트박스(스와이프, 방향키, Esc)에 쓰인다.
+첫 장은 커버, 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
 사진이 없으면 9칸 플레이스홀더가 표시되고 라이트박스는 꺼진다. 빌드 시 webp 반응형으로 변환된다.
 
 ## 배경음악
@@ -39,7 +57,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 
 - JavaScript 키는 `src/data/wedding.ts` 의 `kakaoJsKey` (공개 키, 커밋 가능). REST/네이티브 키는 절대 쓰지 않는다.
 - Kakao Developers 앱 설정 > 플랫폼 > Web 에 `https://teddko.github.io` 도메인 등록 필요.
-- SDK 버전과 SRI 해시는 `src/scripts/main.ts` 에 고정되어 있다. 버전을 올리면 해시도 다시 계산한다.
+- SDK 버전과 SRI 해시는 `src/components/ActionButtons.svelte` 에 고정되어 있다. 버전을 올리면 해시도 다시 계산한다.
   `curl -s https://t1.kakaocdn.net/kakao_js_sdk/<ver>/kakao.min.js | openssl dgst -sha384 -binary | openssl base64 -A`
 
 ## 배포
