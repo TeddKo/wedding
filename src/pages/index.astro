@@ -10,6 +10,8 @@ import Accounts from "../components/Accounts.astro";
 import Rsvp from "../components/Rsvp.astro";
 import Ending from "../components/Ending.astro";
 import Reveal from "../components/Reveal.svelte";
+import Fx from "../components/fx/Fx.svelte";
+import Orn from "../components/Orn.astro";
 import { hasMusic } from "../lib/music";
 ---
 
@@ -18,12 +20,15 @@ import { hasMusic } from "../lib/music";
   <main class="page">
     <Cover />
     <Greeting />
+    <Orn />
     <Gallery />
     <Location />
     <Accounts />
     <Rsvp />
     <Guestbook />
+    <Orn />
     <Ending hasMusic={hasMusic} />
   </main>
   <Reveal client:idle />
+  <Fx client:idle />
 </Base>

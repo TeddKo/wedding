@@ -33,6 +33,7 @@
   --bg-rgb: 246 246 243;
   --accent-rgb: 74 106 155;
   --rail-x: 28px;
+  --rail-c: rgb(26 26 26 / 0.18);
 }
 
 [data-theme="puppy"] {
@@ -66,6 +67,7 @@
   --paper: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .09 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
 
   /* 기존 이름 별칭 */
+  --z-fx: 40;
   --groom: var(--accent);
   --bride: var(--accent);
 }
@@ -104,21 +106,21 @@ a { color: inherit; }
 .ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* 섹션: 여백만. 구분선/박스 없음 */
-.section { position: relative; padding: 60px 40px; text-align: center; }
-@media (max-width: 360px) { .section { padding-inline: 28px; } }
+.section { position: relative; padding: 72px 40px; text-align: center; }
+@media (max-width: 360px) { .section { padding: 64px 28px; } }
 
-.eyebrow { font: 400 14px/1.4 var(--f-latin); text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent-text); margin-bottom: 10px; }
+.eyebrow { font: 400 13px/1.4 var(--f-latin); text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent-text); margin-bottom: 10px; }
 [data-theme="dev"] .eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.08em; }
-.sec-title { font: 400 18.5px/1.5 var(--f-body); color: var(--accent-text); margin-bottom: 28px; }
+.sec-title { font: 400 18.5px/1.5 var(--f-body); color: var(--accent-text); margin-bottom: 24px; }
 html[data-theme="dev"] { --bride: #c2255c; }
 .sec-title .hash { display: none; }
-html[data-theme="dev"] .section { text-align: left; padding: 60px 24px 60px calc(var(--rail-x) + 32px); }
-[data-theme="dev"] .section::before { content: ""; position: absolute; left: var(--rail-x); top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); }
+html[data-theme="dev"] .section { text-align: left; padding-inline: calc(var(--rail-x) + 32px) 24px; }
+[data-theme="dev"] .section::before { content: ""; position: absolute; left: var(--rail-x); top: 0; bottom: 0; width: 2px; margin-left: -1px; z-index: 1; background: var(--rail-c); }
 [data-theme="dev"] .sec-title { position: relative; font-weight: 600; }
 [data-theme="dev"] .sec-title .hash { display: block; font: 400 12px/20px var(--f-mono); color: var(--ink-2); letter-spacing: 0; }
 [data-theme="dev"] .sec-title::before { content: ""; position: absolute; left: -38.5px; top: 27px; width: 13px; height: 13px; border-radius: 50%; background: var(--bg); border: 2px solid var(--ink); }
 html[data-theme="dev"] .footer.ending { text-align: left; padding: 112px 24px 112px calc(var(--rail-x) + 32px); }
-html[data-theme="dev"] .footer.ending::before { content: ""; position: absolute; left: calc(var(--rail-x) - 6.5px); top: 0; width: 13px; height: 74px; background: linear-gradient(var(--ink), var(--ink)) 50% 0 / 2px 67px no-repeat, radial-gradient(circle at 50% 67.5px, var(--ink) 6.5px, transparent 7px); }
+html[data-theme="dev"] .footer.ending::before { content: ""; position: absolute; left: calc(var(--rail-x) - 6.5px); top: 0; width: 13px; height: 74px; background: linear-gradient(var(--rail-c), var(--rail-c)) 50% 0 / 2px 67px no-repeat, radial-gradient(circle at 50% 67.5px, var(--ink) 6.5px, transparent 7px); }
 html[data-theme="dev"] .footer.ending::after { content: "v1.0.0"; position: absolute; left: calc(var(--rail-x) + 20px); top: 59px; font: 500 12px/1 var(--f-mono); color: var(--accent-text); border: 1px solid var(--accent); border-radius: 999px; padding: 4px 9px; }
 [data-theme="puppy"] .eyebrow::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g fill='%23b27085'><ellipse cx='12' cy='16' rx='5' ry='4'/><circle cx='5.5' cy='10' r='2'/><circle cx='10' cy='5.5' r='2'/><circle cx='14' cy='5.5' r='2'/><circle cx='18.5' cy='10' r='2'/></g></svg>") center / contain no-repeat; }
 .body-copy { font-size: 14.5px; line-height: 1.79; color: var(--ink-2); }
@@ -133,7 +135,7 @@ html[data-theme="dev"] .footer.ending::after { content: "v1.0.0"; position: abso
   -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent;
   transition: background 0.2s, border-color 0.2s, opacity 0.2s;
 }
-.btn { min-height: 48px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
+.btn { min-height: 48px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
 .btn:hover { opacity: 0.85; }
 .btn-outline { min-height: 52px; border: 1px solid var(--ink); border-radius: 8px; background: transparent; }
 .btn-outline:hover { background: var(--surface); }
@@ -157,15 +159,8 @@ html[data-theme="dev"] .footer.ending::after { content: "v1.0.0"; position: abso
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; text-align: left; }
 
-/* 인트로 게이트: JS 가 켜져 있는 동안만 본문을 잠시 숨긴다 */
+/* 인트로 게이트: JS 가 켜져 있는 동안 스크롤만 잠근다. 섹션 등장 모션은 motion.css */
 html.gated, html.gated body { overflow: hidden; }
-html.js .page, html.js .footer { transition: opacity 0.6s ease; }
-html.gated .page, html.gated .footer { opacity: 0; }
-
-/* 섹션 등장: Reveal 섬이 rv 를 붙이고 보이면 in 을 붙인다(JS 없으면 그냥 보임) */
-[data-reveal].rv:not(.in) { opacity: 0; transform: translateY(20px); }
-[data-reveal].rv.in { animation: fadeInUp 1s ease both; }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 
 /* 플로팅 원형 버튼: 우하단, 커버를 지나면 표시 */
 .fabs {
@@ -191,7 +186,6 @@ html.gated .fabs, html:not(.has-js) .fabs, .fabs:not(:has(.fab:not([hidden]))) {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  html.js .page, html.js .footer { transition: none; }
   .fabs { transition: none; }
-  [data-reveal].rv.in { animation: none; }
+  [class*="fx-"], [class*="fx-"] * { animation: none !important; transition: none !important; }
 }

@@ -4,15 +4,16 @@ import { wedding } from "../data/wedding";
 import { givenName, hasParents } from "../lib/family";
 
 const people = [wedding.groom, wedding.bride];
+const famD = 320 + wedding.greeting.body.length * 110 + 90;
 ---
 
 <section class="section" data-reveal aria-labelledby="greeting-h">
-  <p class="eyebrow">INVITATION</p>
-  <h2 id="greeting-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("greeting")}</span>소중한 분들을 초대합니다</h2>
-  <div class="greeting body-copy">
+  <p class="eyebrow" data-rv="fade">INVITATION</p>
+  <h2 id="greeting-h" class="sec-title" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("greeting")}</span>소중한 분들을 초대합니다</h2>
+  <div class="greeting body-copy" data-rv="lines" style="--d:320ms">
     {wedding.greeting.body.map((p) => <p>{p}</p>)}
   </div>
-  <div class="family">
+  <div class="family" data-rv="rise" style={`--d:${famD}ms`}>
     {!people.some(hasParents) && <p><span class="rel">신랑</span> <b>{wedding.groom.name}</b> · <span class="rel">신부</span> <b>{wedding.bride.name}</b></p>}
     {
       people.map((p) => {
@@ -36,8 +37,9 @@ const people = [wedding.groom, wedding.bride];
 
 <style>
   .section { text-align: center; }
-  .greeting { margin-top: 32px; }
-  .greeting p { margin: 0 0 1.8em; }
+  .greeting { max-width: 300px; margin: 32px auto 0; }
+  :global(html[data-theme="dev"]) .greeting { margin-inline: 0; }
+  .greeting p { margin: 0 0 1.6em; }
   .greeting p:last-child { margin-bottom: 0; }
   .family { margin-top: 40px; display: grid; gap: 6px; font-size: 15px; line-height: 1.7; color: var(--ink-2); }
   .family p { margin: 0; }

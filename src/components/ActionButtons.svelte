@@ -7,7 +7,7 @@
   import { ICONS } from "../lib/icons";
   import { BRAND } from "../lib/brand";
 
-  type Action = { kind: "copy"; label: string; text: string; icon?: boolean; ghost?: boolean; small?: boolean } | { kind: "kakao"; label: string };
+  type Action = { kind: "copy"; label: string; text: string; icon?: boolean; ghost?: boolean; small?: boolean; rise?: number } | { kind: "kakao"; label: string; rise?: number };
   type Kakao = { key: string; title: string; description: string; imageUrl: string; pageUrl: string };
   let { actions, kakao }: { actions: Action[]; kakao?: Kakao } = $props();
 
@@ -16,6 +16,8 @@
 
   let kakaoReady = $state(false);
   let toasts = $state<{ id: number }[]>([]);
+  let copied = $state(-1);
+  let copiedTimer = 0;
   let seq = 0;
   let sdk: any;
 
@@ -31,8 +33,11 @@
     }
   }
 
-  async function onCopy(a: Extract<Action, { kind: "copy" }>) {
+  async function onCopy(a: Extract<Action, { kind: "copy" }>, i: number) {
     await copy(a.text);
+    copied = i;
+    clearTimeout(copiedTimer);
+    copiedTimer = window.setTimeout(() => (copied = -1), 1600);
     toasts.push({ id: ++seq });
   }
 
@@ -53,6 +58,8 @@
   }
 
   /* 카카오 공유: SDK 로드 실패 시 버튼은 숨겨진 채로 둔다 */
+  onMount(() => () => clearTimeout(copiedTimer));
+
   onMount(() => {
     if (!kakao?.key || !actions.some((a) => a.kind === "kakao")) return;
     const s = document.createElement("script");
@@ -73,22 +80,34 @@
   });
 </script>
 
+{#snippet btn(a: Action, i: number)}
+  <button
+    type="button"
+    class={variant(a)}
+    data-press
+    hidden={a.kind === "kakao" && !kakaoReady}
+    aria-label={a.kind === "copy" && a.icon ? a.label : undefined}
+    onclick={() => (a.kind === "copy" ? onCopy(a, i) : share())}
+  >
+    {#if a.kind === "kakao"}
+      <svg class="kico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND.kakaotalk}</svg>
+    {:else}
+      <span class="ic" class:done={copied === i} aria-hidden="true">
+        <svg class="ico a" viewBox="0 0 24 24" focusable="false"><path d={variant(a) === "box-btn" ? ICONS.link : ICONS.copy} /></svg>
+        <svg class="ico b" viewBox="0 0 24 24" focusable="false"><path d={ICONS.check} /></svg>
+      </span>
+    {/if}
+    {#if !(a.kind === "copy" && a.icon)}{a.label}{/if}
+  </button>
+{/snippet}
+
 <div class="row">
-  {#each actions as a}
-    <button
-      type="button"
-      class={variant(a)}
-      hidden={a.kind === "kakao" && !kakaoReady}
-      aria-label={a.kind === "copy" && a.icon ? a.label : undefined}
-      onclick={() => (a.kind === "copy" ? onCopy(a) : share())}
-    >
-      {#if a.kind === "kakao"}
-        <svg class="kico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND.kakaotalk}</svg>
-      {:else}
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={variant(a) === "box-btn" ? ICONS.link : ICONS.copy} /></svg>
-      {/if}
-      {#if !(a.kind === "copy" && a.icon)}{a.label}{/if}
-    </button>
+  {#each actions as a, i}
+    {#if a.rise !== undefined}
+      <span class="rv-wrap" data-rv="rise" style="--d:{a.rise}ms">{@render btn(a, i)}</span>
+    {:else}
+      {@render btn(a, i)}
+    {/if}
   {/each}
 </div>
 
@@ -107,6 +126,14 @@
   button[hidden] { display: none; }
   button { font-family: var(--f-ui, inherit); -webkit-tap-highlight-color: transparent; }
   svg { flex: none; }
+  .rv-wrap { display: block; }
+  .rv-wrap > button { width: 100%; }
+  .ic { position: relative; display: inline-grid; place-items: center; flex: none; }
+  .ic svg { grid-area: 1 / 1; transition: opacity 240ms var(--e-out, ease), transform 240ms var(--e-out, ease); }
+  .ic .b { opacity: 0; transform: scale(0.6); }
+  .ic.done .a { opacity: 0; transform: scale(0.6); }
+  .ic.done .b { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .ic svg { transition: none; } }
   .kakao-btn, .box-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; padding: 0 8px; white-space: nowrap; border: 1px solid var(--line); border-radius: 12px;
     background: var(--surface); color: var(--ink); font-size: 14.5px; cursor: pointer;

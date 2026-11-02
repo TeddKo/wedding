@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";
-  import { fly, slide } from "svelte/transition";
-  import { backOut, cubicOut } from "svelte/easing";
+  import { slide } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import Toast from "./ui/Toast.svelte";
   import { reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
@@ -250,13 +250,13 @@
     }
   }
 
-  /* 새로 쓴 글은 스프링처럼 날아들고, 나머지는 순번대로 펼쳐진다 */
+  /* 목록 카드는 rise 스태거(배치 내 6개까지 60ms, 나머지 즉시), 새 글은 scale .98 → 1 */
   function enter(node: Element, p: { i: number; fresh: boolean }) {
     if (reduced()) return { duration: 0 };
-    if (!p.fresh) return slide(node, { delay: Math.min(Math.max(p.i - batchFrom, 0) * 55, 500), duration: 420, easing: cubicOut });
-    const sl = slide(node, { duration: 650 });
-    const fl = fly(node, { y: -30, duration: 650 });
-    return { duration: 650, css: (t: number) => sl.css!(cubicOut(t), 1 - cubicOut(t)) + fl.css!(backOut(t), 1 - backOut(t)) };
+    if (p.fresh) return { duration: 320, easing: cubicOut, css: (t: number) => `opacity:${t};transform:scale(${0.98 + 0.02 * t})` };
+    const n = Math.max(p.i - batchFrom, 0);
+    if (n >= 6) return { duration: 0 };
+    return { delay: n * 60, duration: 420, easing: cubicOut, css: (t: number, u: number) => `opacity:${t};transform:translateY(${12 * u}px)` };
   }
   /* 삭제는 흐름에서 빼서 나머지가 flip 으로 올라오게 하고, 접기는 높이를 줄인다 */
   function leave(node: Element) {
@@ -272,7 +272,7 @@
   <p class="sr" role="status" aria-live="polite">{announce}</p>
 
   {#if mounted && !formOpen}
-    <button type="button" id="gb-open" class="btn gbtn open-form" aria-expanded="false" aria-controls="gb-form" onclick={openForm}>방명록 작성하기</button>
+    <button type="button" id="gb-open" class="btn-outline open-form" data-press aria-expanded="false" aria-controls="gb-form" onclick={openForm}>방명록 작성하기</button>
   {/if}
 
   {#if mounted && formOpen}
@@ -310,8 +310,8 @@
       </div>
       {#if errs.form}<p class="err" role="alert">{errs.form}</p>{/if}
       <div class="form-btns">
-        <button type="button" class="gbtn" onclick={closeForm}>닫기</button>
-        <button type="submit" class="gbtn solid" disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
+        <button type="button" class="gbtn" data-press onclick={closeForm}>닫기</button>
+        <button type="submit" class="gbtn solid" data-press disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
       </div>
     </form>
   {/if}
@@ -320,22 +320,23 @@
     {#if status === "loading" || !mounted}
       <div class="skel" aria-hidden="true" class:live={mounted}>
         {#each [0, 1, 2] as k (k)}
-          <div class="card sk"><i class="l1"></i><i class="l2"></i><i class="l3"></i></div>
+          <i class="sk"></i>
         {/each}
       </div>
       {#if mounted}<p class="sr">축하 글을 불러오는 중이에요</p>{/if}
     {:else if status === "error"}
-      <div class="state" role="alert">
-        <p>잠시 후 다시 시도해 주세요</p>
-        <button type="button" class="btn-text" onclick={() => load(true)}>다시 시도</button>
-      </div>
+      <p class="cap err-line" role="alert">방명록을 불러오지 못했어요 · <button type="button" class="btn-text" onclick={() => load(true)}>다시 시도</button></p>
     {:else if items.length === 0}
-      <p class="cap empty">첫 축하 글을 남겨 주세요.</p>
+      <div class="empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z" /></svg>
+        <p class="cap">첫 축하 글을 남겨 주세요.</p>
+      </div>
     {:else}
       <ul class="cards">
         {#each visible as e, i (e.id)}
           <li
             class="card"
+            class:fresh={e.id === freshId}
             id="gb-c-{e.id}"
             tabindex="-1"
             in:enter={{ i, fresh: e.id === freshId }}
@@ -374,11 +375,11 @@
       </ul>
 
       {#if canExpand && !open}
-        <button type="button" class="gbtn more" aria-expanded="false" aria-controls="gb-list" onclick={expand}>{toggleLabel}</button>
+        <button type="button" class="gbtn more" data-press aria-expanded="false" aria-controls="gb-list" onclick={expand}>{toggleLabel}</button>
       {/if}
 
       {#if open}
-        <div class="stick"><button type="button" class="gbtn fold" onclick={collapse}>접기</button></div>
+        <div class="stick"><button type="button" class="gbtn fold" data-press onclick={collapse}>접기</button></div>
         {#if cursor !== null}
           <div class="tail" bind:this={sentinel}>
             {#if moreErr}
@@ -418,8 +419,9 @@
   }
   .gbtn.solid { background: var(--ink); border-color: var(--ink); color: var(--bg); }
   .gbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .open-form { width: 100%; margin-bottom: 24px; }
-  .form { display: grid; gap: 16px; margin-bottom: 28px; }
+  .open-form { display: flex; width: 100%; max-width: 280px; min-height: 48px; margin: 0 auto 24px; border-radius: 9999px; }
+  .form { display: grid; gap: 16px; margin-bottom: 28px; animation: gb-in 320ms var(--e-out, ease) both; }
+  @keyframes gb-in { from { opacity: 0; transform: translateY(8px); } }
   .field { display: grid; gap: 8px; }
   label { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
   input, textarea {
@@ -455,7 +457,7 @@
   .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
   .del-row :global(.btn-text) { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
 
-  .del-row :global(.btn-text:focus-visible), .tail :global(.btn-text:focus-visible), .state :global(.btn-text:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .del-row :global(.btn-text:focus-visible), .tail :global(.btn-text:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .more { display: flex; width: 100%; margin-top: 10px; }
   .stick { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; pointer-events: none; margin: 4px 0; }
@@ -463,19 +465,30 @@
   .tail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0 6px; font-size: 13px; color: var(--ink-3); }
   .tail p { margin: 0; }
   .tail.end { padding-top: 10px; }
-  .tail :global(.btn-text), .state :global(.btn-text) { all: unset; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
+  .tail :global(.btn-text) { all: unset; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
   .dots { display: inline-flex; gap: 6px; }
   .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
 
-  .state { display: grid; justify-items: center; gap: 8px; padding: 12px 0; text-align: center; font-size: 13px; color: var(--ink-3); }
-  .state p { margin: 0; }
-  .empty { padding: 12px 0; margin: 0; text-align: center; }
+  .err-line { margin: 20px 0 0; text-align: center; }
+  .err-line :global(.btn-text) { all: unset; cursor: pointer; padding: 14px 4px; margin: -14px 0; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .err-line :global(.btn-text:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .empty { display: grid; justify-items: center; gap: 8px; padding: 12px 0; animation: gb-in 420ms var(--e-out, ease) both; }
+  .empty svg { width: 28px; height: 28px; fill: none; stroke: var(--ink-3); stroke-width: 1.3; stroke-linejoin: round; opacity: 0.7; }
+  .empty p { margin: 0; }
 
-  .sk { display: grid; gap: 10px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 10px; }
-  .sk i { display: block; height: 12px; border-radius: 6px; background: var(--line); }
-  .sk .l1 { width: 40%; }
-  .sk .l2 { width: 92%; }
-  .sk .l3 { width: 64%; }
+  .skel { display: grid; gap: 10px; }
+  .sk { display: block; height: 72px; border-radius: 12px; background: var(--track); opacity: 0.5; }
+  .skel.live .sk { animation: gb-pulse 1.2s ease-in-out infinite alternate; }
+  .skel.live .sk:nth-child(2) { animation-delay: 150ms; }
+  .skel.live .sk:nth-child(3) { animation-delay: 300ms; }
+  @keyframes gb-pulse { from { opacity: 0.5; } to { opacity: 0.8; } }
+
+  .card.fresh::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; border-radius: 12px 12px 0 0; background: var(--accent); transform-origin: 0 50%; animation: gb-bar 1800ms var(--e-io, ease) both; }
+  @keyframes gb-bar { 0% { transform: scaleX(0); opacity: 1; } 25%, 70% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .skel.live .sk, .form, .empty { animation: none; }
+    .card.fresh::before { display: none; }
+  }
 
   .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
 </style>

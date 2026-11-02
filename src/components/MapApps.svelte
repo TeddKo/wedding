@@ -35,20 +35,23 @@
 </script>
 
 <div class="apps">
-  {#each apps as a (a.id)}
-    <a class="btn app" href={a.href} target={a.blank ? "_blank" : undefined} rel={a.blank ? "noopener noreferrer" : undefined} onclick={(e) => launch(e, a)}>
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND[a.id as BrandId]}</svg>{a.name}
-    </a>
+  {#each apps as a, i (a.id)}
+    <div class="slot" data-rv="rise" style="--d:{700 + i * 90}ms">
+      <a class="app" data-press href={a.href} target={a.blank ? "_blank" : undefined} rel={a.blank ? "noopener noreferrer" : undefined} onclick={(e) => launch(e, a)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND[a.id as BrandId]}</svg>{a.name}
+      </a>
+    </div>
   {/each}
 </div>
 
 <style>
   .apps { display: flex; gap: 8px; }
+  .slot { flex: 1; min-width: 0; display: flex; }
   .app {
     flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 48px; padding: 0 4px;
-    border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--ink); text-decoration: none; box-shadow: none;
     font: 400 14px/1 var(--f-ui, inherit); white-space: nowrap; -webkit-tap-highlight-color: transparent;
   }
   .app:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  svg { flex: none; width: 22px; height: 22px; }
+  svg { flex: none; width: 20px; height: 20px; }
 </style>

@@ -22,8 +22,8 @@ const items = await Promise.all(
 {
   items.length > 0 && (
     <section class="section" data-reveal aria-labelledby="gal-h">
-      <p class="eyebrow">GALLERY</p>
-      <h2 id="gal-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
+      <p class="eyebrow" data-rv="fade">GALLERY</p>
+      <h2 id="gal-h" class="sec-title" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
       <GalleryIsland client:idle items={items} />
     </section>
   )

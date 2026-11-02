@@ -245,7 +245,7 @@
 
 <ul class="gallery">
   {#each items as it, i}
-    <li class="cell">
+    <li class="cell" data-rv="curtain" style="--d:{320 + Math.min(i, 8) * 60}ms">
       <a
         bind:this={btns[i]}
         class="thumb"
@@ -292,7 +292,7 @@
           alt="갤러리 사진 {idx + 1}"
           draggable="false"
           style="width:{fit.w}px;height:{fit.h}px;left:{(SW - fit.w) / 2}px;top:{(SH - 88 - fit.h) / 2 + 20}px;{style}"
-          in:fly={{ x: reduced() ? 0 : dir * 70, duration: reduced() ? 0 : 340, easing: cubicOut }}
+          in:fly={{ x: reduced() ? 0 : dir * 70, opacity: 0.6, duration: reduced() ? 0 : 340, easing: cubicOut }}
           out:fade={{ duration: reduced() ? 0 : 140 }}
         />
       {/key}
