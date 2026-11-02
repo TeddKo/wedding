@@ -6,7 +6,7 @@
   import Moon from "./ui/Moon.svelte";
   import Bat from "./ui/Bat.svelte";
   import Dogs from "./ui/Dogs.svelte";
-  import Terminal from "./ui/Terminal.svelte";
+  import GitGraph from "./ui/GitGraph.svelte";
   import { setTheme, theme } from "../lib/theme.svelte";
   import { THEMES, THEME_NAMES } from "../lib/themes";
   import { playBgm } from "../scripts/audio";
@@ -30,7 +30,7 @@
   const moonLift = new Tween(0, { duration: 1400, easing: quartOut });
 
   /* 문이 열릴 때 흩어지는 것: 할로윈=박쥐, dev=코드 조각, puppy=발자국/하트 */
-  const GLYPHS = ["{ }", "</>", "<3", ";", "0", "1", "=>", "❤"];
+  const GLYPHS = ["+", "−", "+", "−", "+", "−", "+", "−"];
   type BatSpec = { dx: number; dy: number; rot: number; size: number; delay: number; dur: number; flap: number; kind: string; glyph: string };
   let bats = $state<BatSpec[]>([]);
 
@@ -157,14 +157,14 @@
 
     <div class="moon" style:transform="translate3d(-50%, {-moonLift.current * 60}px, 0)" style:opacity={1 - moonLift.current}>
       <span data-th="halloween"><Moon /></span>
-      <span data-th="dev"><Terminal {groom} {bride} /></span>
+      <span data-th="dev"><GitGraph /></span>
       <span data-th="puppy"><Dogs /></span>
     </div>
 
-    <p class="top latin" class:gone={phase !== "idle"}>
-      <span data-th="halloween">The Wedding · 31 October 2027</span>
-      <span data-th="dev">$ ./wedding --date 2027-10-31</span>
-      <span data-th="puppy">The Wedding · 31 October 2027</span>
+    <p class="top" class:gone={phase !== "idle"}>
+      <span data-th="halloween" class="t-hal">You are cordially invited</span>
+      <span data-th="dev" class="t-dev">~/wedding (main) $ git merge {bride}</span>
+      <span data-th="puppy" class="t-pup">같이 걷는 날에 초대해요</span>
     </p>
 
     <div class="center">
@@ -187,14 +187,6 @@
                   <stop offset="0.55" stop-color="#8a3f12" />
                   <stop offset="1" stop-color="#4a1f08" />
                 </radialGradient>
-                <linearGradient id="key-{uid}" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#4b86f2" />
-                  <stop offset="1" stop-color="#2459c7" />
-                </linearGradient>
-                <radialGradient id="paw-{uid}" cx="40%" cy="35%" r="75%">
-                  <stop offset="0" stop-color="#ffb3c1" />
-                  <stop offset="1" stop-color="#e46f88" />
-                </radialGradient>
               </defs>
               <g data-th="halloween">
               <path
@@ -206,17 +198,17 @@
               <text x="60" y="68" text-anchor="middle" font-family="IM Fell English, serif" font-size="26" font-weight="600" fill="#e8c985" letter-spacing="1">{groom[0]}{bride[0]}</text>
               </g>
               <g data-th="dev">
-                <rect x="10" y="14" width="100" height="96" rx="18" fill="#173a80" />
-                <rect x="14" y="10" width="92" height="88" rx="16" fill="url(#key-{uid})" stroke="#2f6feb" stroke-width="1.6" />
-                <text x="60" y="52" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="24" font-weight="600" fill="#ffffff">{groom[0]}{bride[0]}</text>
-                <text x="60" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" fill="#d6e3ff">⏎ Enter</text>
+                <rect x="10" y="16" width="100" height="94" rx="16" fill="#c9d1dc" />
+                <rect x="10" y="12" width="100" height="94" rx="16" fill="#ffffff" stroke="#c9d1dc" stroke-width="1.500" />
+                <text x="60" y="54" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="24" font-weight="500" fill="#1d2433">{groom[0]}{bride[0]}</text>
+                <text x="60" y="84" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" fill="#5b6476">Enter</text>
               </g>
               <g data-th="puppy">
-                <ellipse cx="60" cy="76" rx="32" ry="27" fill="url(#paw-{uid})" />
-                <ellipse cx="25" cy="44" rx="11" ry="14" transform="rotate(-24 25 44)" fill="url(#paw-{uid})" />
-                <ellipse cx="47" cy="25" rx="11" ry="14" transform="rotate(-8 47 25)" fill="url(#paw-{uid})" />
-                <ellipse cx="73" cy="25" rx="11" ry="14" transform="rotate(8 73 25)" fill="url(#paw-{uid})" />
-                <ellipse cx="95" cy="44" rx="11" ry="14" transform="rotate(24 95 44)" fill="url(#paw-{uid})" />
+                <ellipse cx="60" cy="76" rx="32" ry="27" fill="#ee7e98" />
+                <ellipse cx="25" cy="44" rx="11" ry="14" transform="rotate(-24 25 44)" fill="#ee7e98" />
+                <ellipse cx="47" cy="25" rx="11" ry="14" transform="rotate(-8 47 25)" fill="#ee7e98" />
+                <ellipse cx="73" cy="25" rx="11" ry="14" transform="rotate(8 73 25)" fill="#ee7e98" />
+                <ellipse cx="95" cy="44" rx="11" ry="14" transform="rotate(24 95 44)" fill="#ee7e98" />
                 <text x="60" y="85" text-anchor="middle" font-family="Jua, serif" font-size="26" font-weight="700" fill="#fff">{groom[0]}{bride[0]}</text>
               </g>
             </svg>
@@ -237,8 +229,12 @@
           </svg>
         </span>
       </button>
-      <p class="names" class:gone={phase !== "idle"}>{groom} · {bride}</p>
-      <p class="cta" class:gone={phase !== "idle"}>탭하여 초대장 열기</p>
+      <p class="names" class:gone={phase !== "idle"}><span data-th="halloween dev">{groom} &amp; {bride}</span><span data-th="puppy">{groom} 그리고 {bride}</span></p>
+      <p class="cta" class:gone={phase !== "idle"}>
+        <span data-th="halloween">인장을 눌러 초대장을 열어 주세요</span>
+        <span data-th="dev">Enter 를 눌러 열기</span>
+        <span data-th="puppy">발바닥을 눌러 열어 주세요</span>
+      </p>
       <div class="pick" class:gone={phase !== "idle"} role="group" aria-label="초대장 분위기 고르기">
         {#each THEME_NAMES as k (k)}
           <button type="button" class="opt" aria-pressed={theme.name === k} onclick={() => setTheme(k)}>{THEMES[k].label}</button>
@@ -311,6 +307,14 @@
   }
   .moon > span, .moon :global(svg) { width: 100%; height: 100%; display: block; }
 
+  .t-hal { font: italic 18px/1.4 var(--f-latin); }
+  .t-dev { font: 13px/1.4 var(--f-mono); color: var(--ink-2); }
+  .t-pup { font: 17px/1.4 var(--f-display); color: var(--ink-2); }
+  :global([data-theme="halloween"]) .moon { filter: none; }
+  :global([data-theme="dev"]) .moon, :global([data-theme="puppy"]) .moon { filter: none; }
+  :global([data-theme="puppy"]) .moon { width: min(64vw, 240px); aspect-ratio: 240 / 180; }
+  :global([data-theme="puppy"]) .top { top: calc(8vh + min(64vw, 240px) * 0.75 + 18px); }
+  :global([data-theme="dev"]) .seal { filter: none; }
   .top { position: absolute; top: calc(8vh + min(44vw, 180px) + 18px); left: 0; right: 0; text-align: center; z-index: 5; transition: opacity 0.4s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
   .center { position: absolute; inset: 0; padding-top: 20vh; z-index: 7; display: grid; place-items: center; align-content: center; pointer-events: none; }
   .seal { pointer-events: auto; position: relative; width: 112px; height: 112px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; animation: beat 2.6s ease-in-out infinite; filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.65)); -webkit-tap-highlight-color: transparent; outline: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -327,14 +331,14 @@
   .residue { inset: 8px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, var(--residue) 55%, transparent 80%, transparent); }
   .spark { left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #fff4d6; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px #f6d27a); }
 
-  .names { margin-top: 26px; font-size: 24px; letter-spacing: 0.1em; transition: opacity 0.35s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
-  .cta { margin-top: 6px; color: var(--ivory-dim); letter-spacing: 0.2em; font-size: 14px; transition: opacity 0.35s; }
+  .names { margin-top: 26px; font-size: 24px; font-family: var(--f-display); letter-spacing: 0.02em; transition: opacity 0.35s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
+  .cta { margin-top: 6px; color: var(--ink-2, var(--ivory-dim)); letter-spacing: 0; font-size: 14px; transition: opacity 0.35s; }
   .pick { pointer-events: auto; margin-top: 36px; display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid rgb(var(--gold-rgb) / 0.35); background: rgb(var(--bg-rgb) / 0.6); transition: opacity 0.35s; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
   .opt {
     min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--ivory-dim);
     font: inherit; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s;
   }
-  .opt[aria-pressed="true"] { background: var(--gold); color: var(--bg); }
+  .opt[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
   .opt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .gone.pick { pointer-events: none; }
   @keyframes blink { 50% { opacity: 0.55; } }
@@ -351,8 +355,8 @@
     100% { transform: translate3d(0, var(--dy), 0) scale(var(--s)) rotate(var(--rot)); opacity: 1; }
   }
   @keyframes flap { to { transform: scaleY(0.55); } }
-  .glyph { display: block; text-align: center; font: 600 22px/1 var(--latin); font-style: normal; color: var(--digit); text-shadow: 0 0 8px rgb(var(--gold-rgb) / 0.9); white-space: nowrap; }
-  .glyph:nth-child(odd) { color: var(--pumpkin); }
+  .glyph { display: block; text-align: center; font: 500 26px/1 var(--f-mono); font-style: normal; color: var(--groom); white-space: nowrap; }
+  .glyph:nth-child(odd) { color: var(--bride); }
   .by .pup { animation-name: wiggle; filter: drop-shadow(0 1px 2px rgb(var(--shade-rgb) / 0.3)); }
   @keyframes wiggle { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
 

@@ -1,13 +1,24 @@
 ---
 import { wedding } from "../data/wedding";
+import DogsRest from "./ui/DogsRest.svelte";
 
 interface Props {
   hasMusic: boolean;
 }
 const { hasMusic } = Astro.props;
+const ymd = wedding.date;
 ---
 
-<footer class="footer" data-reveal="rise">
-  <p class="latin">{wedding.groom.name} &amp; {wedding.bride.name} · {wedding.date.replaceAll("-", ".")}</p>
-  <p class="credits">Made by TeddKo{hasMusic ? ` · ${wedding.musicCredit}` : ""}</p>
+<footer class="footer" data-reveal>
+  <p class="end-thanks" data-th="halloween dev">함께해 주셔서 고맙습니다.</p>
+  <p class="end-thanks" data-th="puppy">와 주셔서 고마워요</p>
+  <p class="end-names"><span>신랑 {wedding.groom.name}</span><span>신부 {wedding.bride.name}</span></p>
+  <p class="end-date latin" data-th="halloween">All Hallows' Eve, {ymd.slice(0, 4)}</p>
+  <p class="end-date mono" data-th="dev">tag v1.0.0&nbsp;&nbsp;{ymd}</p>
+  <p class="end-date" data-th="puppy">{ymd.replaceAll("-", ".")}</p>
+  <div class="dogs-rest" data-th="puppy"><DogsRest /></div>
+  <p class="credits">
+    <span>Made by TeddKo</span>
+    {hasMusic && <span>{wedding.musicCredit}</span>}
+  </p>
 </footer>

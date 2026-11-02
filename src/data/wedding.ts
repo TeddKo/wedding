@@ -32,6 +32,16 @@ const groom: Person = { name: "고민혁", relation: "아들", father: { name: "
 const bride: Person = { name: "김은정", relation: "딸", father: { name: "", deceased: false }, mother: { name: "", deceased: false } };
 const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "", holder: "" });
 
+export interface Transit {
+  subway?: string[];
+  bus?: string[];
+  car?: string;
+  parking?: string;
+}
+
+// TODO: 교통/주차 안내는 확인된 내용만 입력. 비어 있으면 렌더하지 않는다.
+const transit: Transit = { subway: [], bus: [], car: "", parking: "" };
+
 const venue = {
   name: "MJ컨벤션",
   hall: "3층 다이너스티홀",
@@ -39,6 +49,7 @@ const venue = {
   mapQuery: "MJ컨벤션 부천",
   lat: 37.48179793,
   lng: 126.79851199,
+  transit,
 };
 
 export const wedding = {
@@ -72,7 +83,7 @@ export const wedding = {
   guestbookApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
-    title: `${groom.name} · ${bride.name} 결혼합니다`,
+    title: `${groom.name} & ${bride.name} 결혼합니다`,
     description: `2027년 10월 31일 일요일 오전 10시 30분\n${venue.name} ${venue.hall}`,
   },
   // public/audio/bgm.mp3 가 있을 때만 푸터에 표시

@@ -8,9 +8,9 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 | 컴포넌트 | 하이드레이션 | 역할 |
 |---|---|---|
-| `IntroGate.svelte` | load | 밀랍 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 S 곡선으로 날아감 -> 3D 문(Spring) -> 박쥐 떼 -> 촛불 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
-| `AmbientCanvas.svelte` | idle | 캔버스 1장: 안개, 불씨, 달 앞을 지나는 박쥐. 숨김/화면 밖 정지, 저사양 자동 감량 |
-| `CoverHero.svelte` | load | 4:5 대표 사진(켄번스 + 패럴랙스), 사진 위 날짜 헤더 카운트업, 테마별 필기체 문구, 잉크로 쓰이는 이름. 사진이 없으면 "사진 자리" 표시(캐릭터는 인트로/인사말에만) |
+| `IntroGate.svelte` | load | 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 날아감 -> 3D 문(Spring) -> 테마별 조각(박쥐/+−/발자국) -> 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
+| `AmbientCanvas.svelte` | idle | 캔버스 1장: 할로윈 전용 불씨 10개. 다른 테마는 그리지 않고, 숨김/화면 밖 정지 |
+| `CoverHero.svelte` | load | 테마별 커버(할로윈 첨두 아치, dev 커밋 그래프, puppy 잔디 위 강아지). 실제 사진에만 약한 패럴랙스/켄번스. 사진이 없으면 테마별 플레이스홀더 |
 | `CalendarDday.svelte` | idle | 날짜 칸 캐스케이드, 31일 잭오랜턴, 플립카드 D-day(KST) |
 | `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
@@ -23,9 +23,9 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 | 키 | 이름 | 연출 |
 |---|---|---|
-| `halloween` | 할로윈 | 밀랍 인장, 달, 박쥐, 촛불, 잭오랜턴 |
-| `dev` | 프로그래머 | 터미널 창(`git merge 신랑 신부`), Enter 키캡 인장, 떨어지는 코드 조각, 픽셀 하트 |
-| `puppy` | 강아지 | 말티즈(리본) + 네눈박이(나비넥타이, 끝이 접힌 큰 귀), 발바닥 인장, 발자국/하트 |
+| `halloween` | 할로윈 | 첨두 아치 창 커버(촛불 불꽃), 선으로 그린 초승달, 밀랍 인장, 박쥐(인트로만), 불씨 10개 |
+| `dev` | 프로그래머 | 밝은 git log. 커버의 파랑/분홍 브랜치가 병합되어 한 줄 레일로 이어짐, `GitGraph` 인트로, 무광 Enter 키캡 인장, `+`/`−` 조각 |
+| `puppy` | 강아지 | 말티즈 + 네눈박이(면 분리 평면 일러스트, 꼬리 흔들기 1개), 잔디 띠 위 커버, 평면 발바닥 인장, 엔딩 `DogsRest` |
 
 - 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 왼쪽 아래 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
 - 색은 `src/styles/global.css` 의 `[data-theme]` 토큰. 테마별 마크업은 `data-th="dev"` 처럼 표시하고 CSS 로만 숨긴다(SSR 과 하이드레이션 일치). 캔버스/날아가는 요소처럼 JS 연출만 `src/lib/theme.svelte.ts` 를 읽는다.

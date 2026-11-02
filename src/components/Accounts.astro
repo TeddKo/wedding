@@ -1,5 +1,5 @@
 ---
-import Ornament from "./Ornament.astro";
+import { fnv7 } from "../lib/hash";
 import AccountGroups from "./AccountGroups.svelte";
 import { wedding } from "../data/wedding";
 import { accountRows } from "../lib/family";
@@ -12,9 +12,8 @@ const groups = [
 
 {
   groups.length > 0 && (
-    <section class="section card" data-reveal="blur" aria-labelledby="acc-h">
-      <h2 id="acc-h" class="sec-title"><span class="latin">With Heart</span>마음 전하실 곳</h2>
-      <Ornament name="divider" />
+    <section class="section" data-reveal aria-labelledby="acc-h">
+      <h2 id="acc-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("accounts")}</span>마음 전하실 곳</h2>
       <AccountGroups client:load groups={groups} />
     </section>
   )

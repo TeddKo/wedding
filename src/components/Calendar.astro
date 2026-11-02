@@ -2,6 +2,38 @@
 import CalendarDday from "./CalendarDday.svelte";
 import { wedding } from "../data/wedding";
 import { dateKo, venueLine, dayNames, day, month, monthGrid, year } from "../lib/format";
+
+/* 예식 시각(KST) 기준 2시간짜리 일정. 로컬 시각 + TZID 로 적는다 */
+const [y, m, d] = wedding.date.split("-").map(Number);
+const [hh, mm] = wedding.time.split(":").map(Number);
+const stamp = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, "").slice(0, 15);
+const t0 = Date.UTC(y, m - 1, d, hh, mm);
+const start = stamp(t0);
+const end = stamp(t0 + 2 * 3600 * 1000);
+const esc = (v: string) => v.replace(/([,;\\])/g, "\\$1");
+const summary = `${wedding.groom.name} ${wedding.bride.name} 결혼식`;
+const ics = [
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "PRODID:-//wedding//KO",
+  "BEGIN:VEVENT",
+  `UID:wedding-${start}@wedding`,
+  `DTSTAMP:${start}Z`,
+  `DTSTART;TZID=${wedding.timezone}:${start}`,
+  `DTEND;TZID=${wedding.timezone}:${end}`,
+  `SUMMARY:${esc(summary)}`,
+  `LOCATION:${esc(wedding.venue.address)}`,
+  "END:VEVENT",
+  "END:VCALENDAR",
+].join("\r\n");
+const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+const gcalHref = `https://calendar.google.com/calendar/render?${new URLSearchParams({
+  action: "TEMPLATE",
+  text: summary,
+  dates: `${start}/${end}`,
+  ctz: wedding.timezone,
+  location: wedding.venue.address,
+})}`;
 ---
 
-<CalendarDday client:idle year={year} month={month} day={day} date={wedding.date} dateKo={dateKo} venue={venueLine} dayNames={dayNames} grid={monthGrid()} />
+<CalendarDday client:idle year={year} month={month} day={day} date={wedding.date} dateKo={dateKo} venue={venueLine} dayNames={dayNames} grid={monthGrid()} icsHref={icsHref} gcalHref={gcalHref} />

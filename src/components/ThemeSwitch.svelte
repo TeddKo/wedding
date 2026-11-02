@@ -7,6 +7,7 @@
     ready = true;
   });
   const next = $derived(nextTheme(theme.name));
+
 </script>
 
 <!-- 테마 순환 버튼. SSR 에서는 숨겨 두고 하이드레이션 후 현재 테마로 표시 -->

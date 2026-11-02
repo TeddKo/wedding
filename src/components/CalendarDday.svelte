@@ -1,9 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Spring } from "svelte/motion";
-  import Divider from "./ui/Divider.svelte";
-  import FlipDigit from "./ui/FlipDigit.svelte";
-  import { ddayKst, rand, reduced } from "../lib/motion";
+  import { ddayKst, reduced } from "../lib/motion";
+  import { fnv7 } from "../lib/hash";
 
   let {
     year,
@@ -11,55 +9,63 @@
     day,
     date,
     dateKo,
-    venue,
     dayNames,
     grid,
-  }: { year: number; month: number; day: number; date: string; dateKo: string; venue: string; dayNames: string[]; grid: (number | null)[] } = $props();
+    icsHref,
+    gcalHref,
+  }: {
+    year: number;
+    month: number;
+    day: number;
+    date: string;
+    dateKo: string;
+    venue?: string;
+    dayNames: string[];
+    grid: (number | null)[];
+    icsHref: string;
+    gcalHref: string;
+  } = $props();
 
   let root = $state<HTMLElement>();
-  let armed = $state(false);
-  let shown = $state(false);
   let n = $state<number | null>(null);
-  const lamp = new Spring({ s: 1, o: 1 }, { stiffness: 0.16, damping: 0.3 });
-  const pop = new Spring(0, { stiffness: 0.07, damping: 0.32 });
+  let shown = $state(0);
 
-  const digits = $derived(n === null ? [] : String(Math.abs(n)).split("").map(Number));
   const text = $derived(n === null ? "" : n > 0 ? `결혼식까지 ${n}일` : n === 0 ? "오늘" : `${-n}일 지났습니다`);
-  const delayOf = (i: number) => (Math.floor(i / 7) + (i % 7)) * 48;
-  const wedIdx = grid.indexOf(day);
+
+  /* 첫 노출에 0 에서 N 까지 900ms 카운트업 */
+  function countUp(to: number) {
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / 900);
+      shown = Math.round(to * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
 
   onMount(() => {
     n = ddayKst(date);
-    if (reduced()) {
-      shown = true;
-      pop.set(1, { instant: true });
+    const to = Math.abs(n);
+    if (reduced() || to === 0) {
+      shown = to;
       return;
     }
-    armed = true;
     const io = new IntersectionObserver(
       ([e]) => {
         if (!e.isIntersecting) return;
-        shown = true;
         io.disconnect();
-        setTimeout(() => (pop.target = 1), delayOf(wedIdx) + 350);
+        countUp(to);
       },
       { threshold: 0.3 },
     );
     if (root) io.observe(root);
-    const tick = setInterval(() => {
-      if (shown && !document.hidden) lamp.target = { s: 1 + rand(-0.04, 0.06), o: rand(0.6, 1) };
-    }, 130);
-    return () => {
-      io.disconnect();
-      clearInterval(tick);
-    };
+    return () => io.disconnect();
   });
 </script>
 
-<section class="section card" aria-labelledby="cal-h" bind:this={root} data-reveal="line">
-  <h2 id="cal-h" class="sec-title"><span class="latin">Calendar</span>{year}년 {month}월</h2>
-  <Divider />
-  <p class="when">{dateKo}<br />{venue}</p>
+<section class="section" aria-labelledby="cal-h" bind:this={root} data-reveal>
+  <h2 id="cal-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("calendar")}</span>{year}년 {month}월</h2>
+  <p class="when">{dateKo}</p>
   <div class="cal" role="table" aria-label={`${year}년 ${month}월 달력`}>
     <div class="cal-row" role="row">
       {#each dayNames as d, i}
@@ -71,33 +77,14 @@
         {#if d === null}
           <span role="cell"></span>
         {:else if d === day}
-          <span role="cell" class="today c" class:armed class:in={shown} class:sun={i % 7 === 0} style:--d="{delayOf(i)}ms" aria-label="{month}월 {d}일 결혼식">
-            <i class="glow" style:opacity={armed ? pop.current * lamp.current.o : 1} style:transform="scale({armed ? 0.6 + pop.current * 0.6 * lamp.current.s : 1})"></i>
-            <svg class="pumpkin" data-th="halloween" viewBox="0 0 48 46" aria-hidden="true" focusable="false" style:transform="scale({armed ? 0.5 + pop.current * 0.5 : 1})">
-              <defs>
-                <radialGradient id="pk" cx="50%" cy="46%" r="60%">
-                  <stop offset="0" stop-color="#ffb35a" />
-                  <stop offset="0.7" stop-color="#e07a2f" />
-                  <stop offset="1" stop-color="#b95a18" />
-                </radialGradient>
-              </defs>
-              <path d="M24 9c-3-3-6-4-8-3" fill="none" stroke="#6b8a3a" stroke-width="3" stroke-linecap="round" />
-              <ellipse cx="14" cy="27" rx="12" ry="16" fill="url(#pk)" />
-              <ellipse cx="34" cy="27" rx="12" ry="16" fill="url(#pk)" />
-              <ellipse cx="24" cy="27" rx="12" ry="17.5" fill="url(#pk)" />
-              <path d="M24 10v34M17 12c-4 8-4 24 0 32M31 12c4 8 4 24 0 32" fill="none" stroke="#b95a18" stroke-width="0.9" opacity="0.7" />
-              <path d="M16 13l3.6 5h-7.2zM32 13l3.6 5h-7.2z" fill="#2a1208" opacity="0.85" />
-            </svg>
-            <svg class="pumpkin" data-th="dev" viewBox="0 0 48 46" aria-hidden="true" focusable="false" style:transform="scale({armed ? 0.5 + pop.current * 0.5 : 1})">
-              <path d="M8 6h8v4h4v4h8v-4h4V6h8v4h4v12h-4v4h-4v4h-4v4h-4v4h-4v4h-4v-4h-4v-4h-4v-4h-4v-4H8v-4H4V10h4z" fill="#f778ba" stroke="#ffb3d9" stroke-width="1" shape-rendering="crispEdges" />
-            </svg>
-            <svg class="pumpkin" data-th="puppy" viewBox="0 0 48 46" aria-hidden="true" focusable="false" style:transform="scale({armed ? 0.5 + pop.current * 0.5 : 1})">
-              <g fill="#ec7d92"><ellipse cx="24" cy="29" rx="15" ry="13" /><ellipse cx="7" cy="16" rx="5" ry="6.5" transform="rotate(-20 7 16)" /><ellipse cx="17" cy="6.5" rx="5" ry="6.5" transform="rotate(-6 17 6.5)" /><ellipse cx="31" cy="6.5" rx="5" ry="6.5" transform="rotate(6 31 6.5)" /><ellipse cx="41" cy="16" rx="5" ry="6.5" transform="rotate(20 41 16)" /></g>
-            </svg>
-            <b>{d}</b>
+          <span role="cell" class="c wed" aria-label="{month}월 {d}일 결혼식">
+            <i class="mark">
+              <svg data-th="puppy" class="paw" viewBox="0 0 42 42" aria-hidden="true" focusable="false"><g fill="var(--rose, #ee7e98)"><ellipse cx="21" cy="27" rx="11" ry="9.5" /><ellipse cx="7" cy="19" rx="3.8" ry="4.8" /><ellipse cx="15" cy="9" rx="3.8" ry="4.8" /><ellipse cx="27" cy="9" rx="3.8" ry="4.8" /><ellipse cx="35" cy="19" rx="3.8" ry="4.8" /></g></svg>
+              <b>{d}</b>
+            </i>
           </span>
         {:else}
-          <span role="cell" class="c" class:armed class:in={shown} class:sun={i % 7 === 0} style:--d="{delayOf(i)}ms">{d}</span>
+          <span role="cell" class="c" class:sun={i % 7 === 0}>{d}</span>
         {/if}
       {/each}
     </div>
@@ -111,42 +98,48 @@
       <span class="vis" aria-hidden="true">
         {#if n > 0}<span class="lead">결혼식까지</span>{/if}
         {#if n === 0}
-          <span class="today-txt">오늘</span>
+          <span class="num">오늘</span>
         {:else}
-          <span class="flip">
-            {#each digits as dg, i (i)}
-              <FlipDigit value={dg} steps={5 + i * 2} delay={i * 160} go={shown} />
-            {/each}
-          </span>
+          <span class="num">{shown}</span>
           <span class="unit">{n > 0 ? "일" : "일 지났습니다"}</span>
         {/if}
       </span>
     {/if}
   </p>
+
+  <div class="cal-add">
+    <a class="btn-text" href={icsHref} download="wedding.ics">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4" /></svg>
+      캘린더에 추가
+    </a>
+    <a class="btn-text" href={gcalHref} target="_blank" rel="noopener">Google 캘린더</a>
+  </div>
 </section>
 
 <style>
-  .when { max-width: 340px; margin: 0 auto 20px; padding: 2px 0 2px 14px; border-left: 3px solid var(--pumpkin); text-align: left; color: var(--ivory-dim); }
-  .cal { max-width: 340px; margin: 0 auto; border-top: 1px solid rgb(var(--gold-rgb) / 0.5); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.5); padding: 14px 0; }
+  .when { margin: 0 auto 24px; max-width: 340px; text-align: center; white-space: nowrap; font-size: 15px; line-height: 1.6; color: var(--ink-2, var(--ivory-dim)); }
+  .cal { max-width: 340px; margin: 0 auto; }
   .cal-row, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
-  .cal-h { font-size: 13px; color: var(--gold); padding-bottom: 8px; }
-  .cal-grid span { height: 42px; display: grid; place-items: center; font-size: 15px; position: relative; }
+  .cal-h { font-size: 12px; line-height: 40px; color: var(--ink-2, var(--ivory-dim)); }
+  .cal-grid span { height: 40px; display: grid; place-items: center; font-size: 15px; font-variant-numeric: tabular-nums; }
   .sun { color: var(--sun); }
-  .c.armed { opacity: 0; transform: translateY(14px) scale(0.7); }
-  .c.armed.in { opacity: 1; transform: none; transition: opacity 0.5s ease var(--d), transform 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) var(--d); }
-  .today { color: var(--today-ink); font-weight: 700; z-index: 1; overflow: visible; }
-  .today b { position: relative; z-index: 2; font-weight: 700; margin-top: 10px; font-size: 14px; }
-  .pumpkin { position: absolute; left: 50%; top: 50%; width: 48px; height: 46px; margin: -22px 0 0 -24px; will-change: transform; }
-  .glow {
-    position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none; will-change: transform, opacity;
-    background: radial-gradient(closest-side, rgb(var(--glow-rgb) / 0.55), rgb(var(--accent-rgb) / 0.18) 55%, rgb(var(--accent-rgb) / 0));
+  .mark {
+    position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font-style: normal;
+    background: var(--accent, var(--pumpkin)); color: var(--on-accent, var(--bg));
   }
+  .mark b { position: relative; font-weight: 600; font-size: 15px; }
+  .paw { display: none; }
+  :global([data-theme="halloween"]) .mark { outline: 1px solid var(--accent, var(--pumpkin)); outline-offset: 3px; }
+  :global([data-theme="dev"]) .mark { background: var(--groom, var(--accent)); border-radius: 4px; }
+  :global([data-theme="puppy"]) .mark { background: none; width: 42px; height: 42px; }
+  :global([data-theme="puppy"]) .paw { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+  :global([data-theme="puppy"]) .mark b { color: #fff; transform: translateY(6px); }
 
-  .dday { margin: 28px 0 24px; font-size: 20px; letter-spacing: 0.06em; min-height: 78px; display: grid; place-items: center; }
-  .vis { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
-  .lead, .unit { color: var(--ivory); }
-  .today-txt { font-size: 34px; color: var(--pumpkin); font-weight: 700; }
-  .flip { display: inline-flex; }
-  .plain { color: var(--ivory-dim); }
+  .dday { margin: 32px 0 16px; min-height: 56px; display: grid; place-items: center; }
+  .vis { display: inline-flex; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .lead, .unit { font-size: 16px; color: var(--ink, var(--ivory)); }
+  .num { font-family: var(--f-display, inherit); font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent-text, var(--accent, var(--pumpkin))); }
+  .plain { color: var(--ink-2, var(--ivory-dim)); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .cal-add { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
 </style>
