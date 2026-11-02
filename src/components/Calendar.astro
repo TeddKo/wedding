@@ -1,32 +1,8 @@
 ---
-import Ornament from "./Ornament.astro";
+import CalendarDday from "./CalendarDday.svelte";
 import { wedding } from "../data/wedding";
 import { dateKo, dayNames, day, month, monthGrid, year } from "../lib/format";
 import { url } from "../lib/url";
 ---
 
-<section class="section reveal" aria-labelledby="cal-h">
-  <h2 id="cal-h" class="sec-title"><span class="latin">Calendar</span>{year}년 {month}월</h2>
-  <Ornament name="divider" />
-  <p class="cal-time">{dateKo}</p>
-  <div class="cal" role="table" aria-label={`${year}년 ${month}월 달력`}>
-    <div class="cal-row" role="row">
-      {dayNames.map((d, i) => <span role="columnheader" class:list={["cal-h", i === 0 && "sun"]}>{d}</span>)}
-    </div>
-    <div class="cal-grid">
-      {
-        monthGrid().map((d, i) =>
-          d === null ? (
-            <span role="cell" />
-          ) : (
-            <span role="cell" class:list={[i % 7 === 0 && "sun", d === day && "today"]} aria-label={d === day ? `${month}월 ${d}일 결혼식` : undefined}>
-              {d}
-            </span>
-          ),
-        )
-      }
-    </div>
-  </div>
-  <p class="dday" id="dday" data-date={wedding.date} aria-live="polite">&nbsp;</p>
-  <a class="btn" href={url("invitation.ics")} download="wedding.ics">캘린더에 추가</a>
-</section>
+<CalendarDday client:idle year={year} month={month} day={day} date={wedding.date} dateKo={dateKo} dayNames={dayNames} grid={monthGrid()} icsHref={url("invitation.ics")} />

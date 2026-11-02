@@ -56,8 +56,6 @@ html.ambient .page, html.ambient .footer { background: transparent; }
 .sec-title .latin { display: block; margin-bottom: 8px; }
 .orn-divider { width: 200px; height: 20px; color: var(--gold); margin: 20px auto 28px; display: block; }
 
-.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s ease, transform 0.9s ease; }
-.reveal.in { opacity: 1; transform: none; }
 
 /* buttons */
 .btn {
@@ -85,51 +83,11 @@ html.gated, html.gated body { overflow: hidden; }
 html.js .page, html.js .footer { transition: opacity 1.1s ease, transform 1.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
 html.gated .page, html.gated .footer { opacity: 0; transform: translateY(28px); }
 
-/* cover */
-.cover { padding: 56px 28px 40px; text-align: center; position: relative; }
-.cobweb { position: absolute; top: 0; left: 0; width: 110px; color: rgb(201 164 92 / 0.35); }
-.cobweb svg { width: 100%; display: block; }
-.arch {
-  width: 80%; max-width: 320px; aspect-ratio: 3 / 4; margin: 24px auto 32px;
-  border: 1px solid var(--gold); border-radius: 999px 999px 0 0; padding: 6px; overflow: hidden;
-}
-.arch > * { width: 100%; height: 100%; border-radius: 999px 999px 0 0; object-fit: cover; display: block; }
-.arch-placeholder {
-  background: linear-gradient(#2a1a33, #150f1a 70%);
-  position: relative; display: block; overflow: hidden;
-}
-.arch-placeholder .orn-moon { position: absolute; top: 12%; left: 50%; width: 38%; height: auto; transform: translateX(-50%); filter: drop-shadow(0 0 18px rgb(242 232 213 / 0.4)); }
-.arch-placeholder .orn-candle { position: absolute; bottom: 8%; left: 50%; width: 15%; height: auto; transform: translateX(-50%); }
-.flame { transform-origin: 50% 90%; animation: flicker 2.2s ease-in-out infinite; }
-@keyframes flicker {
-  0%, 100% { transform: scale(1, 1) rotate(0); opacity: 1; }
-  30% { transform: scale(0.94, 1.06) rotate(-2deg); opacity: 0.92; }
-  60% { transform: scale(1.04, 0.96) rotate(2deg); opacity: 1; }
-}
-.names { font-size: 32px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.4; }
-.amp { color: var(--pumpkin); margin: 0 0.4em; font-weight: 400; }
-.cover-date { font-size: 18px; margin-top: 4px; }
-.cover-venue { color: var(--ivory-dim); margin-top: 4px; }
-
 /* greeting */
 .greeting p { margin-bottom: 1.2em; }
 .greeting p:last-child { margin-bottom: 0; }
 .signature { margin-top: 32px; color: var(--ivory-dim); }
 .signature b { color: var(--ivory); font-weight: 700; margin: 0 0.2em; }
-
-/* calendar */
-.cal-time { margin-bottom: 20px; color: var(--ivory-dim); }
-.cal { max-width: 340px; margin: 0 auto; border-top: 1px solid rgb(201 164 92 / 0.5); border-bottom: 1px solid rgb(201 164 92 / 0.5); padding: 14px 0; }
-.cal-row, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
-.cal-h { font-size: 13px; color: var(--gold); padding-bottom: 8px; }
-.cal-grid span { height: 42px; display: grid; place-items: center; font-size: 15px; }
-.sun { color: #e58a8a; }
-.cal-grid .today {
-  background: var(--pumpkin); color: #14090a; font-weight: 700; border-radius: 50%;
-  width: 38px; height: 38px; margin: 2px auto;
-}
-.dday { margin: 24px 0 22px; font-size: 20px; letter-spacing: 0.06em; }
-.dday::first-line { color: var(--ivory); }
 
 /* location */
 .venue-name { font-size: 20px; font-weight: 700; }
@@ -182,7 +140,5 @@ html.gated .page, html.gated .footer { opacity: 0; transform: translateY(28px); 
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .flame { animation: none; }
   html.js .page, html.js .footer { transition: none; }
 }

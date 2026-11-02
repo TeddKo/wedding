@@ -24,17 +24,6 @@ else {
   reveals.forEach((e) => io.observe(e));
 }
 
-/* D-day (KST) */
-const dd = $<HTMLElement>("#dday");
-if (dd?.dataset.date) {
-  const [y, m, d] = dd.dataset.date.split("-").map(Number);
-  const kst = new Date(Date.now() + 9 * 3600e3);
-  const today = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
-  const n = Math.round((Date.UTC(y, m - 1, d) - today) / 864e5);
-  dd.textContent = n > 0 ? `결혼식까지 ${n}일` : n === 0 ? "오늘" : `${-n}일 지났습니다`;
-  dd.dataset.n = String(n);
-}
-
 /* 복사 */
 async function copy(text: string, btn: HTMLElement) {
   try {
