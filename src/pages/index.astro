@@ -1,0 +1,29 @@
+---
+import Base from "../layouts/Base.astro";
+import Intro from "../components/Intro.astro";
+import Cover from "../components/Cover.astro";
+import Greeting from "../components/Greeting.astro";
+import Calendar from "../components/Calendar.astro";
+import Location from "../components/Location.astro";
+import Gallery from "../components/Gallery.astro";
+import Accounts from "../components/Accounts.astro";
+import Rsvp from "../components/Rsvp.astro";
+import Share from "../components/Share.astro";
+import Footer from "../components/Footer.astro";
+import { hasMusic } from "../lib/music";
+---
+
+<Base>
+  <Intro />
+  <main class="page">
+    <Cover />
+    <Greeting />
+    <Calendar />
+    <Location />
+    <Gallery />
+    <Accounts />
+    <Rsvp />
+    <Share />
+  </main>
+  <Footer hasMusic={hasMusic} />
+</Base>

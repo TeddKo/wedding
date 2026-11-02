@@ -1,0 +1,23 @@
+---
+import Ornament from "./Ornament.astro";
+import { wedding } from "../data/wedding";
+import { venueLine } from "../lib/format";
+
+const q = encodeURIComponent(wedding.venue.mapQuery);
+const kakao = `https://map.kakao.com/link/search/${q}`;
+const naver = `https://map.naver.com/p/search/${q}`;
+const tmap = `tmap://search?name=${q}`;
+---
+
+<section class="section reveal" aria-labelledby="loc-h">
+  <h2 id="loc-h" class="sec-title"><span class="latin">Location</span>오시는 길</h2>
+  <Ornament name="divider" />
+  <p class="venue-name">{venueLine}</p>
+  <p class="address" id="address">{wedding.venue.address}</p>
+  <button type="button" class="btn btn-ghost" data-copy={wedding.venue.address}>주소 복사</button>
+  <div class="map-links">
+    <a class="btn" href={kakao} target="_blank" rel="noopener noreferrer">카카오맵</a>
+    <a class="btn" href={naver} target="_blank" rel="noopener noreferrer">네이버지도</a>
+    <a class="btn" href={tmap} data-tmap data-fallback={kakao}>티맵</a>
+  </div>
+</section>

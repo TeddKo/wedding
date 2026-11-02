@@ -1,0 +1,30 @@
+---
+import { Image } from "astro:assets";
+import Ornament from "./Ornament.astro";
+import { wedding } from "../data/wedding";
+import { dateKo, venueLine } from "../lib/format";
+import { photos } from "../lib/photos";
+
+const cover = photos[0];
+---
+
+<header class="cover reveal">
+  <div class="cobweb tl"><Ornament name="cobweb" /></div>
+  <p class="latin">The Wedding · Hallow's Eve</p>
+  <div class="arch">
+    {
+      cover ? (
+        <Image src={cover} alt={`${wedding.groom}, ${wedding.bride}`} width={720} format="webp" widths={[360, 540, 720]} sizes="(max-width: 480px) 80vw, 384px" loading="eager" />
+      ) : (
+        <div class="arch-placeholder" role="img" aria-label="사진이 들어갈 자리">
+          <Ornament name="moon" />
+          <Ornament name="candle" />
+        </div>
+      )
+    }
+  </div>
+  <h1 class="names">{wedding.groom}<span class="amp">&amp;</span>{wedding.bride}</h1>
+  <Ornament name="divider" />
+  <p class="cover-date">{dateKo}</p>
+  <p class="cover-venue">{venueLine}</p>
+</header>

@@ -1,0 +1,33 @@
+---
+import Ornament from "./Ornament.astro";
+import { wedding } from "../data/wedding";
+
+const sides = [
+  { title: "신랑측", list: wedding.accounts.groom },
+  { title: "신부측", list: wedding.accounts.bride },
+].filter((s) => s.list.length > 0);
+---
+
+{
+  sides.length > 0 && (
+    <section class="section reveal" aria-labelledby="acc-h">
+      <h2 id="acc-h" class="sec-title"><span class="latin">With Heart</span>마음 전하실 곳</h2>
+      <Ornament name="divider" />
+      {sides.map((s) => (
+        <details class="acc">
+          <summary>{s.title}</summary>
+          <ul>
+            {s.list.map((a) => (
+              <li>
+                <span class="acc-label">{a.label}</span>
+                <span>{a.bank} {a.number}</span>
+                <span class="acc-holder">{a.holder}</span>
+                <button type="button" class="btn btn-ghost btn-sm" data-copy={a.number}>복사</button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
+    </section>
+  )
+}

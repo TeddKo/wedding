@@ -1,0 +1,13 @@
+---
+import { wedding } from "../data/wedding";
+
+interface Props {
+  hasMusic: boolean;
+}
+const { hasMusic } = Astro.props;
+---
+
+<footer class="footer">
+  <p class="latin">{wedding.groom} &amp; {wedding.bride} · {wedding.date.replaceAll("-", ".")}</p>
+  <p class="credits">Made with care{hasMusic ? ` · ${wedding.musicCredit}` : ""}</p>
+</footer>

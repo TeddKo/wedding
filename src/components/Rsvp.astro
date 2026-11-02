@@ -1,0 +1,15 @@
+---
+import Ornament from "./Ornament.astro";
+import { wedding } from "../data/wedding";
+---
+
+{
+  wedding.rsvpUrl && (
+    <section class="section reveal" aria-labelledby="rsvp-h">
+      <h2 id="rsvp-h" class="sec-title"><span class="latin">R.S.V.P.</span>참석 여부</h2>
+      <Ornament name="divider" />
+      <p class="note">참석 여부를 미리 알려주시면 큰 도움이 됩니다.</p>
+      <a class="btn" href={wedding.rsvpUrl} target="_blank" rel="noopener noreferrer">참석 여부 전달하기</a>
+    </section>
+  )
+}

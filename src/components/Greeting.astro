@@ -1,0 +1,13 @@
+---
+import Ornament from "./Ornament.astro";
+import { wedding } from "../data/wedding";
+---
+
+<section class="section reveal" aria-labelledby="greeting-h">
+  <h2 id="greeting-h" class="sec-title"><span class="latin">Invitation</span>{wedding.greeting.title}</h2>
+  <Ornament name="divider" />
+  <div class="greeting">
+    {wedding.greeting.body.map((p) => <p>{p}</p>)}
+  </div>
+  <p class="signature">신랑 <b>{wedding.groom}</b> · 신부 <b>{wedding.bride}</b></p>
+</section>
