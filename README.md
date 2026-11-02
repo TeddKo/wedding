@@ -37,7 +37,16 @@ corepack pnpm build    # astro check + astro build -> dist/
 
 - 홀 이름: `venue.hall` (비어 있으면 표시 안 함)
 - 인사말: `greeting` (TODO 표시된 문구 교체)
-- 계좌: `accounts.groom` / `accounts.bride` 에 `{ label, bank, number, holder }` 추가. 둘 다 비면 섹션이 렌더링되지 않는다.
+- 이름/혼주: `groom` / `bride` 는 `{ name, relation, givenName?, father, mother }`. `father`/`mother` 는 `{ name, deceased }`.
+  - `relation`: 아들/장남/차남/딸/장녀/차녀 등 자유 문구
+  - `givenName`: 생략하면 성(첫 글자)을 뺀 나머지. 두 글자 성이면 직접 지정
+  - `deceased: true` 면 이름 앞에 "故" 가 붙고 흐리게 표시. 한 분만 적으면 점 없이 한 분만, 둘 다 비면 그쪽 혼주 줄은 숨김
+  - 커버/인트로(인장 이니셜=성)/공유 문구/푸터는 모두 이 값에서 파생
+- 계좌: `accounts.groom` / `accounts.bride` 에 `{ role, bank, number, holder, payLink? }` 추가
+  - `role`: `groom`|`bride`(본인), `father`, `mother`. 라벨(신랑/신랑 아버지/신부 어머니 등)은 role 과 측으로 자동 생성
+  - `holder` 가 비면 해당 인물 이름. `number` 가 비면 "준비 중"(복사 버튼 없음)
+  - 부모 이름과 `number` 가 모두 비면 그 행은 숨김. 항목이 0개면 섹션 전체 숨김
+  - `payLink`: 있으면 "송금" 버튼(토스/카카오페이 등 링크). 복사 버튼은 `은행 번호` 를 복사
 - 축하 글 API: `guestbookApi` (Worker URL). 비면 섹션 숨김. 서버는 `guestbook/` 참고(루트 빌드/CI 와 무관, `tsconfig` 에서 제외)
 - 참석 여부: `rsvpUrl` 에 구글폼 URL. 비면 섹션 숨김.
 - 날짜/시간: `date`, `time` (달력, D-day, 공유 문구 제외 전부 자동 반영)

@@ -3,4 +3,4 @@ import IntroGate from "./IntroGate.svelte";
 import { wedding } from "../data/wedding";
 ---
 
-<IntroGate client:load groom={wedding.groom} bride={wedding.bride} />
+<IntroGate client:load groom={wedding.groom.name} bride={wedding.bride.name} />

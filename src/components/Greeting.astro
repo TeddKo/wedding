@@ -1,6 +1,9 @@
 ---
 import Ornament from "./Ornament.astro";
 import { wedding } from "../data/wedding";
+import { givenName, hasParents } from "../lib/family";
+
+const families = [wedding.groom, wedding.bride].filter(hasParents);
 ---
 
 <section class="section" data-reveal="blur" aria-labelledby="greeting-h">
@@ -9,5 +12,25 @@ import { wedding } from "../data/wedding";
   <div class="greeting">
     {wedding.greeting.body.map((p) => <p>{p}</p>)}
   </div>
-  <p class="signature">신랑 <b>{wedding.groom}</b> · 신부 <b>{wedding.bride}</b></p>
+  {
+    families.length > 0 && (
+      <div class="family">
+        {families.map((p) => {
+          const parents = [p.father, p.mother].filter((x) => x.name);
+          return (
+            <p>
+              {parents.map((x, i) => (
+                <>
+                  {i > 0 && <span class="sep" aria-hidden="true">·</span>}
+                  <span class="par">{x.deceased && <span class="dec">故</span>}{x.name}</span>
+                </>
+              ))}
+              <span class="of">의</span> {p.relation} <b>{givenName(p)}</b>
+            </p>
+          );
+        })}
+      </div>
+    )
+  }
+  <p class="signature">신랑 <b>{wedding.groom.name}</b> · 신부 <b>{wedding.bride.name}</b></p>
 </section>

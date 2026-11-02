@@ -1,34 +1,21 @@
 ---
 import Ornament from "./Ornament.astro";
-import ActionButtons from "./ActionButtons.svelte";
+import AccountGroups from "./AccountGroups.svelte";
 import { wedding } from "../data/wedding";
+import { accountRows } from "../lib/family";
 
-const sides = [
-  { title: "신랑측", list: wedding.accounts.groom },
-  { title: "신부측", list: wedding.accounts.bride },
-].filter((s) => s.list.length > 0);
+const groups = [
+  { title: "신랑 측", rows: accountRows("groom", wedding.groom, wedding.accounts.groom) },
+  { title: "신부 측", rows: accountRows("bride", wedding.bride, wedding.accounts.bride) },
+].filter((g) => g.rows.length > 0);
 ---
 
 {
-  sides.length > 0 && (
+  groups.length > 0 && (
     <section class="section" data-reveal="blur" aria-labelledby="acc-h">
       <h2 id="acc-h" class="sec-title"><span class="latin">With Heart</span>마음 전하실 곳</h2>
       <Ornament name="divider" />
-      {sides.map((s) => (
-        <details class="acc">
-          <summary>{s.title}</summary>
-          <ul>
-            {s.list.map((a) => (
-              <li>
-                <span class="acc-label">{a.label}</span>
-                <span>{a.bank} {a.number}</span>
-                <span class="acc-holder">{a.holder}</span>
-                <ActionButtons client:idle actions={[{ kind: "copy", label: "복사", text: a.number, ghost: true, small: true }]} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      ))}
+      <AccountGroups client:load groups={groups} />
     </section>
   )
 }
