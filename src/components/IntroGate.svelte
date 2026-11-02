@@ -161,9 +161,9 @@
     </div>
 
     <p class="top latin" class:gone={phase !== "idle"}>
-      <span data-th="halloween">The Wedding · Hallow's Eve</span>
-      <span data-th="dev">git commit -m "forever"</span>
-      <span data-th="puppy">The Wedding · 두 발바닥, 한 집</span>
+      <span data-th="halloween">The Wedding · 31 October 2027</span>
+      <span data-th="dev">$ ./wedding --date 2027-10-31</span>
+      <span data-th="puppy">The Wedding · 31 October 2027</span>
     </p>
 
     <div class="center">

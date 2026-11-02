@@ -44,7 +44,7 @@ export const wedding = {
   timezone: "Asia/Seoul",
   venue: {
     name: "MJ컨벤션",
-    hall: "", // 홀 이름 미정: 확정되면 입력
+    hall: "3층 다이너스티홀",
     address: "경기도 부천시 소사구 경인로 386",
     mapQuery: "MJ컨벤션 부천",
     lat: 37.48179793,
@@ -71,7 +71,7 @@ export const wedding = {
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
     title: `${groom.name} · ${bride.name} 결혼합니다`,
-    description: "2027년 10월 31일 일요일 오전 10시 30분\nMJ컨벤션",
+    description: "2027년 10월 31일 일요일 오전 10시 30분\nMJ컨벤션 3층 다이너스티홀",
   },
   // public/audio/bgm.mp3 가 있을 때만 푸터에 표시
   musicCredit: "Music: generated with Suno",

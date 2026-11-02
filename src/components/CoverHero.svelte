@@ -96,8 +96,6 @@
             <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
           </g>
         </svg>
-        <p class="code tl" data-th="dev" aria-hidden="true">// TODO: 평생 행복하기</p>
-        <p class="code br" data-th="dev" aria-hidden="true">{"{ }"}</p>
         {#each ["tl", "br"] as pos}
           <svg class="paws {pos}" data-th="puppy" viewBox="0 0 110 90" aria-hidden="true" focusable="false">
             {#each [[14, 74, -30], [40, 52, -20], [62, 30, -30], [88, 12, -20]] as [x, y, r], i}
@@ -117,9 +115,9 @@
   </div>
 
   <p class="script">
-    <span data-th="halloween">Save the date · Hallow's Eve</span>
-    <span data-th="dev">&gt; git merge --no-ff us</span>
-    <span data-th="puppy">Save the date, paws &amp; hearts</span>
+    <span data-th="halloween">the thirty-first of October</span>
+    <span data-th="dev">git tag v1.0 -m "10.31"</span>
+    <span data-th="puppy">Sunday, the thirty-first of October</span>
   </p>
 
   <h1 class="names" class:inked={armed}>

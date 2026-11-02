@@ -1,7 +1,5 @@
 ---
 import Ornament from "./Ornament.astro";
-import Moon from "./ui/Moon.svelte";
-import Bat from "./ui/Bat.svelte";
 import Terminal from "./ui/Terminal.svelte";
 import Dogs from "./ui/Dogs.svelte";
 import { wedding } from "../data/wedding";
@@ -11,8 +9,7 @@ const families = [wedding.groom, wedding.bride].filter(hasParents);
 ---
 
 <section class="section" data-reveal="blur" aria-labelledby="greeting-h">
-  <div class="illus" aria-hidden="true">
-    <div data-th="halloween"><Bat /><Moon /><Bat /></div>
+  <div class="illus" data-th="dev puppy" aria-hidden="true">
     <div data-th="dev"><Terminal groom={wedding.groom.name} bride={wedding.bride.name} /></div>
     <div data-th="puppy"><Dogs /></div>
   </div>
