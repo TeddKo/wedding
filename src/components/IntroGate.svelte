@@ -7,7 +7,8 @@
   import Bat from "./ui/Bat.svelte";
   import Dogs from "./ui/Dogs.svelte";
   import Terminal from "./ui/Terminal.svelte";
-  import { theme } from "../lib/theme.svelte";
+  import { setTheme, theme } from "../lib/theme.svelte";
+  import { THEMES, THEME_NAMES } from "../lib/themes";
   import { playBgm } from "../scripts/audio";
   import { reduced, rand } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
@@ -46,7 +47,7 @@
     stage.gate = true;
     html.dataset.gate = "ready";
     for (const el of document.querySelectorAll("main, footer")) el.setAttribute("inert", "");
-    seal?.focus({ preventScroll: true });
+    seal?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
   });
 
   async function openGate() {
@@ -187,8 +188,8 @@
                   <stop offset="1" stop-color="#4a1f08" />
                 </radialGradient>
                 <linearGradient id="key-{uid}" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#2ea043" />
-                  <stop offset="1" stop-color="#196c2e" />
+                  <stop offset="0" stop-color="#4b86f2" />
+                  <stop offset="1" stop-color="#2459c7" />
                 </linearGradient>
                 <radialGradient id="paw-{uid}" cx="40%" cy="35%" r="75%">
                   <stop offset="0" stop-color="#ffb3c1" />
@@ -202,13 +203,13 @@
               />
               <circle cx="60" cy="60" r="38" fill="none" stroke="#c9a45c" stroke-width="1.6" stroke-dasharray="2 3" opacity="0.8" />
               <circle cx="60" cy="60" r="31" fill="none" stroke="#c9a45c" stroke-width="1" opacity="0.55" />
-              <text x="60" y="68" text-anchor="middle" font-family="Cinzel, serif" font-size="26" font-weight="600" fill="#e8c985" letter-spacing="1">{groom[0]}{bride[0]}</text>
+              <text x="60" y="68" text-anchor="middle" font-family="IM Fell English, serif" font-size="26" font-weight="600" fill="#e8c985" letter-spacing="1">{groom[0]}{bride[0]}</text>
               </g>
               <g data-th="dev">
-                <rect x="10" y="14" width="100" height="96" rx="18" fill="#0b2a16" />
-                <rect x="14" y="10" width="92" height="88" rx="16" fill="url(#key-{uid})" stroke="#3fb950" stroke-width="1.6" />
-                <text x="60" y="52" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="600" fill="#e6ffec">{groom[0]}{bride[0]}</text>
-                <text x="60" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" fill="#7ee787">⏎ Enter</text>
+                <rect x="10" y="14" width="100" height="96" rx="18" fill="#173a80" />
+                <rect x="14" y="10" width="92" height="88" rx="16" fill="url(#key-{uid})" stroke="#2f6feb" stroke-width="1.6" />
+                <text x="60" y="52" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="24" font-weight="600" fill="#ffffff">{groom[0]}{bride[0]}</text>
+                <text x="60" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" fill="#d6e3ff">⏎ Enter</text>
               </g>
               <g data-th="puppy">
                 <ellipse cx="60" cy="76" rx="32" ry="27" fill="url(#paw-{uid})" />
@@ -216,7 +217,7 @@
                 <ellipse cx="47" cy="25" rx="11" ry="14" transform="rotate(-8 47 25)" fill="url(#paw-{uid})" />
                 <ellipse cx="73" cy="25" rx="11" ry="14" transform="rotate(8 73 25)" fill="url(#paw-{uid})" />
                 <ellipse cx="95" cy="44" rx="11" ry="14" transform="rotate(24 95 44)" fill="url(#paw-{uid})" />
-                <text x="60" y="85" text-anchor="middle" font-family="Gaegu, serif" font-size="26" font-weight="700" fill="#fff">{groom[0]}{bride[0]}</text>
+                <text x="60" y="85" text-anchor="middle" font-family="Jua, serif" font-size="26" font-weight="700" fill="#fff">{groom[0]}{bride[0]}</text>
               </g>
             </svg>
           </span>
@@ -238,6 +239,11 @@
       </button>
       <p class="names" class:gone={phase !== "idle"}>{groom} · {bride}</p>
       <p class="cta" class:gone={phase !== "idle"}>탭하여 초대장 열기</p>
+      <div class="pick" class:gone={phase !== "idle"} role="group" aria-label="초대장 분위기 고르기">
+        {#each THEME_NAMES as k (k)}
+          <button type="button" class="opt" aria-pressed={theme.name === k} onclick={() => setTheme(k)}>{THEMES[k].label}</button>
+        {/each}
+      </div>
     </div>
 
     <div class="bats" aria-hidden="true">
@@ -292,7 +298,7 @@
   .l { left: 0; transform-origin: 0 50%; border-right: 1px solid rgb(var(--gold-rgb) / 0.6); }
   .r { right: 0; transform-origin: 100% 50%; border-left: 1px solid rgb(var(--gold-rgb) / 0.6); }
   .panel {
-    position: absolute; inset: 9% 12% 9%; border: 1px solid rgb(var(--gold-rgb) / 0.45); border-radius: 999px 999px 4px 4px;
+    position: absolute; inset: 9% 12% 9%; border: 1px solid rgb(var(--gold-rgb) / 0.45); border-radius: var(--door-r, 999px 999px 4px 4px);
     box-shadow: inset 0 0 0 6px rgb(var(--bg-rgb)), inset 0 0 0 7px rgb(var(--gold-rgb) / 0.2);
   }
   .ring { position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; border: 1px solid var(--gold); }
@@ -322,7 +328,15 @@
   .spark { left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #fff4d6; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px #f6d27a); }
 
   .names { margin-top: 26px; font-size: 24px; letter-spacing: 0.1em; transition: opacity 0.35s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
-  .cta { margin-top: 6px; color: var(--pumpkin); letter-spacing: 0.3em; font-size: 14px; transition: opacity 0.35s; animation: blink 2.4s ease-in-out infinite; }
+  .cta { margin-top: 6px; color: var(--ivory-dim); letter-spacing: 0.2em; font-size: 14px; transition: opacity 0.35s; }
+  .pick { pointer-events: auto; margin-top: 36px; display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid rgb(var(--gold-rgb) / 0.35); background: rgb(var(--bg-rgb) / 0.6); transition: opacity 0.35s; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .opt {
+    min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--ivory-dim);
+    font: inherit; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s;
+  }
+  .opt[aria-pressed="true"] { background: var(--gold); color: var(--bg); }
+  .opt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .gone.pick { pointer-events: none; }
   @keyframes blink { 50% { opacity: 0.55; } }
   .gone { opacity: 0; animation: none; }
 

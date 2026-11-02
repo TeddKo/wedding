@@ -145,7 +145,7 @@
   .dday { margin: 28px 0 24px; font-size: 20px; letter-spacing: 0.06em; min-height: 78px; display: grid; place-items: center; }
   .vis { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
   .lead, .unit { color: var(--ivory); }
-  .today-txt { font-size: 34px; color: var(--pumpkin); font-weight: 700; text-shadow: 0 0 18px rgb(var(--accent-rgb) / 0.6); }
+  .today-txt { font-size: 34px; color: var(--pumpkin); font-weight: 700; }
   .flip { display: inline-flex; }
   .plain { color: var(--ivory-dim); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

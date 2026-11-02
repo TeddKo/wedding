@@ -325,13 +325,22 @@
       </div>
     {:else if items.length === 0}
       <div class="state empty">
-        <svg viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+        <svg data-th="halloween" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
           <path d="M26 6a17 17 0 1 0 16 24A14 14 0 0 1 26 6z" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round" />
           <rect x="44" y="30" width="9" height="20" rx="1.5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
           <path d="M40 50h17" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round" />
           <path class="flame" d="M48.5 28c-3-3-3-6 0-10 3 4 3 7 0 10z" fill="var(--pumpkin)" />
         </svg>
-        <p>첫 축하 글을 남겨 주세요</p>
+        <svg data-th="dev" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+          <rect x="6" y="8" width="60" height="40" rx="5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
+          <path d="M16 22l7 6-7 6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <rect class="caret" x="28" y="32" width="10" height="2.5" fill="var(--pumpkin)" />
+        </svg>
+        <svg data-th="puppy" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+          <g fill="var(--gold)" opacity="0.55"><ellipse cx="22" cy="40" rx="7" ry="6" /><circle cx="14" cy="31" r="2.8" /><circle cx="19" cy="26" r="2.8" /><circle cx="25" cy="26" r="2.8" /><circle cx="30" cy="31" r="2.8" /></g>
+          <g fill="var(--pumpkin)"><ellipse cx="48" cy="24" rx="7" ry="6" /><circle cx="40" cy="15" r="2.8" /><circle cx="45" cy="10" r="2.8" /><circle cx="51" cy="10" r="2.8" /><circle cx="56" cy="15" r="2.8" /></g>
+        </svg>
+        <p>아직 축하 글이 없어요. 첫 마음을 남겨 주세요</p>
       </div>
     {:else}
       <ul class="cards">
@@ -414,15 +423,15 @@
   .gb { text-align: left; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  .form { display: grid; gap: 14px; padding: 20px 18px; margin-bottom: 28px; border: 1px solid rgb(var(--gold-rgb) / 0.4); background: rgb(var(--bg2-rgb) / 0.6); }
+  .form { display: grid; gap: 16px; margin-bottom: 40px; }
   .field { display: grid; gap: 4px; }
-  label { font-size: 14px; color: var(--gold); letter-spacing: 0.06em; }
+  label { font-size: 14px; color: var(--ivory-dim); }
   input, textarea {
-    width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid rgb(var(--gold-rgb) / 0.4); border-radius: 2px; background: var(--field); color: var(--ivory);
+    width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid rgb(var(--gold-rgb) / 0.4); border-radius: var(--btn-r); background: var(--field); color: var(--ivory);
     font: inherit; font-size: 16px; line-height: 1.5; transition: border-color 0.2s, box-shadow 0.2s;
   }
   textarea { resize: vertical; min-height: 104px; }
-  input:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgb(var(--accent-rgb) / 0.25); }
+  input:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
   input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--sun); }
   .count, .hint { font-size: 13px; color: var(--ivory-dim); line-height: 1.5; }
   .count { text-align: right; }
@@ -441,13 +450,9 @@
   .list { position: relative; }
   .cards { list-style: none; margin: 0; padding: 0; position: relative; }
   .card {
-    position: relative; margin-bottom: 12px; padding: 18px 18px 14px; border: 1px solid rgb(var(--gold-rgb) / 0.28); border-radius: 2px;
-    background: linear-gradient(180deg, rgb(var(--bg2-rgb) / 0.95), rgb(var(--bg-rgb) / 0.95)); outline: none; transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative; padding: 18px 2px 16px; border-top: 1px solid rgb(var(--gold-rgb) / 0.3); outline: none;
   }
-  .card::before { content: ""; position: absolute; left: 14px; right: 14px; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.8; }
-  .card:hover, .card:focus-within {
-    border-color: rgb(var(--gold-rgb) / 0.65); box-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.2), 0 0 3px rgb(var(--gold-rgb) / 0.45), inset 0 0 26px rgb(var(--accent-rgb) / 0.05);
-  }
+  .card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
   .who { font-weight: 700; color: var(--ivory); overflow-wrap: anywhere; line-height: 1.5; }
   .when { flex: none; font-size: 13px; color: var(--ivory-dim); letter-spacing: 0.06em; }
@@ -459,7 +464,7 @@
 
   .more { display: block; width: 100%; margin-top: 4px; }
   .stick { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; pointer-events: none; margin: 4px 0; }
-  .fold { pointer-events: auto; background: rgb(var(--bg-rgb) / 0.92); border-color: var(--gold); box-shadow: 0 6px 22px rgb(0 0 0 / 0.6), 0 0 16px rgb(var(--gold-rgb) / 0.25); }
+  .fold { pointer-events: auto; background: rgb(var(--bg-rgb) / 0.92); border-color: var(--gold); box-shadow: 0 6px 20px rgb(var(--shade-rgb) / 0.25); }
   .tail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0 6px; font-size: 14px; color: var(--ivory-dim); }
   .tail.end { padding-top: 10px; }
   .dots { display: inline-flex; gap: 6px; }
@@ -470,6 +475,8 @@
 
   .state { display: grid; justify-items: center; gap: 12px; padding: 28px 0; text-align: center; color: var(--ivory-dim); }
   .empty svg { width: 72px; height: 56px; }
+  .caret { animation: caret 1.1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
   .flame { transform-origin: 48.5px 28px; animation: flick 1.6s ease-in-out infinite; }
   @keyframes flick { 0%, 100% { transform: scale(1, 1); opacity: 1; } 50% { transform: scale(0.9, 1.12); opacity: 0.8; } }
 
@@ -484,7 +491,7 @@
   .toasts { position: fixed; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom)); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
-    .ripple, .dots i, .flame, .live .sk i { animation: none; }
+    .ripple, .dots i, .flame, .caret, .live .sk i { animation: none; }
     .card, input, textarea { transition: none; }
   }
 </style>

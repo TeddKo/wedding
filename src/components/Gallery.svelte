@@ -3,7 +3,6 @@
   import { Spring } from "svelte/motion";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import Tilt from "./ui/Tilt.svelte";
   import { lerp, reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
 
@@ -283,8 +282,7 @@
           <img src={it.thumb} srcset={it.srcset} sizes="(max-width: 480px) 33vw, 160px" width="360" height="360" alt="갤러리 사진 {i + 1}" loading="lazy" decoding="async" />
         </a>
       {:else}
-        <div class="ph-wrap" style:--d="{i * 0.45}s">
-          <Tilt label="사진 {i + 1} 자리"><span class="latin num">{String(i + 1).padStart(2, "0")}</span></Tilt>
+        <div class="ph" role="img" aria-label="사진 {i + 1} 자리">
         </div>
       {/if}
     </li>
@@ -346,8 +344,7 @@
   .thumb { display: block; width: 100%; height: 100%; cursor: zoom-in; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .thumb:hover img, .thumb:focus-visible img { transform: scale(1.07); }
-  .ph-wrap { width: 100%; height: 100%; perspective: 600px; }
-  .num { font-size: 12px; transform: translateZ(24px); }
+  .ph { width: 100%; height: 100%; background: linear-gradient(160deg, var(--panel-a), var(--panel-b)); }
 
   .lb { position: fixed; inset: 0; z-index: 200; color: #fff; outline: none; }
   .backdrop { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #1b1322, #07040a 80%); }

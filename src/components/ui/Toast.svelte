@@ -28,7 +28,7 @@
 <style>
   .toast {
     display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; font-size: 15px; letter-spacing: 0.06em; color: var(--ivory);
-    background: rgb(var(--bg2-rgb) / 0.94); border: 1px solid var(--gold); box-shadow: 0 8px 30px rgb(0 0 0 / 0.6), 0 0 22px rgb(var(--gold-rgb) / 0.25); will-change: transform, opacity;
+    background: rgb(var(--bg2-rgb) / 0.94); border: 1px solid var(--gold); box-shadow: 0 8px 30px rgb(var(--shade-rgb) / 0.3); will-change: transform, opacity;
   }
   svg { width: 16px; height: 16px; color: var(--gold); }
 </style>

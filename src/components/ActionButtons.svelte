@@ -133,7 +133,7 @@
   .row { display: contents; }
   .ab { position: relative; overflow: visible; isolation: isolate; }
   .ab .lbl { position: relative; z-index: 1; }
-  .ab.ok { background: rgb(var(--gold-rgb) / 0.22); border-color: var(--gold); color: var(--ivory); box-shadow: 0 0 18px rgb(var(--gold-rgb) / 0.35); }
+  .ab.ok { background: rgb(var(--gold-rgb) / 0.22); border-color: var(--gold); color: var(--ivory); }
   .ripple {
     position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0); opacity: 0.5;
     background: radial-gradient(closest-side, rgb(var(--glow-rgb) / 0.75), rgb(var(--gold-rgb) / 0));

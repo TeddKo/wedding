@@ -73,7 +73,7 @@
     };
     const glyph = (ch: string, col: string) =>
       draw(64, (g) => {
-        g.font = "600 26px 'JetBrains Mono', ui-monospace, Menlo, monospace";
+        g.font = "600 26px 'IBM Plex Mono', ui-monospace, Menlo, monospace";
         g.textAlign = "center";
         g.textBaseline = "middle";
         g.shadowColor = col;
@@ -102,14 +102,14 @@
     const make: Record<ThemeName, () => Look> = {
       halloween: () => ({ outer: "#0a070d", col: "#120d16", fog: fogSpr, parts: [emberSpr, emberSpr, dustSpr], scale: 1, alpha: 0.5, fall: false, blend: "lighter", night: true }),
       dev: () => ({
-        outer: "#010409", col: "#0d1117", fog: fogOf(["88,166,255", "63,185,80", "60,80,140"]),
-        parts: [..."01{};".split(""), "<3", "=>", "</>"].map((ch, i) => glyph(ch, i % 4 === 3 ? "#f778ba" : "#3fb950")),
-        scale: 2.4, alpha: 0.2, fall: true, blend: "lighter", night: false,
+        outer: "#e4e8ee", col: "#f7f8fa", fog: fogOf(["47,111,235", "229,72,122", "180,195,220"]),
+        parts: ["{ }", ";", "</>", "&&", "=>"].map((ch, i) => glyph(ch, i % 2 ? "#e5487a" : "#2f6feb")),
+        scale: 2.4, alpha: 0.1, fall: true, blend: "source-over", night: false,
       }),
       puppy: () => ({
-        outer: "#f3e6d4", col: "#fff8ef", fog: fogOf(["255,190,200", "255,214,160", "250,200,210"]),
-        parts: [paw("#e8a0ae"), paw("#d9a77c"), heart("#f4a3b4"), heart("#f7c1a0")],
-        scale: 1.8, alpha: 0.22, fall: false, blend: "source-over", night: false,
+        outer: "#d9e6f0", col: "#f2f7fb", fog: fogOf(["255,255,255", "191,224,181", "255,236,170"]),
+        parts: [paw("#4f8f5b"), paw("#ee7e98"), paw("#7fa7c9")],
+        scale: 1.6, alpha: 0.14, fall: false, blend: "source-over", night: false,
       }),
     };
     const looks: Partial<Record<ThemeName, Look>> = {};
