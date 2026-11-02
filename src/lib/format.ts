@@ -19,9 +19,3 @@ export function monthGrid() {
   const last = new Date(Date.UTC(Y, M, 0)).getUTCDate();
   return [...Array<null>(lead).fill(null), ...Array.from({ length: last }, (_, i) => i + 1)];
 }
-
-/** Asia/Seoul(UTC+9, DST 없음) 시각을 UTC ICS 형식으로 환산 */
-export function icsUtc(minutesAfterStart = 0) {
-  const t = new Date(Date.UTC(Y, M - 1, D, H, MIN) - 9 * 3600e3 + minutesAfterStart * 60e3);
-  return t.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-}

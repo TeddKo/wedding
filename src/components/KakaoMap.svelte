@@ -1,0 +1,126 @@
+<script lang="ts">
+  import { onMount } from "svelte";
+
+  let { name, address, lat, lng, appkey }: { name: string; address: string; lat: number; lng: number; appkey: string } = $props();
+
+  /* fallback: 서버 HTML/오류 상태, loading: 스켈레톤, ready: 타일 로드 완료 */
+  let st = $state<"fallback" | "loading" | "ready">("fallback");
+  let free = $state(false);
+  let el: HTMLDivElement;
+  let map: any;
+
+  const link = $derived(`https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`);
+  const TIMEOUT = 8000;
+
+  const pin = (label: string) =>
+    `<div class="km-pin"><b>${label}</b><svg viewBox="0 0 24 32" width="28" height="38" aria-hidden="true"><path d="M12 31C12 31 2 19.5 2 12a10 10 0 0 1 20 0c0 7.5-10 19-10 19z" fill="#e07a2f" stroke="#c9a45c" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="#120d16"/></svg></div>`;
+
+  onMount(() => {
+    st = "loading";
+    let done = false;
+    const fail = () => {
+      if (done) return;
+      done = true;
+      st = "fallback";
+    };
+    const timer = setTimeout(fail, TIMEOUT);
+    const s = document.createElement("script");
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appkey)}&autoload=false`;
+    s.async = true;
+    s.onerror = fail;
+    s.onload = () => {
+      try {
+        const k = (window as any).kakao;
+        if (!k?.maps?.load) return fail();
+        k.maps.load(() => {
+          try {
+            const c = new k.maps.LatLng(lat, lng);
+            map = new k.maps.Map(el, { center: c, level: 3 });
+            map.setDraggable(false);
+            map.setZoomable(false);
+            const label = document.createElement("div");
+            label.innerHTML = pin(name);
+            new k.maps.CustomOverlay({ map, position: c, content: label.firstElementChild as HTMLElement, yAnchor: 1 });
+            k.maps.event.addListener(map, "tilesloaded", () => {
+              if (done) return;
+              done = true;
+              clearTimeout(timer);
+              st = "ready";
+            });
+          } catch {
+            fail();
+          }
+        });
+      } catch {
+        fail();
+      }
+    };
+    document.head.append(s);
+    return () => {
+      done = true;
+      clearTimeout(timer);
+    };
+  });
+
+  function toggle() {
+    free = !free;
+    map?.setDraggable(free);
+    map?.setZoomable(free);
+  }
+  const zoom = (d: number) => map?.setLevel(map.getLevel() + d, { animate: true });
+</script>
+
+{#if st === "fallback"}
+  <div class="km-card">
+    <b>{name}</b>
+    <span>{address}</span>
+    <a class="btn btn-sm" href={link} target="_blank" rel="noopener noreferrer">카카오맵에서 보기</a>
+  </div>
+{/if}
+
+<div class="km" class:locked={!free} hidden={st === "fallback"}>
+  <div class="km-map" bind:this={el}></div>
+  {#if st === "loading"}<div class="km-skel" aria-hidden="true"></div>{/if}
+  {#if st === "ready"}
+    {#if !free}<div class="km-shield" aria-hidden="true"></div>{/if}
+    <div class="km-ctl">
+      <button type="button" class="km-z" onclick={() => zoom(-1)} aria-label="확대">+</button>
+      <button type="button" class="km-z" onclick={() => zoom(1)} aria-label="축소">&minus;</button>
+    </div>
+    <button type="button" class="km-tg" onclick={toggle} aria-pressed={free}>{free ? "고정" : "지도 이동"}</button>
+  {/if}
+  <i class="km-vig" aria-hidden="true"></i>
+</div>
+
+<style>
+  .km, .km-card { margin: 4px 0 18px; border: 1px solid rgb(201 164 92 / 0.55); border-radius: 14px; overflow: hidden; background: var(--bg-2); }
+  .km { position: relative; height: 260px; isolation: isolate; }
+  .km[hidden] { display: none; }
+  .km-map { position: absolute; inset: 0; }
+  .km.locked .km-map, .km.locked .km-map :global(*) { touch-action: pan-y !important; }
+  .km-shield { position: absolute; inset: 0; z-index: 2; touch-action: pan-y; }
+  .km-vig { position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 28px 6px rgb(18 13 22 / 0.55); border-radius: inherit; }
+  .km-skel {
+    position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--bg-2) 30%, rgb(201 164 92 / 0.16) 50%, var(--bg-2) 70%) 0 0 / 220% 100%;
+    animation: km-shimmer 1.4s linear infinite;
+  }
+  @keyframes km-shimmer { to { background-position: -220% 0; } }
+  @media (prefers-reduced-motion: reduce) { .km-skel { animation: none; } }
+  .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid rgb(201 164 92 / 0.6); border-radius: 10px; overflow: hidden; background: rgb(18 13 22 / 0.88); }
+  .km-z { width: 36px; height: 36px; border: 0; background: none; color: var(--gold); font-size: 20px; line-height: 1; cursor: pointer; }
+  .km-z + .km-z { border-top: 1px solid rgb(201 164 92 / 0.35); }
+  .km-tg {
+    position: absolute; z-index: 5; left: 10px; bottom: 10px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
+    border: 1px solid var(--gold); background: rgb(18 13 22 / 0.88); color: var(--gold); font: inherit; font-size: 14px;
+  }
+  .km-tg[aria-pressed="true"] { background: var(--gold); color: var(--bg); }
+  .km :global(.km-pin) { display: grid; justify-items: center; transform: translateY(2px); pointer-events: none; }
+  .km :global(.km-pin b) {
+    margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--gold); background: var(--bg); color: var(--gold);
+    font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
+  }
+  .km :global(.km-pin svg) { filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5)); }
+  .km-card { display: grid; justify-items: center; gap: 6px; padding: 22px 16px; text-align: center; }
+  .km-card b { font-size: 18px; color: var(--gold); }
+  .km-card span { color: var(--ivory-dim); font-size: 15px; margin-bottom: 8px; }
+</style>

@@ -4,12 +4,13 @@ export const wedding = {
   date: "2027-10-31",
   time: "10:30",
   timezone: "Asia/Seoul",
-  durationMinutes: 120,
   venue: {
     name: "MJ컨벤션",
     hall: "", // 홀 이름 미정: 확정되면 입력
     address: "경기도 부천시 소사구 경인로 386",
     mapQuery: "MJ컨벤션 부천",
+    lat: 37.48179793,
+    lng: 126.79851199,
   },
   // TODO: 실제 인사말로 교체
   greeting: {
@@ -27,6 +28,8 @@ export const wedding = {
   },
   // 구글폼 URL. 비어 있으면 참석 여부 섹션이 숨겨진다.
   rsvpUrl: "",
+  // 방명록 Worker URL. 비어 있으면 축하 글 섹션이 숨겨진다.
+  guestbookApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
     title: "고민혁 · 김은정 결혼합니다",

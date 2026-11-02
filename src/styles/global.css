@@ -30,7 +30,7 @@ a { color: inherit; }
   background: var(--bg);
   position: relative;
 }
-.page { overflow: hidden; box-shadow: 0 0 60px #000; z-index: 1; }
+.page { overflow: hidden; overflow: clip; box-shadow: 0 0 60px #000; z-index: 1; }
 .footer { z-index: 1; }
 html.ambient .page, html.ambient .footer { background: transparent; }
 
@@ -92,8 +92,10 @@ html.gated .page, html.gated .footer { opacity: 0; transform: translateY(28px); 
 /* location */
 .venue-name { font-size: 20px; font-weight: 700; }
 .address { color: var(--ivory-dim); margin: 4px 0 16px; }
-.map-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 28px; }
-.map-links .btn { padding: 10px 4px; font-size: 14px; letter-spacing: 0; }
+.loc-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
+.map-fallback { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
+.map-fallback .btn { padding: 10px 4px; font-size: 14px; letter-spacing: 0; }
+html.js .map-fallback, html:not(.js) .mc-btn { display: none; }
 
 /* accounts / rsvp / share */
 .acc { border: 1px solid rgb(201 164 92 / 0.4); margin-bottom: 10px; text-align: left; }

@@ -13,8 +13,7 @@
     dateKo,
     dayNames,
     grid,
-    icsHref,
-  }: { year: number; month: number; day: number; date: string; dateKo: string; dayNames: string[]; grid: (number | null)[]; icsHref: string } = $props();
+  }: { year: number; month: number; day: number; date: string; dateKo: string; dayNames: string[]; grid: (number | null)[] } = $props();
 
   let root = $state<HTMLElement>();
   let armed = $state(false);
@@ -117,7 +116,6 @@
       </span>
     {/if}
   </p>
-  <a class="btn" href={icsHref} download="wedding.ics">캘린더에 추가</a>
 </section>
 
 <style>

@@ -10,7 +10,7 @@
   function apply(el: HTMLElement, mode: string, p: number) {
     const s = el.style;
     if (mode === "wipe") {
-      s.clipPath = `inset(0 ${(1 - p) * 100}% 0 0)`;
+      s.clipPath = `inset(0 ${Math.min(99, (1 - p) * 100)}% 0 0)`;
       s.opacity = String(Math.min(1, p * 3));
     } else if (mode === "blur") {
       s.filter = `blur(${(1 - p) * 10}px)`;
@@ -60,21 +60,22 @@
     }
 
     const plays = new Map<Element, () => void>();
-    const io = new IntersectionObserver(
-      (es) => {
-        for (const e of es) {
-          if (!e.isIntersecting) continue;
-          io.unobserve(e.target);
-          const play = plays.get(e.target)!;
-          if (stage.open) play();
-          else queue.add(play);
-        }
-      },
-      { threshold: 0.12 },
-    );
+    const onSee = (es: IntersectionObserverEntry[]) => {
+      for (const e of es) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        ioWipe.unobserve(e.target);
+        const play = plays.get(e.target)!;
+        if (stage.open) play();
+        else queue.add(play);
+      }
+    };
+    const io = new IntersectionObserver(onSee, { threshold: 0.12 });
+    /* Chrome 은 교차 면적에 clip-path 를 반영한다. wipe 는 처음에 99% 가 잘려 있으므로 임계값을 그만큼 낮춘다 */
+    const ioWipe = new IntersectionObserver(onSee, { threshold: 0.004 });
     for (const el of document.querySelectorAll<HTMLElement>("[data-reveal]")) {
       plays.set(el, prep(el));
-      io.observe(el);
+      (el.dataset.reveal === "wipe" ? ioWipe : io).observe(el);
     }
     const watch = $effect.root(() => {
       $effect(() => {
@@ -86,6 +87,7 @@
     });
     return () => {
       io.disconnect();
+      ioWipe.disconnect();
       watch();
       stops.forEach((f) => f());
     };
