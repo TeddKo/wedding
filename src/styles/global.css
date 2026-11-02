@@ -27,7 +27,6 @@
   --hero-inset: 0px;
   --hero-r: 999px 999px 0 0;
   --hero-line: none;
-  --card-r: 2px;
   /* 인트로 */
   --gate-bg: radial-gradient(ellipse at 50% 28%, #2a1a33 0%, #120d16 72%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #ffd89a 0%, #e07a2f 28%, #5b2a12 58%, #1a0d0a 85%);
@@ -65,7 +64,6 @@
   --hero-inset: 16px;
   --hero-r: 10px;
   --hero-line: 0 0 0 1px var(--gold);
-  --card-r: 10px;
   --gate-bg: radial-gradient(ellipse at 50% 28%, #132235 0%, #0d1117 72%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #eafff0 0%, #3fb950 30%, #0f3d1f 60%, #010409 88%);
   --gate-door: linear-gradient(#161b22, #0b0f14);
@@ -105,7 +103,6 @@
   --hero-inset: 16px;
   --hero-r: 28px;
   --hero-line: 0 0 0 2px var(--pumpkin), 0 0 0 5px var(--bg), 0 0 0 6.5px var(--gold);
-  --card-r: 20px;
   --gate-bg: radial-gradient(ellipse at 50% 28%, #fff6ea 0%, #f6e3cc 75%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #fff 0%, #ffe1c2 30%, #f7b9c4 62%, #e8a17a 90%);
   --gate-door: linear-gradient(#f9e6cf, #efd3b2);
@@ -179,7 +176,6 @@ html.ambient .page, html.ambient .footer { background: transparent; }
 .sec-title .latin { display: block; margin-bottom: 8px; }
 .orn-divider { width: 200px; height: 20px; color: var(--gold); margin: 20px auto 28px; display: block; }
 
-
 /* buttons */
 .btn {
   display: inline-block;
@@ -210,7 +206,6 @@ html.gated .page, html.gated .footer { opacity: 0; transform: translateY(28px); 
 .illus { height: 96px; margin: -16px 0 28px; display: flex; justify-content: center; align-items: center; }
 .illus > div { height: 100%; display: flex; align-items: center; justify-content: center; gap: 14px; }
 .illus svg { height: 100%; width: auto; max-width: 100%; display: block; }
-.illus .orn-moon { height: 64px; opacity: 0.9; }
 .illus .orn-term, .illus .orn-dogs { height: 96px; }
 .greeting p { margin-bottom: 1.2em; }
 .greeting p:last-child { margin-bottom: 0; }

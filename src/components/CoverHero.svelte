@@ -183,9 +183,6 @@
   .cobweb { position: absolute; width: 84px; color: rgb(var(--gold-rgb) / 0.55); pointer-events: none; }
   .cobweb.tl { top: 0; left: 0; }
   .cobweb.br { bottom: 0; right: 0; transform: rotate(180deg); }
-  .code { position: absolute; font: 12px/1.4 var(--latin); color: #fff; opacity: 0.85; text-shadow: 0 1px 4px rgb(0 0 0 / 0.6); }
-  .code.tl { bottom: 22px; left: 12px; }
-  .code.br { bottom: 22px; right: 12px; }
   .paws { position: absolute; width: 96px; pointer-events: none; }
   .paws.tl { top: 4px; left: 4px; }
   .paws.br { bottom: 4px; right: 4px; transform: rotate(180deg); }
