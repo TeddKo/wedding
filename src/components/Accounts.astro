@@ -1,5 +1,6 @@
 ---
 import Ornament from "./Ornament.astro";
+import ActionButtons from "./ActionButtons.svelte";
 import { wedding } from "../data/wedding";
 
 const sides = [
@@ -22,7 +23,7 @@ const sides = [
                 <span class="acc-label">{a.label}</span>
                 <span>{a.bank} {a.number}</span>
                 <span class="acc-holder">{a.holder}</span>
-                <button type="button" class="btn btn-ghost btn-sm" data-copy={a.number}>복사</button>
+                <ActionButtons client:idle actions={[{ kind: "copy", label: "복사", text: a.number, ghost: true, small: true }]} />
               </li>
             ))}
           </ul>

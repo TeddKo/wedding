@@ -5,6 +5,7 @@
   import { cubicOut } from "svelte/easing";
   import Tilt from "./ui/Tilt.svelte";
   import { lerp, reduced } from "../lib/motion";
+  import { portal } from "../lib/portal";
 
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
   let { items, count = 9 }: { items: Item[]; count?: number } = $props();
@@ -86,10 +87,6 @@
   function setInert(on: boolean) {
     for (const el of document.querySelectorAll(".page, .footer")) on ? el.setAttribute("inert", "") : el.removeAttribute("inert");
     document.documentElement.style.overflow = on ? "hidden" : "";
-  }
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
   }
 
   function preload() {

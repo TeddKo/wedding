@@ -1,6 +1,7 @@
 ---
 import Ornament from "./Ornament.astro";
 import { wedding } from "../data/wedding";
+import ActionButtons from "./ActionButtons.svelte";
 import { venueLine } from "../lib/format";
 
 const q = encodeURIComponent(wedding.venue.mapQuery);
@@ -14,7 +15,7 @@ const tmap = `tmap://search?name=${q}`;
   <Ornament name="divider" />
   <p class="venue-name">{venueLine}</p>
   <p class="address" id="address">{wedding.venue.address}</p>
-  <button type="button" class="btn btn-ghost" data-copy={wedding.venue.address}>주소 복사</button>
+  <ActionButtons client:idle actions={[{ kind: "copy", label: "주소 복사", text: wedding.venue.address, ghost: true }]} />
   <div class="map-links">
     <a class="btn" href={kakao} target="_blank" rel="noopener noreferrer">카카오맵</a>
     <a class="btn" href={naver} target="_blank" rel="noopener noreferrer">네이버지도</a>

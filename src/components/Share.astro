@@ -1,12 +1,24 @@
 ---
 import Ornament from "./Ornament.astro";
+import ActionButtons from "./ActionButtons.svelte";
+import { wedding } from "../data/wedding";
+import { url } from "../lib/url";
+
+const pageUrl = new URL(url(""), Astro.site).href;
+const imageUrl = new URL(url("og.png"), Astro.site).href;
 ---
 
 <section class="section" data-reveal="rise" aria-labelledby="share-h">
   <h2 id="share-h" class="sec-title"><span class="latin">Share</span>공유하기</h2>
   <Ornament name="divider" />
   <div class="share-row">
-    <button type="button" class="btn" id="kakao-share" hidden>카카오톡 공유</button>
-    <button type="button" class="btn btn-ghost" data-copy-url>링크 복사</button>
+    <ActionButtons
+      client:idle
+      actions={[
+        { kind: "kakao", label: "카카오톡 공유" },
+        { kind: "copy", label: "링크 복사", text: pageUrl, ghost: true },
+      ]}
+      kakao={{ key: wedding.kakaoJsKey, title: wedding.share.title, description: wedding.share.description, imageUrl, pageUrl }}
+    />
   </div>
 </section>
