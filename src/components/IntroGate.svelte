@@ -5,6 +5,9 @@
   import { cubicOut, cubicInOut, quartOut } from "svelte/easing";
   import Moon from "./ui/Moon.svelte";
   import Bat from "./ui/Bat.svelte";
+  import Dogs from "./ui/Dogs.svelte";
+  import Terminal from "./ui/Terminal.svelte";
+  import { theme } from "../lib/theme.svelte";
   import { playBgm } from "../scripts/audio";
   import { reduced, rand } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
@@ -25,7 +28,9 @@
   const uid = $props.id();
   const moonLift = new Tween(0, { duration: 1400, easing: quartOut });
 
-  type Bat = { dx: number; dy: number; rot: number; size: number; delay: number; dur: number; flap: number };
+  /* 문이 열릴 때 흩어지는 것: 할로윈=박쥐, dev=코드 조각, puppy=발자국/하트 */
+  const GLYPHS = ["{ }", "</>", "<3", ";", "0", "1", "=>", "❤"];
+  type Bat = { dx: number; dy: number; rot: number; size: number; delay: number; dur: number; flap: number; kind: string; glyph: string };
   let bats = $state<Bat[]>([]);
 
   const wait = (ms: number) => new Promise<void>((res) => setTimeout(res, reduced() ? 0 : ms));
@@ -66,6 +71,8 @@
         delay: i * 55 + rand(0, 90),
         dur: rand(1500, 2600),
         flap: rand(0.14, 0.26),
+        kind: theme.name,
+        glyph: theme.name === "dev" ? GLYPHS[i % GLYPHS.length] : i % 3 ? "paw" : "heart",
       };
     });
     await wait(500);
@@ -148,10 +155,16 @@
     </div>
 
     <div class="moon" style:transform="translate3d(-50%, {-moonLift.current * 60}px, 0)" style:opacity={1 - moonLift.current}>
-      <Moon />
+      <span data-th="halloween"><Moon /></span>
+      <span data-th="dev"><Terminal {groom} {bride} /></span>
+      <span data-th="puppy"><Dogs /></span>
     </div>
 
-    <p class="top latin" class:gone={phase !== "idle"}>The Wedding · Hallow's Eve</p>
+    <p class="top latin" class:gone={phase !== "idle"}>
+      <span data-th="halloween">The Wedding · Hallow's Eve</span>
+      <span data-th="dev">git commit -m "forever"</span>
+      <span data-th="puppy">The Wedding · 두 발바닥, 한 집</span>
+    </p>
 
     <div class="center">
       <button bind:this={seal} type="button" class="seal" aria-label="초대장 열기" onclick={openGate}>
@@ -173,7 +186,16 @@
                   <stop offset="0.55" stop-color="#8a3f12" />
                   <stop offset="1" stop-color="#4a1f08" />
                 </radialGradient>
+                <linearGradient id="key-{uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#2ea043" />
+                  <stop offset="1" stop-color="#196c2e" />
+                </linearGradient>
+                <radialGradient id="paw-{uid}" cx="40%" cy="35%" r="75%">
+                  <stop offset="0" stop-color="#ffb3c1" />
+                  <stop offset="1" stop-color="#e46f88" />
+                </radialGradient>
               </defs>
+              <g data-th="halloween">
               <path
                 d="M60 6c15 0 24 6 36 13s19 19 17 35-3 27-13 39-25 21-40 21-27-7-37-19S4 76 8 58 21 24 35 14 45 6 60 6Z"
                 fill="url(#wax-{uid})"
@@ -181,6 +203,21 @@
               <circle cx="60" cy="60" r="38" fill="none" stroke="#c9a45c" stroke-width="1.6" stroke-dasharray="2 3" opacity="0.8" />
               <circle cx="60" cy="60" r="31" fill="none" stroke="#c9a45c" stroke-width="1" opacity="0.55" />
               <text x="60" y="68" text-anchor="middle" font-family="Cinzel, serif" font-size="26" font-weight="600" fill="#e8c985" letter-spacing="1">{groom[0]}{bride[0]}</text>
+              </g>
+              <g data-th="dev">
+                <rect x="10" y="14" width="100" height="96" rx="18" fill="#0b2a16" />
+                <rect x="14" y="10" width="92" height="88" rx="16" fill="url(#key-{uid})" stroke="#3fb950" stroke-width="1.6" />
+                <text x="60" y="52" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="24" font-weight="600" fill="#e6ffec">{groom[0]}{bride[0]}</text>
+                <text x="60" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" fill="#7ee787">⏎ Enter</text>
+              </g>
+              <g data-th="puppy">
+                <ellipse cx="60" cy="76" rx="32" ry="27" fill="url(#paw-{uid})" />
+                <ellipse cx="25" cy="44" rx="11" ry="14" transform="rotate(-24 25 44)" fill="url(#paw-{uid})" />
+                <ellipse cx="47" cy="25" rx="11" ry="14" transform="rotate(-8 47 25)" fill="url(#paw-{uid})" />
+                <ellipse cx="73" cy="25" rx="11" ry="14" transform="rotate(8 73 25)" fill="url(#paw-{uid})" />
+                <ellipse cx="95" cy="44" rx="11" ry="14" transform="rotate(24 95 44)" fill="url(#paw-{uid})" />
+                <text x="60" y="85" text-anchor="middle" font-family="Gaegu, serif" font-size="26" font-weight="700" fill="#fff">{groom[0]}{bride[0]}</text>
+              </g>
             </svg>
           </span>
           <svg class="veil" viewBox="0 0 150 190" aria-hidden="true" focusable="false" style:opacity={drape} style:transform="translate3d(0, {(1 - drape) * -22}px, 0) skewX({-vx * 1.1}deg) scaleY({0.6 + 0.4 * drape})">
@@ -192,7 +229,7 @@
             </defs>
             <path d={veilD} fill="url(#vl-{uid})" stroke="#fffaf0" stroke-opacity="0.85" stroke-width="1.2" stroke-linejoin="round" />
             <path d={veilD} fill="none" stroke="#fffaf0" stroke-opacity="0.7" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="0.1 4.2" transform="translate(0 -5)" />
-            <path d="M55 31 L59 21 L67 27 L75 15 L83 27 L91 21 L95 31" fill="rgb(246 210 122 / 0.35)" stroke="#f0cf86" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="M55 31 L59 21 L67 27 L75 15 L83 27 L91 21 L95 31" fill="rgb(var(--glow-rgb) / 0.35)" stroke="#f0cf86" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
             <circle cx="75" cy="13" r="2" fill="#fff4d6" />
             <circle cx="59" cy="20" r="1.4" fill="#fff4d6" />
             <circle cx="91" cy="20" r="1.4" fill="#fff4d6" />
@@ -207,7 +244,19 @@
       {#each bats as b, i (i)}
         <span class="bx" style:--dx="{b.dx}px" style:--dur="{b.dur}ms" style:animation-delay="{b.delay}ms">
           <span class="by" style:--dy="{b.dy}px" style:--rot="{b.rot}deg" style:--s={b.size / 56} style:--flap="{b.flap}s" style:animation-delay="{b.delay}ms" style:animation-duration="{b.dur}ms">
-            <Bat />
+            {#if b.kind === "dev"}
+              <i class="glyph">{b.glyph}</i>
+            {:else if b.kind === "puppy"}
+              <svg class="pup" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                {#if b.glyph === "paw"}
+                  <g fill="#e98aa0"><ellipse cx="16" cy="21" rx="8" ry="7" /><circle cx="7" cy="12" r="3.4" /><circle cx="13" cy="7" r="3.4" /><circle cx="19" cy="7" r="3.4" /><circle cx="25" cy="12" r="3.4" /></g>
+                {:else}
+                  <path d="M16 28S3 20 3 11a6.5 6.5 0 0 1 13-2 6.5 6.5 0 0 1 13 2c0 9-13 17-13 17z" fill="#f4a3b4" />
+                {/if}
+              </svg>
+            {:else}
+              <Bat />
+            {/if}
           </span>
         </span>
       {/each}
@@ -220,33 +269,33 @@
 <style>
   .gate {
     position: fixed; inset: 0; z-index: 100; display: none; overflow: hidden;
-    background: radial-gradient(ellipse at 50% 28%, #2a1a33 0%, #120d16 72%);
+    background: var(--gate-bg);
     perspective: 1200px;
   }
   :global(html.js) .gate { display: block; }
 
-  .mist { position: absolute; width: 140%; height: 50%; left: -20%; border-radius: 50%; filter: blur(40px); opacity: 0.35; background: radial-gradient(closest-side, rgb(150 110 190 / 0.35), transparent); animation: mist 22s ease-in-out infinite alternate; }
+  .mist { position: absolute; width: 140%; height: 50%; left: -20%; border-radius: 50%; filter: blur(40px); opacity: 0.35; background: radial-gradient(closest-side, var(--gate-mist-a), transparent); animation: mist 22s ease-in-out infinite alternate; }
   .m1 { top: 6%; }
-  .m2 { bottom: -6%; animation-duration: 28s; animation-direction: alternate-reverse; background: radial-gradient(closest-side, rgb(224 122 47 / 0.22), transparent); }
+  .m2 { bottom: -6%; animation-duration: 28s; animation-direction: alternate-reverse; background: radial-gradient(closest-side, var(--gate-mist-b), transparent); }
   @keyframes mist { to { transform: translate3d(8%, 3%, 0) scale(1.1); } }
 
   .hall {
     position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 50% 55%, #ffd89a 0%, #e07a2f 28%, #5b2a12 58%, #1a0d0a 85%);
+    background: var(--gate-hall);
   }
   .stage3d { position: absolute; inset: 0; transform-style: preserve-3d; z-index: 3; pointer-events: none; }
   .door {
     position: absolute; top: 0; bottom: 0; width: 50%;
-    background: linear-gradient(#1c1322, #0d0910);
+    background: var(--gate-door);
     backface-visibility: hidden; will-change: transform;
   }
-  .l { left: 0; transform-origin: 0 50%; border-right: 1px solid rgb(201 164 92 / 0.6); }
-  .r { right: 0; transform-origin: 100% 50%; border-left: 1px solid rgb(201 164 92 / 0.6); }
+  .l { left: 0; transform-origin: 0 50%; border-right: 1px solid rgb(var(--gold-rgb) / 0.6); }
+  .r { right: 0; transform-origin: 100% 50%; border-left: 1px solid rgb(var(--gold-rgb) / 0.6); }
   .panel {
-    position: absolute; inset: 9% 12% 9%; border: 1px solid rgb(201 164 92 / 0.45); border-radius: 999px 999px 4px 4px;
-    box-shadow: inset 0 0 0 6px rgb(18 13 22), inset 0 0 0 7px rgb(201 164 92 / 0.2);
+    position: absolute; inset: 9% 12% 9%; border: 1px solid rgb(var(--gold-rgb) / 0.45); border-radius: 999px 999px 4px 4px;
+    box-shadow: inset 0 0 0 6px rgb(var(--bg-rgb)), inset 0 0 0 7px rgb(var(--gold-rgb) / 0.2);
   }
-  .ring { position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; border: 1px solid #c9a45c; }
+  .ring { position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; border: 1px solid var(--gold); }
   .l .ring { right: 14px; } .r .ring { left: 14px; }
   .shade { position: absolute; inset: 0; background: #000; pointer-events: none; }
 
@@ -254,13 +303,13 @@
     position: absolute; top: 8vh; left: 50%; width: min(44vw, 180px); aspect-ratio: 1; z-index: 4; pointer-events: none;
     filter: drop-shadow(0 0 28px rgb(242 232 213 / 0.45)); will-change: transform, opacity;
   }
-  .moon :global(svg) { width: 100%; height: 100%; display: block; }
+  .moon > span, .moon :global(svg) { width: 100%; height: 100%; display: block; }
 
-  .top { position: absolute; top: calc(8vh + min(44vw, 180px) + 18px); left: 0; right: 0; text-align: center; z-index: 5; transition: opacity 0.4s; text-shadow: 0 0 10px #0a070d; }
+  .top { position: absolute; top: calc(8vh + min(44vw, 180px) + 18px); left: 0; right: 0; text-align: center; z-index: 5; transition: opacity 0.4s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
   .center { position: absolute; inset: 0; padding-top: 20vh; z-index: 7; display: grid; place-items: center; align-content: center; pointer-events: none; }
   .seal { pointer-events: auto; position: relative; width: 112px; height: 112px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; animation: beat 2.6s ease-in-out infinite; filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.65)); -webkit-tap-highlight-color: transparent; outline: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-  .seal:focus-visible { outline: 2px solid #f6d27a; outline-offset: 8px; }
-  @keyframes beat { 50% { transform: scale(1.06); filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.65)) drop-shadow(0 0 16px rgb(224 122 47 / 0.55)); } }
+  .seal:focus-visible { outline: 2px solid rgb(var(--glow-rgb)); outline-offset: 8px; }
+  @keyframes beat { 50% { transform: scale(1.06); filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.65)) drop-shadow(0 0 16px rgb(var(--accent-rgb) / 0.55)); } }
   .going .seal { animation: none; }
   .fly, .residue, .spark, .curl, .peel, .veil { position: absolute; display: block; pointer-events: none; }
   .fly { inset: 0; will-change: transform, opacity; transform-origin: 50% 50%; }
@@ -268,11 +317,12 @@
   .wax { width: 100%; height: 100%; display: block; }
   .curl { inset: 4px; border-radius: 50%; transform: translate3d(12px, 12px, 0); background: radial-gradient(closest-side, rgb(0 0 0 / 0.7), transparent); filter: blur(5px); opacity: 0; }
   .veil { left: -19px; top: -30px; width: 150px; height: 190px; overflow: visible; transform-origin: 50% 8%; will-change: transform, opacity; filter: drop-shadow(0 2px 6px rgb(255 250 240 / 0.35)); }
-  .residue { inset: 8px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgb(138 63 18 / 0.55) 55%, rgb(74 31 8 / 0.25) 80%, transparent); }
+  :global([data-theme="puppy"]) .veil { filter: drop-shadow(0 1px 4px rgb(150 100 70 / 0.55)); }
+  .residue { inset: 8px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, var(--residue) 55%, transparent 80%, transparent); }
   .spark { left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #fff4d6; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px #f6d27a); }
 
-  .names { margin-top: 26px; font-size: 24px; letter-spacing: 0.1em; transition: opacity 0.35s; text-shadow: 0 0 10px #0a070d; }
-  .cta { margin-top: 6px; color: #e07a2f; letter-spacing: 0.3em; font-size: 14px; transition: opacity 0.35s; animation: blink 2.4s ease-in-out infinite; }
+  .names { margin-top: 26px; font-size: 24px; letter-spacing: 0.1em; transition: opacity 0.35s; text-shadow: 0 0 10px var(--gate-ink-shadow); }
+  .cta { margin-top: 6px; color: var(--pumpkin); letter-spacing: 0.3em; font-size: 14px; transition: opacity 0.35s; animation: blink 2.4s ease-in-out infinite; }
   @keyframes blink { 50% { opacity: 0.55; } }
   .gone { opacity: 0; animation: none; }
 
@@ -287,10 +337,14 @@
     100% { transform: translate3d(0, var(--dy), 0) scale(var(--s)) rotate(var(--rot)); opacity: 1; }
   }
   @keyframes flap { to { transform: scaleY(0.55); } }
+  .glyph { display: block; text-align: center; font: 600 22px/1 var(--latin); font-style: normal; color: var(--digit); text-shadow: 0 0 8px rgb(var(--gold-rgb) / 0.9); white-space: nowrap; }
+  .glyph:nth-child(odd) { color: var(--pumpkin); }
+  .by .pup { animation-name: wiggle; filter: drop-shadow(0 1px 2px rgb(var(--shade-rgb) / 0.3)); }
+  @keyframes wiggle { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
 
   .bloom {
     position: absolute; left: 50%; top: 50%; width: 150vmax; height: 150vmax; border-radius: 50%; z-index: 6; pointer-events: none; will-change: transform, opacity;
-    background: radial-gradient(closest-side, #fff4d6 0%, #ffd58a 22%, rgb(224 122 47 / 0.85) 48%, rgb(224 122 47 / 0) 100%);
+    background: var(--gate-bloom);
   }
 
   @media (prefers-reduced-motion: reduce) {

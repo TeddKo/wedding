@@ -36,18 +36,18 @@
 </span>
 
 <style>
-  .card { position: relative; display: inline-block; width: 42px; height: 62px; perspective: 400px; font: 600 42px/62px var(--latin); color: #f6e2a8; margin: 0 2px; vertical-align: middle; }
+  .card { position: relative; display: inline-block; width: 42px; height: 62px; perspective: 400px; font: 600 42px/62px var(--latin); color: var(--digit); margin: 0 2px; vertical-align: middle; }
   .half, .face {
-    position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; border: 1px solid rgb(201 164 92 / 0.45);
-    background: linear-gradient(#2a1f31, #1a1220);
+    position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; border: 1px solid rgb(var(--gold-rgb) / 0.45);
+    background: linear-gradient(var(--panel-a), var(--panel-b));
   }
   .top, .front { top: 0; border-radius: 6px 6px 0 0; border-bottom-width: 0; }
-  .bottom, .back { bottom: 0; border-radius: 0 0 6px 6px; border-top-width: 0; background: linear-gradient(#1a1220, #130d18); }
+  .bottom, .back { bottom: 0; border-radius: 0 0 6px 6px; border-top-width: 0; background: linear-gradient(var(--panel-b), var(--panel-b)); }
   b { position: absolute; left: 0; right: 0; height: 200%; font-weight: inherit; text-align: center; display: block; }
   .top b, .front b { top: 0; }
   .bottom b, .back b { bottom: 0; }
   .flap { position: absolute; left: 0; right: 0; top: 0; height: 50%; transform-origin: 50% 100%; transform-style: preserve-3d; will-change: transform; }
   .face { backface-visibility: hidden; -webkit-backface-visibility: hidden; height: 100%; }
   .back { transform: rotateX(180deg); top: 0; bottom: auto; border-radius: 0 0 6px 6px; border-top-width: 1px; }
-  .card::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(0 0 0 / 0.7); z-index: 3; }
+  .card::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(var(--shade-rgb) / var(--flip-line, 0.7)); z-index: 3; }
 </style>

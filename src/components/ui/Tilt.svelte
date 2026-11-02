@@ -30,17 +30,17 @@
   style:transform="perspective(520px) rotateX({t.current.rx}deg) rotateY({t.current.ry}deg) scale({t.current.s})"
 >
   {@render children()}
-  <i class="glare" style:opacity={t.current.g} style:background="radial-gradient(circle at {t.current.gx}% {t.current.gy}%, rgb(255 226 160 / 0.4), rgb(255 226 160 / 0) 58%)"></i>
+  <i class="glare" style:opacity={t.current.g} style:background="radial-gradient(circle at {t.current.gx}% {t.current.gy}%, rgb(var(--glow-rgb) / 0.4), rgb(var(--glow-rgb) / 0) 58%)"></i>
 </div>
 
 <style>
   .tilt {
     position: relative; width: 100%; height: 100%; display: grid; place-items: center; will-change: transform; transform-style: preserve-3d;
-    background: linear-gradient(145deg, #2a1c31, #150f1a); border: 1px solid rgb(201 164 92 / 0.3); overflow: hidden;
+    background: linear-gradient(145deg, var(--panel-a), var(--panel-b)); border: 1px solid rgb(var(--gold-rgb) / 0.3); overflow: hidden;
   }
   .tilt::after {
     content: ""; position: absolute; inset: 0; pointer-events: none; transform: translate3d(-120%, 0, 0);
-    background: linear-gradient(105deg, transparent 38%, rgb(246 226 160 / 0.14) 50%, transparent 62%);
+    background: linear-gradient(105deg, transparent 38%, rgb(var(--glow-rgb) / 0.14) 50%, transparent 62%);
     animation: shimmer 4.2s ease-in-out infinite; animation-delay: var(--d, 0s);
   }
   .glare { position: absolute; inset: 0; pointer-events: none; }

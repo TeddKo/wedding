@@ -1,3 +1,5 @@
+import type { ThemeName } from "../lib/themes";
+
 export interface Parent {
   name: string;
   deceased: boolean;
@@ -33,6 +35,8 @@ const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "",
 export const wedding = {
   groom,
   bride,
+  /** 기본 테마. 방문자는 하단 버튼이나 `?theme=halloween|dev|puppy` 로 바꿀 수 있다 */
+  theme: "halloween" as ThemeName,
   date: "2027-10-31",
   time: "10:30",
   timezone: "Asia/Seoul",

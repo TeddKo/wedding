@@ -133,15 +133,15 @@
   .row { display: contents; }
   .ab { position: relative; overflow: visible; isolation: isolate; }
   .ab .lbl { position: relative; z-index: 1; }
-  .ab.ok { background: rgb(201 164 92 / 0.22); border-color: var(--gold); color: var(--ivory); box-shadow: 0 0 18px rgb(201 164 92 / 0.35); }
+  .ab.ok { background: rgb(var(--gold-rgb) / 0.22); border-color: var(--gold); color: var(--ivory); box-shadow: 0 0 18px rgb(var(--gold-rgb) / 0.35); }
   .ripple {
     position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0); opacity: 0.5;
-    background: radial-gradient(closest-side, rgb(246 210 122 / 0.75), rgb(201 164 92 / 0));
+    background: radial-gradient(closest-side, rgb(var(--glow-rgb) / 0.75), rgb(var(--gold-rgb) / 0));
     animation: ripple 650ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
   }
   .ember {
-    position: absolute; z-index: 2; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, #ffe3a0, #e07a2f 60%, rgb(224 122 47 / 0));
-    box-shadow: 0 0 8px 2px rgb(224 122 47 / 0.65); animation: ember ease-out forwards;
+    position: absolute; z-index: 2; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgb(var(--glow-rgb)), var(--pumpkin) 60%, rgb(var(--accent-rgb) / 0));
+    box-shadow: 0 0 8px 2px rgb(var(--accent-rgb) / 0.65); animation: ember ease-out forwards;
   }
   @keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
   @keyframes ember {
