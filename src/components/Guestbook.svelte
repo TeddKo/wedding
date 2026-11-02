@@ -132,6 +132,17 @@
     if (status === "ready" && !open && items.length < HEAD && cursor !== null) void load(false);
   });
 
+  async function openForm() {
+    formOpen = true;
+    await tick();
+    document.getElementById("gb-name")?.focus();
+  }
+  async function closeForm() {
+    formOpen = false;
+    await tick();
+    document.getElementById("gb-open")?.focus();
+  }
+
   function expand() {
     batchFrom = HEAD;
     expanded = true;
@@ -170,6 +181,7 @@
         formOpen = false;
         notify("축하 글이 등록되었습니다");
         await tick();
+        document.getElementById("gb-open")?.focus({ preventScroll: true });
         document.getElementById(`gb-c-${entry.id}`)?.scrollIntoView({ behavior: reduced() ? "instant" : "smooth", block: "nearest" });
       } else if (r.status === 429) {
         notify("잠시 후 다시 작성해 주세요", true);
@@ -260,7 +272,7 @@
   <p class="sr" role="status" aria-live="polite">{announce}</p>
 
   {#if mounted && !formOpen}
-    <button type="button" class="btn-primary open-form" aria-expanded="false" aria-controls="gb-form" onclick={() => (formOpen = true)}>축하 글 남기기</button>
+    <button type="button" id="gb-open" class="btn-primary open-form" aria-expanded="false" aria-controls="gb-form" onclick={openForm}>축하 글 남기기</button>
   {/if}
 
   {#if mounted && formOpen}
@@ -298,7 +310,7 @@
       </div>
       {#if errs.form}<p class="err" role="alert">{errs.form}</p>{/if}
       <div class="form-btns">
-        <button type="button" class="btn" onclick={() => (formOpen = false)}>닫기</button>
+        <button type="button" class="btn" onclick={closeForm}>닫기</button>
         <button type="submit" class="btn-primary" disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
       </div>
     </form>

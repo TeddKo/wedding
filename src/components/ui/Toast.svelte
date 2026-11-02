@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { reduced } from "../../lib/motion";
+  import { ICONS } from "../../lib/icons";
 
   let { msg, onend, warn = false }: { msg: string; onend: () => void; warn?: boolean } = $props();
 
@@ -19,8 +20,8 @@
 </script>
 
 <div class="toast" class:on role="status">
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    {#if warn}<path d="M12 7v6M12 17v.01" />{:else}<path d="M5 12.5l4.5 4.5L19 7.5" />{/if}
+  <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    {#if warn}<path d="M12 7v6M12 17v.01" />{:else}<path d={ICONS.check} />{/if}
   </svg>
   {msg}
 </div>
@@ -32,6 +33,6 @@
     opacity: 0; transform: translateY(8px); transition: opacity 200ms ease, transform 200ms ease;
   }
   .toast.on { opacity: 1; transform: none; }
-  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico { width: 16px; height: 16px; }
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; transform: none; } }
 </style>

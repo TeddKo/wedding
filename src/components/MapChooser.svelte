@@ -193,5 +193,5 @@
   .mc-tx b { font-size: 17px; font-weight: 700; }
   .mc-tx small { font-size: 13px; color: var(--ivory-dim); }
   .mc-chev { flex: none; width: 16px; height: 16px; color: var(--ivory-dim); }
-  .mc-kakao { margin: 14px 2px 0; font-size: 13px; line-height: 1.5; color: var(--pumpkin); }
+  .mc-kakao { margin: 14px 2px 0; font-size: 13px; line-height: 1.5; color: var(--accent-text); }
 </style>

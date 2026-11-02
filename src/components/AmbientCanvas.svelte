@@ -104,7 +104,7 @@
       visible = en.isIntersecting;
       visible ? start() : stop();
     });
-    io.observe(canvas);
+    io.observe(document.querySelector("header.cover") ?? canvas);
     const ro = new ResizeObserver(() => running && resize());
     ro.observe(canvas);
     const vis = () => (document.hidden ? stop() : visible && start());

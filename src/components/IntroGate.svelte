@@ -237,7 +237,7 @@
       </p>
       <div class="pick" class:gone={phase !== "idle"} role="group" aria-label="초대장 분위기 고르기">
         {#each THEME_NAMES as k (k)}
-          <button type="button" class="opt" aria-pressed={theme.name === k} onclick={() => setTheme(k)}>{THEMES[k].label}</button>
+          <button type="button" class="opt" aria-pressed={theme.name === k} disabled={phase !== "idle"} onclick={() => setTheme(k)}>{THEMES[k].label}</button>
         {/each}
       </div>
     </div>
@@ -339,7 +339,7 @@
     font: inherit; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s;
   }
   .opt[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-  .opt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .gone.pick { pointer-events: none; }
   @keyframes blink { 50% { opacity: 0.55; } }
   .gone { opacity: 0; animation: none; }

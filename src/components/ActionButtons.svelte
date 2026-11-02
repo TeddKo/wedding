@@ -4,6 +4,7 @@
   import Toast from "./ui/Toast.svelte";
   import { reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
+  import { ICONS } from "../lib/icons";
 
   type Action = { kind: "copy"; label: string; text: string; ghost?: boolean; small?: boolean } | { kind: "kakao"; label: string };
   type Kakao = { key: string; title: string; description: string; imageUrl: string; pageUrl: string };
@@ -14,7 +15,6 @@
 
   let kakaoReady = $state(false);
   let toasts = $state<{ id: number }[]>([]);
-  let okIdx = $state(-1);
   let seq = 0;
   let sdk: any;
 
@@ -30,11 +30,9 @@
     }
   }
 
-  async function onCopy(a: Extract<Action, { kind: "copy" }>, i: number) {
+  async function onCopy(a: Extract<Action, { kind: "copy" }>) {
     await copy(a.text);
     toasts.push({ id: ++seq });
-    okIdx = i;
-    setTimeout(() => okIdx === i && (okIdx = -1), 1200);
   }
 
   function share() {
@@ -75,16 +73,15 @@
 </script>
 
 <div class="row">
-  {#each actions as a, i}
+  {#each actions as a}
     <button
       type="button"
       class={variant(a)}
-      class:ok={okIdx === i}
       hidden={a.kind === "kakao" && !kakaoReady}
-      onclick={() => (a.kind === "copy" ? onCopy(a, i) : share())}
+      onclick={() => (a.kind === "copy" ? onCopy(a) : share())}
     >
       {#if variant(a) === "btn-text"}
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.copy} /></svg>
       {/if}
       {a.label}
     </button>

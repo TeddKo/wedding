@@ -34,7 +34,6 @@
   --bg-2: #201925;
   --outer: #0f0b12;
   --field: #201925;
-  --digit: #ece2d0;
   --panel-a: #2a2030;
   --panel-b: #1d1622;
   --gold-rgb: 184 154 99;
@@ -44,7 +43,6 @@
   --bg2-rgb: 32 25 37;
   --shade-rgb: 10 6 12;
   --page-shadow: #000;
-  --today-ink: #1b1014;
   --hero-inset: 28px;
   --hero-r: 999px 999px 0 0;
   --hero-line: none;
@@ -65,7 +63,7 @@
   --ink: #1d2433;
   --ink-2: #5b6476;
   --line: #d8dee8;
-  --line-strong: #9aa6b8;
+  --line-strong: #7d8aa0;
   --accent: #1f5fd6;
   --accent-text: #1f5fd6;
   --on-accent: #ffffff;
@@ -93,7 +91,6 @@
   --bg-2: #eef1f5;
   --outer: #e4e8ee;
   --field: #ffffff;
-  --digit: #1d2433;
   --panel-a: #e8ecf2;
   --panel-b: #dbe1ea;
   --gold-rgb: 154 166 184;
@@ -103,8 +100,6 @@
   --bg2-rgb: 238 241 245;
   --shade-rgb: 29 36 51;
   --page-shadow: rgb(29 36 51 / 0.1);
-  --today-ink: #fff;
-  --flip-line: 0.12;
   --door-r: 8px;
   --hero-inset: 20px;
   --hero-r: 6px;
@@ -135,7 +130,7 @@
   --on-accent: #ffffff;
   --groom: #3d7449;
   --bride: #ee7e98;
-  --sun: #cf4f4f;
+  --sun: #b83f3f;
   --radius: 24px;
   --radius-lg: 28px;
   --f-body: "Gowun Dodum", sans-serif;
@@ -157,7 +152,6 @@
   --bg-2: #e3edf5;
   --outer: #d9e6f0;
   --field: #ffffff;
-  --digit: #26324a;
   --panel-a: #e3edf5;
   --panel-b: #cfdeea;
   --gold-rgb: 79 143 91;
@@ -167,8 +161,6 @@
   --bg2-rgb: 227 237 245;
   --shade-rgb: 38 50 74;
   --page-shadow: rgb(38 50 74 / 0.12);
-  --today-ink: #fff;
-  --flip-line: 0.12;
   --door-r: 48px 48px 12px 12px;
   --hero-inset: 20px;
   --hero-r: 28px;
@@ -249,8 +241,6 @@ html.ambient .page, html.ambient .footer { background: transparent; }
 .btn:hover { background: var(--surface); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .btn-primary:hover { opacity: 0.9; }
-.btn-ghost { border-color: var(--line-strong); color: var(--ink); }
-.btn-sm { min-height: 36px; padding: 0 14px; font-size: 14px; }
 .btn[hidden], .btn-primary[hidden], .btn-text[hidden] { display: none; }
 .btn-text {
   display: inline-flex; align-items: center; gap: 4px;
@@ -294,18 +284,6 @@ html.js .map-fallback, html:not(.js) .mc-btn { display: none; }
 .transit dd span { display: block; }
 
 /* accounts / rsvp / share */
-.acc { border-top: 1px solid var(--line); text-align: left; }
-.acc:last-child { border-bottom: 1px solid var(--line); }
-.acc summary { min-height: 56px; padding: 0 4px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; }
-.acc summary::-webkit-details-marker { display: none; }
-.acc-list { list-style: none; margin: 0; padding: 0 4px 16px; }
-.acc-list li { display: grid; gap: 2px; padding: 12px 0; border-top: 1px solid var(--line); }
-.acc-list li:first-child { border-top: 0; }
-.acc-label { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
-.acc-holder { font-size: 15px; }
-.acc-num { font-family: var(--f-mono); font-size: 16px; overflow-wrap: anywhere; }
-.acc-soon { color: var(--ink-2); font-size: 14px; }
-.acc-btns { display: flex; gap: 8px; margin-top: 4px; }
 .note { margin-bottom: 24px; font-size: 15px; color: var(--ink-2); }
 
 /* footer = 엔딩 */
@@ -330,7 +308,7 @@ html.js .map-fallback, html:not(.js) .mc-btn { display: none; }
   opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
 }
 html.dock-on .dock { opacity: 1; visibility: visible; }
-html.gated .dock, html:not(.js) .dock { display: none; }
+html.gated .dock, html:not(.has-js) .dock, .dock:not(:has(button:not([hidden]))) { display: none; }
 .dock astro-island { display: contents; }
 .bgm-toggle, .theme-toggle {
   position: relative; width: 40px; height: 40px; padding: 9px; margin: 0; border: 0; border-radius: 50%;

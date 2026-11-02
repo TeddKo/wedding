@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { ddayKst, reduced } from "../lib/motion";
   import { fnv7 } from "../lib/hash";
+  import { ICONS } from "../lib/icons";
 
   let {
     year,
@@ -19,7 +20,6 @@
     day: number;
     date: string;
     dateKo: string;
-    venue?: string;
     dayNames: string[];
     grid: (number | null)[];
     icsHref: string;
@@ -79,7 +79,7 @@
         {:else if d === day}
           <span role="cell" class="c wed" aria-label="{month}월 {d}일 결혼식">
             <i class="mark">
-              <svg data-th="puppy" class="paw" viewBox="0 0 42 42" aria-hidden="true" focusable="false"><g fill="var(--rose, #ee7e98)"><ellipse cx="21" cy="27" rx="11" ry="9.5" /><ellipse cx="7" cy="19" rx="3.8" ry="4.8" /><ellipse cx="15" cy="9" rx="3.8" ry="4.8" /><ellipse cx="27" cy="9" rx="3.8" ry="4.8" /><ellipse cx="35" cy="19" rx="3.8" ry="4.8" /></g></svg>
+              <svg data-th="puppy" class="paw" viewBox="0 0 42 42" aria-hidden="true" focusable="false"><g fill="var(--accent-text)"><ellipse cx="21" cy="27" rx="11" ry="9.5" /><ellipse cx="7" cy="19" rx="3.8" ry="4.8" /><ellipse cx="15" cy="9" rx="3.8" ry="4.8" /><ellipse cx="27" cy="9" rx="3.8" ry="4.8" /><ellipse cx="35" cy="19" rx="3.8" ry="4.8" /></g></svg>
               <b>{d}</b>
             </i>
           </span>
@@ -109,7 +109,7 @@
 
   <div class="cal-add">
     <a class="btn-text" href={icsHref} download="wedding.ics">
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4" /></svg>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS["calendar-plus"]} /></svg>
       캘린더에 추가
     </a>
     <a class="btn-text" href={gcalHref} target="_blank" rel="noopener">Google 캘린더</a>
@@ -117,7 +117,7 @@
 </section>
 
 <style>
-  .when { margin: 0 auto 24px; max-width: 340px; text-align: center; white-space: nowrap; font-size: 15px; line-height: 1.6; color: var(--ink-2, var(--ivory-dim)); }
+  .when { margin: 0 auto 24px; max-width: 340px; text-align: center; font-size: clamp(13px, 4vw, 15px); line-height: 1.6; color: var(--ink-2, var(--ivory-dim)); }
   .cal { max-width: 340px; margin: 0 auto; }
   .cal-row, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
   .cal-h { font-size: 12px; line-height: 40px; color: var(--ink-2, var(--ivory-dim)); }

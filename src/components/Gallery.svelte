@@ -7,7 +7,7 @@
   import { portal } from "../lib/portal";
 
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
-  let { items }: { items: Item[]; count?: number } = $props();
+  let { items }: { items: Item[] } = $props();
 
   const real = items.length > 0;
   const n = real ? items.length : 3;

@@ -10,13 +10,12 @@
     groom,
     bride,
     date,
-    time,
     dateKo,
     venue,
     focus,
     hasPhoto,
     photo,
-  }: { groom: string; bride: string; date: string; time: string; dateKo: string; venue: string; focus: string; hasPhoto: boolean; photo?: Snippet } = $props();
+  }: { groom: string; bride: string; date: string; dateKo: string; venue: string; focus: string; hasPhoto: boolean; photo?: Snippet } = $props();
 
   const uid = $props.id();
   const [y, m, d] = date.split("-").map(Number);
@@ -27,7 +26,6 @@
   const ord = (n: number) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
   const longEn = `${EN_DAY[wd]}, the ${ord(d)} of ${EN_MON[m - 1]} ${y}`;
   const longKo = `${y}년 ${m}월 ${d}일 ${KO_DAY[wd]}요일`;
-  void time;
 
   /* 첨두 아치: 안쪽 괘선 경로(336x440 기준, i=안쪽 간격) */
   const arch = (i: number) => `M${i} 440V${190 + i * 0.3}C${i} ${105 + i * 0.7} ${84 + i * 0.6} ${36 + i * 1.4} 168 ${i * 2.4}C${252 - i * 0.6} ${36 + i * 1.4} ${336 - i} ${105 + i * 0.7} ${336 - i} ${190 + i * 0.3}V440`;
@@ -117,6 +115,7 @@
       <circle cx="42" cy="72" r="5.500" fill="var(--bg)" stroke="var(--bride)" stroke-width="2" />
       <circle cx="28" cy="124" r="7.500" fill="var(--ink)" stroke="var(--bg)" stroke-width="2" />
     </svg>
+    <h1 class="sr">{groom} & {bride} 결혼합니다</h1>
     <span class="gl-row r1">{groom}</span>
     <span class="gl-row r2">{bride}</span>
     <span class="gl-row r3">결혼합니다 <em>wedding</em></span>
@@ -143,6 +142,7 @@
   .k-dev { font: 12px/1.5 var(--f-mono); }
   .k-pup { font: 18px/1.4 var(--f-display); color: var(--ink); }
   .defs { position: absolute; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   .hero { position: relative; margin: 0 auto; }
   .frame { position: relative; width: 100%; overflow: hidden; background: var(--surface); }
