@@ -1,0 +1,67 @@
+/* th/dev: dev 테마 전용 스타일. global.css 뒤에 로드되어 override 한다. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
+html[data-theme="dev"] { --neon-g: #2e6bff; --neon-b: #ff2d7a; }
+
+html[data-theme="dev"] .gl { z-index: 1; }
+html[data-theme="dev"] .gl::before { content: ""; position: absolute; top: -12px; bottom: -12px; left: calc(var(--rail-x, 28px) - 48px); width: 140px; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgb(26 26 26 / 0.028), transparent 100%); pointer-events: none; }
+html[data-theme="dev"] .gl-sig { position: absolute; top: 0; left: calc(var(--rail-x, 28px) - 28px); width: 60px; height: 140px; pointer-events: none; }
+
+html[data-theme="dev"] .gl-svg { overflow: visible; }
+html[data-theme="dev"] .gl .br-g, html[data-theme="dev"] .gl .nd-g { --c: var(--neon-g); }
+html[data-theme="dev"] .gl .br-b, html[data-theme="dev"] .gl .nd-b, html[data-theme="dev"] .gl .nd-m { --c: var(--neon-b); }
+html[data-theme="dev"] .gl .nd-m { transform-box: fill-box; transform-origin: center; }
+html[data-theme="dev"] .gl .br path, html[data-theme="dev"] .gl .nd circle { fill: none; stroke: var(--c); stroke-linecap: round; }
+html[data-theme="dev"] .gl .br path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+html[data-theme="dev"] .gl .halo { stroke-width: 6; opacity: 0.5; will-change: opacity; }
+html[data-theme="dev"] .gl .tube { stroke-width: 2; }
+html[data-theme="dev"] .gl .core { stroke: #fff; stroke-width: 0.8; opacity: 0.85; }
+html[data-theme="dev"] .gl .nd .tube { fill: var(--bg); }
+html[data-theme="dev"] .gl .nd .pulse { stroke-width: 6; opacity: 0; will-change: opacity; }
+html[data-theme="dev"] .gl .nd .dot { fill: var(--ink); stroke: none; }
+html[data-theme="dev"] .gl .sig { position: absolute; left: 0; top: 0; width: 4.4px; height: 4.4px; margin: -2.2px 0 0 -2.2px; border-radius: 50%; background: #fff; opacity: 0; box-shadow: 0 0 0 0.6px var(--neon-g), 0 0 4px 1px rgb(46 107 255 / 0.55); }
+html[data-theme="dev"] .gl .sig-b { box-shadow: 0 0 0 0.6px var(--neon-b), 0 0 4px 1px rgb(255 45 122 / 0.55); }
+html[data-theme="dev"] .gl .sig-g { offset-path: path("M14 20V88C14 112 28 106 28 124"); }
+html[data-theme="dev"] .gl .sig-b { offset-path: path("M42 72V88C42 112 28 106 28 124"); }
+@supports not (offset-path: path("M0 0")) { html[data-theme="dev"] .gl .sig { display: none; } }
+
+html[data-theme="dev"] .gl.fx-paused, html[data-theme="dev"] .gl.fx-paused * { animation-play-state: paused !important; }
+
+html.js:not(.opened)[data-theme="dev"] .gl .br path { stroke-dashoffset: 1; }
+html.js:not(.opened)[data-theme="dev"] .gl .nd, html.js:not(.opened)[data-theme="dev"] .gl .gl-row { opacity: 0; }
+
+html.opened[data-theme="dev"] .gl .br-g path { animation: dev-draw 800ms cubic-bezier(0.6, 0, 0.2, 1) 1100ms both; }
+html.opened[data-theme="dev"] .gl .br-b path { animation: dev-draw 800ms cubic-bezier(0.6, 0, 0.2, 1) 1350ms both; }
+html.opened[data-theme="dev"] .gl .br-g .halo { animation: dev-draw 800ms cubic-bezier(0.6, 0, 0.2, 1) 1100ms both, dev-hum 4s ease-in-out 1.9s infinite alternate; }
+html.opened[data-theme="dev"] .gl .br-b .halo { animation: dev-draw 800ms cubic-bezier(0.6, 0, 0.2, 1) 1350ms both, dev-hum 4s ease-in-out 2.15s infinite alternate; }
+html.opened[data-theme="dev"] .gl .nd-g { animation: dev-on 250ms ease-out 1100ms both; }
+html.opened[data-theme="dev"] .gl .nd-b { animation: dev-on 250ms ease-out 1350ms both; }
+html.opened[data-theme="dev"] .gl .nd-m { animation: dev-pop 700ms ease-out 2250ms both; }
+html.opened[data-theme="dev"] .gl .nd-m .halo { animation: dev-flicker 700ms linear 2250ms both; }
+html.opened[data-theme="dev"] .gl .nd-m .pulse { animation: dev-arrive 2.5s ease-in-out 2.8s infinite; }
+html.opened[data-theme="dev"] .gl .r1 { animation: dev-row 400ms ease-out 1100ms both; }
+html.opened[data-theme="dev"] .gl .r2 { animation: dev-row 400ms ease-out 1350ms both; }
+html.opened[data-theme="dev"] .gl .r3 { animation: dev-row 400ms ease-out 2250ms both; }
+html.opened[data-theme="dev"] .gl .sig-g { animation: dev-sig 5s linear 2.8s infinite; }
+html.opened[data-theme="dev"] .gl .sig-b { animation: dev-sig 5s linear 5.3s infinite; }
+html[data-theme="dev"] .gl .br.blink { animation: dev-blink 160ms linear; }
+
+@keyframes dev-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes dev-hum { from { opacity: 0.45; } to { opacity: 0.6; } }
+@keyframes dev-on { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dev-pop { 0% { opacity: 0; transform: scale(1); } 1% { opacity: 1; } 45% { transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes dev-flicker { 0% { opacity: 0; } 15% { opacity: 0.9; } 30% { opacity: 0.15; } 50% { opacity: 1; } 75% { opacity: 0.4; } 100% { opacity: 0.5; } }
+@keyframes dev-arrive { 0%, 52% { opacity: 0; } 64% { opacity: 0.45; } 84%, 100% { opacity: 0; } }
+@keyframes dev-row { from { opacity: 0; transform: translateY(calc(-50% + 4px)); } to { opacity: 1; transform: translateY(-50%); } }
+@keyframes dev-sig { 0% { offset-distance: 0%; opacity: 0; } 3% { opacity: 1; } 29% { opacity: 1; } 32% { offset-distance: 100%; opacity: 0; } 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes dev-blink { 0%, 100% { opacity: 1; } 35% { opacity: 0.25; } 60% { opacity: 0.85; } }
+
+html[data-theme="dev"] .rail-glow { position: absolute; z-index: 0; left: var(--rail-x, 28px); top: 0; width: 2px; height: 0; margin-left: -1px; transform-origin: 50% 0; background: linear-gradient(var(--neon-g), var(--neon-b)); box-shadow: 0 0 6px rgb(255 45 122 / 0.45); pointer-events: none; will-change: transform; }
+
+html[data-theme="dev"] .sec-title::before { z-index: 1; transition: border-color 0.6s ease, box-shadow 0.6s ease; }
+html[data-theme="dev"] [data-reveal].in .sec-title::before { border-color: var(--neon-b); box-shadow: 0 0 10px rgb(255 45 122 / 0.45); }
+
+html[data-theme="dev"] .footer.ending.in::after { animation: dev-ver 900ms ease-out 1; }
+@keyframes dev-ver { 0%, 100% { text-shadow: none; } 30% { text-shadow: 0 0 8px rgb(46 107 255 / 0.7), 0 0 2px rgb(46 107 255 / 0.6); } }
+
+html[data-theme="dev"] .intro-emblem[data-th~="dev"] { display: flex; align-items: center; gap: 10px; font: 500 13px/1 var(--f-mono); }
+html[data-theme="dev"] .ie-node { width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; background: var(--bg); border: 2px solid var(--neon-g); box-shadow: 0 0 8px rgb(46 107 255 / 0.45); }
+html[data-theme="dev"] .ie-label { color: var(--accent-text); letter-spacing: 0.02em; }

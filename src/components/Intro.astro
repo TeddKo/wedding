@@ -1,6 +1,7 @@
 ---
 import IntroGate from "./IntroGate.svelte";
 import { wedding } from "../data/wedding";
+import { dateKo } from "../lib/format";
 ---
 
-<IntroGate client:load groom={wedding.groom.name} bride={wedding.bride.name} />
+<IntroGate client:load groom={wedding.groom.name} bride={wedding.bride.name} date={dateKo} />

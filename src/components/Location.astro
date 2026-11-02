@@ -1,47 +1,46 @@
 ---
+import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
+import { ICONS } from "../lib/icons";
 import ActionButtons from "./ActionButtons.svelte";
 import KakaoMap from "./KakaoMap.svelte";
-import MapChooser from "./MapChooser.svelte";
+import MapApps from "./MapApps.svelte";
 import { venueLine } from "../lib/format";
-import { mapApps } from "../lib/maps";
-import { fnv7 } from "../lib/hash";
-import { ICONS, type IconName } from "../lib/icons";
 
 const { name, mapQuery: query, lat, lng, transit } = wedding.venue;
 const venue = { name, query, lat, lng };
-const webLinks = mapApps("desktop", false, venue);
 
-const all: { icon: IconName; label: string; lines: string[] }[] = [
-  { icon: "subway", label: "지하철", lines: transit.subway ?? [] },
-  { icon: "bus", label: "버스", lines: transit.bus ?? [] },
-  { icon: "car", label: "자가용", lines: transit.car ? [transit.car] : [] },
-  { icon: "parking", label: "주차", lines: transit.parking ? [transit.parking] : [] },
+const all = [
+  { label: "지하철", lines: transit.subway ?? [] },
+  { label: "버스", lines: transit.bus ?? [] },
+  { label: "자가용", lines: transit.car ? [transit.car] : [] },
+  { label: "주차", lines: transit.parking ? [transit.parking] : [] },
 ];
 const rows = all.filter((r) => r.lines.length > 0);
 ---
 
-<section class="section" data-reveal aria-labelledby="loc-h">
-  <h2 id="loc-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("location")}</span>오시는 길</h2>
-  <KakaoMap client:visible name={name} address={wedding.venue.address} lat={lat} lng={lng} appkey={wedding.kakaoJsKey} />
-  <p class="venue-name">{venueLine}</p>
-  <p class="address" id="address">{wedding.venue.address}</p>
-  <div class="btn-row">
-    <MapChooser client:visible venue={venue} />
-    <ActionButtons client:idle actions={[{ kind: "copy", label: "주소 복사", text: wedding.venue.address, ghost: true }]} />
+<section class="section loc" data-reveal aria-labelledby="loc-h">
+  <p class="eyebrow" data-rv="fade">LOCATION</p>
+  <h2 class="sec-title" id="loc-h" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("location")}</span>오시는 길</h2>
+  <p class="venue-name" data-rv="mask" style="--d:240ms">{venueLine}</p>
+  <div class="address" data-rv="fade" style="--d:200ms">
+    <span id="address">{wedding.venue.address}</span>
+    <span class="copy-fb" data-copy-fb>
+      <ActionButtons client:idle actions={[{ kind: "copy", label: "주소 복사", text: wedding.venue.address, icon: true }]} />
+      <svg class="chk" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.check} /></svg>
+    </span>
   </div>
-  <div class="map-fallback">
-    {webLinks.map((a) => <a class="btn-text" href={a.href} target="_blank" rel="noopener noreferrer">{a.name}</a>)}
+  <div class="bleed" data-rv="curtain" style="--d:350ms">
+    <KakaoMap client:visible name={name} lat={lat} lng={lng} appkey={wedding.kakaoJsKey} />
   </div>
+  <div class="apps-wrap"><MapApps client:visible venue={venue} /></div>
+  <p class:list={["cap", { last: rows.length === 0 }]} data-rv="fade" style="--d:900ms">원하시는 앱을 선택하시면 길안내가 시작됩니다</p>
   {
     rows.length > 0 && (
-      <dl class="transit">
+      <dl class="transit" data-rv="rise" style="--d:1000ms">
         {rows.map((r) => (
           <div>
-            <dt>
-              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[r.icon]} /></svg>
-              {r.label}
-            </dt>
+            <dt>{r.label}</dt>
             <dd>{r.lines.map((l) => <span>{l}</span>)}</dd>
           </div>
         ))}
@@ -49,3 +48,39 @@ const rows = all.filter((r) => r.lines.length > 0);
     )
   }
 </section>
+
+<script>
+  /** 주소 복사 마이크로 피드백: 아이콘이 check 로 교차 전환되고 1.6s 뒤 복귀 */
+  for (const host of document.querySelectorAll<HTMLElement>("[data-copy-fb]")) {
+    let t = 0;
+    host.addEventListener("click", (e) => {
+      if (!(e.target as Element).closest("button")) return;
+      host.classList.add("done");
+      clearTimeout(t);
+      t = window.setTimeout(() => host.classList.remove("done"), 1600);
+    });
+  }
+</script>
+
+<style>
+  .loc { text-align: center; }
+  .venue-name { margin: 20px 0 0; font: 400 18.5px/1.5 var(--f-body, inherit); color: var(--ink); }
+  .address { margin: 4px 0 24px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 15px; line-height: 1.6; color: var(--ink-3); }
+  .copy-fb { position: relative; display: inline-flex; }
+  .copy-fb :global(.icon-btn svg) { transition: opacity 240ms var(--e-out), transform 240ms var(--e-out); }
+  .chk { position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; fill: none; stroke: var(--accent-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(0.6); transition: opacity 240ms var(--e-out), transform 240ms var(--e-out); pointer-events: none; }
+  .copy-fb.done :global(.icon-btn svg) { opacity: 0; transform: scale(0.6); }
+  .copy-fb.done .chk { opacity: 1; transform: none; }
+  .bleed { position: relative; margin: 0 -40px 16px; }
+  @media (max-width: 360px) { .bleed { margin: 0 -28px 16px; } }
+  :global(html[data-theme="dev"]) .bleed { margin-left: 0; margin-right: -24px; }
+  .apps-wrap { margin-bottom: 12px; }
+  .cap { margin: 0 0 32px; font-size: 12.5px; color: var(--ink-3); }
+  .cap.last { margin-bottom: 0; }
+  .transit { margin: 0; display: grid; gap: 20px; text-align: left; }
+  .transit dt { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .transit dd { margin: 6px 0 0; display: grid; gap: 6px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+  .transit dd span { position: relative; padding-left: 14px; }
+  .transit dd span::before { content: ""; position: absolute; left: 0; top: 0.65em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .copy-fb :global(.icon-btn svg), .chk { transition: none; } }
+</style>

@@ -9,8 +9,7 @@
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
   let { items }: { items: Item[] } = $props();
 
-  const real = items.length > 0;
-  const n = real ? items.length : 3;
+  const n = items.length;
 
   /* ---------- 라이트박스 ---------- */
   let open = $state(false);
@@ -244,26 +243,21 @@
   }
 </script>
 
-<ul class="gallery" class:empty={!real}>
-  {#each { length: n } as _, i}
-    <li class="cell" class:real>
-      {#if real}
-        {@const it = items[i]}
-        <a
-          bind:this={btns[i]}
-          class="thumb"
-          href={it.full}
-          aria-label="사진 {i + 1} 크게 보기"
-          onclick={(e) => {
-            e.preventDefault();
-            void openAt(i);
-          }}
-        >
-          <img src={it.thumb} srcset={it.srcset} sizes="(max-width: 480px) 33vw, 160px" width="360" height="360" alt="갤러리 사진 {i + 1}" loading="lazy" decoding="async" />
-        </a>
-      {:else}
-        <div class="ph" data-pattern role="img" aria-label="사진 {i + 1} 자리"></div>
-      {/if}
+<ul class="gallery">
+  {#each items as it, i}
+    <li class="cell" data-rv="curtain" style="--d:{320 + Math.min(i, 8) * 60}ms">
+      <a
+        bind:this={btns[i]}
+        class="thumb"
+        href={it.full}
+        aria-label="사진 {i + 1} 크게 보기"
+        onclick={(e) => {
+          e.preventDefault();
+          void openAt(i);
+        }}
+      >
+        <img src={it.thumb} srcset={it.srcset} sizes="(max-width: 480px) 33vw, 160px" width="360" height="360" alt="갤러리 사진 {i + 1}" loading="lazy" decoding="async" />
+      </a>
     </li>
   {/each}
 </ul>
@@ -298,7 +292,7 @@
           alt="갤러리 사진 {idx + 1}"
           draggable="false"
           style="width:{fit.w}px;height:{fit.h}px;left:{(SW - fit.w) / 2}px;top:{(SH - 88 - fit.h) / 2 + 20}px;{style}"
-          in:fly={{ x: reduced() ? 0 : dir * 70, duration: reduced() ? 0 : 340, easing: cubicOut }}
+          in:fly={{ x: reduced() ? 0 : dir * 70, opacity: 0.6, duration: reduced() ? 0 : 340, easing: cubicOut }}
           out:fade={{ duration: reduced() ? 0 : 140 }}
         />
       {/key}
@@ -315,33 +309,27 @@
 {/if}
 
 <style>
-  .gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .cell { aspect-ratio: 1; position: relative; }
-  .cell.real { overflow: hidden; }
-  .gallery.empty .cell { aspect-ratio: auto; }
-  .gallery.empty .cell:nth-child(1) { grid-column: 1 / 3; grid-row: 1 / 3; aspect-ratio: 1; }
-  .gallery.empty .cell:nth-child(2) { grid-column: 3; grid-row: 1; }
-  .gallery.empty .cell:nth-child(3) { grid-column: 3; grid-row: 2; }
+  .gallery { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .cell { aspect-ratio: 1; position: relative; overflow: hidden; border-radius: 6px; }
   .thumb { display: block; width: 100%; height: 100%; cursor: zoom-in; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .thumb:hover img, .thumb:focus-visible img { transform: scale(1.07); }
-  .ph { width: 100%; height: 100%; border-radius: var(--radius); }
 
   .lb { position: fixed; inset: 0; z-index: 200; color: #fff; outline: none; }
-  .backdrop { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #1b1322, #07040a 80%); }
+  .backdrop { position: absolute; inset: 0; background: #0c0b0e; }
   .stage { position: absolute; inset: 0; touch-action: none; overflow: hidden; cursor: grab; }
   .lbp { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; will-change: transform; box-shadow: 0 10px 50px rgb(0 0 0 / 0.7); }
   .ui { position: absolute; inset: 0; pointer-events: none; }
   .b {
-    position: absolute; pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgb(var(--gold-rgb) / 0.55);
-    background: rgb(var(--bg-rgb) / 0.6); color: var(--ivory); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 0 3px;
+    position: absolute; pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.4);
+    background: rgb(0 0 0 / 0.4); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; padding: 0 0 3px;
     transition: background 0.2s, transform 0.2s;
   }
-  .b:hover { background: var(--gold); color: var(--bg); }
+  .b:hover { background: #fff; color: #111; }
   .b:active { transform: scale(0.92); }
   .close { top: max(14px, env(safe-area-inset-top)); right: 14px; }
   .prev { left: 10px; top: 50%; margin-top: -24px; }
   .next { right: 10px; top: 50%; margin-top: -24px; }
-  .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: var(--gold); }
+  .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: rgb(255 255 255 / 0.8); font: 400 14px/1.4 var(--f-latin); }
   @media (prefers-reduced-motion: reduce) { .thumb img { transition: none; } }
 </style>

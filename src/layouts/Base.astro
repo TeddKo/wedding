@@ -1,10 +1,13 @@
 ---
 import "../styles/global.css";
+import "../styles/motion.css";
+import "../styles/th/halloween.css";
+import "../styles/th/puppy.css";
+import "../styles/th/dev.css";
 import { hasMusic } from "../lib/music";
 import { wedding } from "../data/wedding";
 import { dateKo } from "../lib/format";
 import { url } from "../lib/url";
-import AmbientCanvas from "../components/AmbientCanvas.svelte";
 import ThemeSwitch from "../components/ThemeSwitch.svelte";
 import { THEMES } from "../lib/themes";
 import { ICONS } from "../lib/icons";
@@ -54,18 +57,18 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Gowun+Batang:wght@400;700&family=IM+Fell+English:ital@0;1&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400;500&family=Jua&family=Gowun+Dodum&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Crimson+Pro:ital,wght@0,400;1,400&family=Mrs+Saint+Delafield&family=IBM+Plex+Mono:wght@400&display=swap"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   </head>
   <body
     data-bgm={hasMusic ? url("audio/bgm.mp3") : ""}
   >
-    <AmbientCanvas client:idle />
     <slot />
-    <div class="dock" id="dock">
+    <div class="fabs" id="dock">
       <ThemeSwitch client:idle />
-      <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.music} /></svg>
+      <button type="button" class="fab bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.music} /></svg>
       </button>
     </div>
     <script>

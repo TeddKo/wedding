@@ -1,0 +1,110 @@
+/**
+ * 공유 모션 시스템. 엔진은 components/Reveal.svelte.
+ * 규약: 기본 CSS 는 항상 최종 상태. 숨김은 html.js [data-reveal].rv:not(.in) 아래에서만 걸린다.
+ * html.js 가 제거되거나(JS off, 4.5s 폴백) 모션 감소이면 .rv 가 없어 전부 최종 상태로 보인다.
+ * transform/opacity 만 사용. 예외: draw 의 stroke-dashoffset, mask 래퍼 overflow:clip, data-dir=x 의 clip-path.
+ */
+:root {
+  --e-out: cubic-bezier(.22, 1, .36, 1);
+  --e-io: cubic-bezier(.65, 0, .35, 1);
+  --e-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --e-ink: cubic-bezier(.45, 0, .1, 1);
+  --t1: 180ms; --t2: 420ms; --t3: 800ms; --t4: 1200ms;
+  --st-ch: 38ms; --st-ln: 110ms; --st-el: 90ms; --st-ty: 28ms;
+  --rv-dur: var(--t3); --rv-ease: var(--e-out); --rv-y: 16px; --rv-s: 1;
+  --press-s: .97;
+}
+[data-theme="halloween"] { --rv-dur: 1100ms; --rv-ease: var(--e-ink); --rv-y: 10px; --st-ch: 46ms; }
+[data-theme="dev"] { --rv-dur: 520ms; --rv-ease: cubic-bezier(.2, .8, .2, 1); --rv-y: 0px; --st-ch: 28ms; }
+[data-theme="puppy"] { --rv-dur: 760ms; --rv-ease: var(--e-spring); --rv-y: 22px; --rv-s: .96; --st-ch: 34ms; --press-s: .96; }
+
+/** 레거시 루트: data-rv 자식이 없는 섹션은 통째로 rise */
+html.js [data-reveal].rv:not(.rv-c) { transition: opacity var(--rv-dur) var(--rv-ease), transform var(--rv-dur) var(--rv-ease); }
+html.js [data-reveal].rv:not(.rv-c):not(.in) { opacity: 0; transform: translateY(var(--rv-y)) scale(var(--rv-s)); }
+
+/** fade */
+html.js [data-reveal].rv [data-rv="fade"] { transition: opacity var(--t3) var(--e-out) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="fade"] { opacity: 0; }
+
+/** rise: 인라인 요소는 transform 이 안 먹으므로 block/inline-block 로 */
+html.js [data-reveal].rv [data-rv="rise"] { transition: opacity var(--rv-dur) var(--rv-ease) var(--d, 0ms), transform var(--rv-dur) var(--rv-ease) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="rise"] { opacity: 0; transform: translateY(var(--rv-y)) scale(var(--rv-s)); }
+
+/** stamp: 도장 */
+html.js [data-reveal].rv [data-rv="stamp"] { transition: opacity var(--t2) var(--e-spring) var(--d, 0ms), transform 360ms var(--e-spring) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="stamp"] { opacity: 0; transform: scale(1.3); }
+
+/** count: 숫자 롤은 JS, 여기선 등장과 폭 고정만 */
+[data-rv="count"] { font-variant-numeric: tabular-nums lining-nums; }
+html.js [data-reveal].rv [data-rv="count"] { transition: opacity var(--t2) var(--e-out) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="count"] { opacity: 0; }
+
+/** mask / lines: .m(클립) > .mi(이동). lines 는 --i 줄 번호로 스태거 */
+.m { display: block; overflow: clip; padding-block: .14em; margin-block: -.14em; }
+.mi { display: block; }
+html.js [data-reveal].rv .mi { transition: transform var(--rv-dur) var(--rv-ease) calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln)); }
+html.js [data-reveal].rv:not(.in) .mi { transform: translateY(105%); }
+
+/** mask data-dir=x: 필기체 와이프(클립패스 1회, 1600ms) */
+html.js [data-reveal].rv [data-rv="mask"][data-dir="x"] .m { overflow: visible; clip-path: inset(-30% -12% -30% -12%); transition: clip-path 1600ms var(--e-io) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="mask"][data-dir="x"] .m { clip-path: inset(-30% 100% -30% -12%); }
+html.js [data-reveal].rv [data-rv="mask"][data-dir="x"] .mi { transition: none; transform: none; }
+
+/** letters / type: .ch 단위 */
+.w { display: inline-block; white-space: nowrap; }
+.ch { display: inline-block; }
+html.js [data-reveal].rv:not(.in) :is([data-rv="letters"], [data-rv="type"]) .ch { opacity: 0; }
+html.js [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch var(--t3) var(--rv-ease) calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
+html.js[data-theme="halloween"] [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch-candle 900ms var(--rv-ease) calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
+html.js[data-theme="puppy"] [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch-bounce 700ms ease calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
+html.js[data-theme="dev"] [data-reveal].rv.in [data-rv="letters"] .ch,
+html.js [data-reveal].rv.in [data-rv="type"] .ch { animation: rv-step 1ms steps(1, end) calc(var(--d, 0ms) + var(--i) * var(--st-ty)) both; }
+html.js[data-theme="dev"] [data-reveal].rv.in [data-rv="letters"] .ch { animation-delay: calc(var(--d, 0ms) + var(--i) * var(--st-ch)); }
+@keyframes rv-ch { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes rv-ch-candle { 0% { opacity: 0; transform: translateY(6px); } 30% { opacity: .7; } 55% { opacity: .35; } 100% { opacity: 1; transform: none; } }
+@keyframes rv-ch-bounce { 0% { opacity: 0; transform: translateY(10px); } 60% { opacity: 1; transform: translateY(-2px); } 100% { opacity: 1; transform: none; } }
+@keyframes rv-step { from { opacity: 0; } to { opacity: 1; } }
+
+/** type 캐럿: 타이핑이 끝난 뒤 500ms 깜빡 3회, 엔진이 animationend 에 제거 */
+.caret { opacity: 0; }
+html.js [data-reveal].rv.in .caret { animation: rv-caret 500ms steps(1, end) calc(var(--d, 0ms) + var(--n) * var(--st-ty)) 3 backwards; }
+@keyframes rv-caret { 0% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/** draw: SVG 도형(dashoffset) 또는 헤어라인 요소(scaleX; data-axis=y 면 scaleY, data-origin=center 면 중앙 기준) */
+html.js [data-reveal].rv :is([data-rv="draw"]:is(path, line, polyline, circle, ellipse, rect), [data-rv="draw"] :is(path, line, polyline, circle, ellipse, rect)) { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 700ms var(--e-io) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) :is([data-rv="draw"]:is(path, line, polyline, circle, ellipse, rect), [data-rv="draw"] :is(path, line, polyline, circle, ellipse, rect)) { stroke-dashoffset: 1; }
+html.js [data-reveal].rv [data-rv="draw"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { transform-origin: 0 50%; transition: transform 700ms var(--e-io) var(--d, 0ms), opacity 700ms var(--e-io) var(--d, 0ms); }
+html.js [data-reveal].rv [data-rv="draw"][data-axis="y"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { transform-origin: 50% 0; }
+html.js [data-reveal].rv [data-rv="draw"][data-origin="center"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { transform-origin: 50% 50%; }
+html.js [data-reveal].rv:not(.in) [data-rv="draw"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { transform: scaleX(0); }
+html.js [data-reveal].rv:not(.in) [data-rv="draw"][data-axis="y"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { transform: scaleY(0); }
+html.js[data-theme="halloween"] [data-reveal].rv:not(.in) [data-rv="draw"]:not(:is(svg, path, line, polyline, circle, ellipse, rect)) { opacity: .45; }
+
+/** curtain: 요소에 position 지정 필요(없으면 relative). 덮개는 ::after, 직계 자식은 scale 1.06→1. 배경은 --curtain-bg(기본 var(--bg)) */
+:where(html.js [data-reveal].rv [data-rv="curtain"]) { position: relative; overflow: clip; }
+html.js [data-reveal].rv [data-rv="curtain"]::after { content: ""; position: absolute; inset: 0; z-index: 1; background: var(--curtain-bg, var(--bg)); transform-origin: 50% 0; transform: scaleY(0); transition: transform 1000ms var(--e-io) var(--d, 0ms); pointer-events: none; }
+html.js [data-reveal].rv:not(.in) [data-rv="curtain"]::after { transform: scaleY(1); }
+html.js [data-reveal].rv [data-rv="curtain"] > * { transition: transform 1400ms var(--e-out) var(--d, 0ms); }
+html.js [data-reveal].rv:not(.in) [data-rv="curtain"] > * { transform: scale(1.06); }
+
+/** dev "터미널·커밋": lines 는 2px accent 바가 먼저 그려지고 줄은 opacity 만으로 등장 */
+html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .m { overflow: visible; position: relative; }
+html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .m::before { content: ""; position: absolute; left: -10px; top: .2em; bottom: .2em; width: 2px; background: var(--accent); transform-origin: 50% 0; transition: transform 180ms var(--e-out) calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln)); }
+html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .m::before { transform: scaleY(0); }
+html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .mi { transition: opacity var(--t2) linear calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln) + 120ms); }
+html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .mi { transform: none; opacity: 0; }
+
+/** dev 섹션 노드: 진입 시 stamp + (dev.css 의) neon-b 점등 */
+html.js[data-theme="dev"] [data-reveal].rv .sec-title::before { transition: border-color .6s ease, box-shadow .6s ease, opacity 360ms var(--e-spring), transform 360ms var(--e-spring); }
+html.js[data-theme="dev"] [data-reveal].rv:not(.in) .sec-title::before { opacity: 0; transform: scale(1.3); }
+
+/** press: :active 눌림, 포인터 fine 에서 hover 살짝 뜸 */
+[data-press] { transition: transform var(--t1) var(--e-out), box-shadow var(--t1) var(--e-out); -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) and (pointer: fine) {
+  [data-press]:hover { transform: translateY(-1px); box-shadow: 0 6px 18px -10px rgb(26 26 26 / .25); }
+}
+[data-press]:active { transform: scale(var(--press-s)); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-press], [data-press]:hover, [data-press]:active { transition: none; transform: none; box-shadow: none; }
+}

@@ -7,14 +7,21 @@ import { wedding } from "../data/wedding";
 {
   wedding.guestbookApi && (
     <section class="section gb-section" data-reveal aria-labelledby="gb-h">
-      <h2 id="gb-h" class="sec-title" tabindex="-1"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("guestbook")}</span>축하 글</h2>
-      <p class="note">두 사람에게 따뜻한 축하의 말을 남겨 주세요.</p>
+      <p class="eyebrow" data-rv="fade">GUESTBOOK</p>
+      <h2 class="sec-title" id="gb-h" tabindex="-1" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("guestbook")}</span>방명록</h2>
+      <p class="body-copy" data-rv="lines" style="--d:320ms">
+        두 사람에게
+        <br />
+        따뜻한 축하의 말을 남겨 주세요.
+      </p>
       <GuestbookIsland client:visible api={wedding.guestbookApi} />
-      <noscript><p class="note">축하 글은 JavaScript가 켜진 브라우저에서 볼 수 있어요</p></noscript>
+      <noscript><p class="cap">방명록은 JavaScript가 켜진 브라우저에서 볼 수 있어요</p></noscript>
     </section>
   )
 }
 
 <style>
+  .gb-section { text-align: center; }
+  .gb-section .body-copy { margin: 20px 0 28px; }
   #gb-h { scroll-margin-top: 24px; outline: none; }
 </style>

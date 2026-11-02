@@ -1,0 +1,42 @@
+/* th/halloween: halloween 테마 전용 스타일. global.css 뒤에 로드되어 override 한다. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
+
+/* 커버 일러스트 레이어: .hero(300px, 336:440, margin-top -72px)와 동일 기하로 겹친다. */
+[data-theme="halloween"] .cover > .art {
+  position: absolute;
+  left: 50%;
+  top: calc(56px + 3 * 0.88 * min(92px, (100vw - 56px) / 4.6) - 72px);
+  width: min(300px, calc(100% - 64px));
+  aspect-ratio: 336 / 440;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.hw-ghost, .hw-float, .hw-pumpkin, .hw-landed { display: block; }
+.hw-ghost svg, .hw-pumpkin svg, .hw-landed svg, .hw-end svg { display: block; width: 100%; height: auto; }
+
+.hw-ghost { position: absolute; top: 28%; left: calc(100% - 40px); width: 56px; }
+.hw-pumpkin {
+  position: absolute; z-index: 2; left: -20px; top: calc(100% - 8px); width: 56px;
+  transform-origin: 50% 100%; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.hw-landed { position: absolute; z-index: 2; width: 20px; }
+.hw-landed.l1 { left: 50px; top: calc(100% + 6px); transform: rotate(-18deg); }
+.hw-landed.l2 { right: 30px; top: calc(100% + 2px); transform: rotate(24deg); }
+.hw-landed.l3 { right: 62px; top: calc(100% + 12px); transform: rotate(110deg); }
+
+html.js:not(.opened) .fx-ghost { opacity: 0; transform: translateX(-18px); }
+html.js:not(.opened) .fx-landed { opacity: 0; }
+html.opened .fx-ghost { animation: hw-peek 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms backwards; }
+html.opened .fx-float { animation: hw-float 4.8s ease-in-out 1s infinite; }
+html.opened .fx-landed { animation: hw-land 400ms ease-out 1.6s backwards; }
+.fx-paused { animation-play-state: paused !important; }
+@keyframes hw-peek { from { opacity: 0; transform: translateX(-18px); } 20% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes hw-float { 0%, 100% { transform: translateY(-5px); } 50% { transform: translateY(5px); } }
+@keyframes hw-land { from { opacity: 0; } to { opacity: 1; } }
+
+/* 엔딩 유령 */
+.end-art-h { width: 112px; margin: 0 auto 8px; }
+
+/* 구분 장식 */
+.hw-orn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 0; }
+.hw-orn i { display: block; width: 40px; height: 1px; background: rgb(var(--accent-rgb) / 0.45); }
+.hw-orn svg { display: block; width: 20px; height: auto; flex: none; }

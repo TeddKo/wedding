@@ -1,0 +1,49 @@
+/* th/puppy: puppy 테마 전용 스타일. 기본=최종 정지 상태(앉은 쌍+공), html.js:not(.opened) 만 초기 숨김. */
+
+html[data-theme="puppy"] .page { isolation: isolate; }
+
+/* 커버: 높이 160px 고정(CLS 0), 지면선 하단 12px. .pc 는 220px 슬롯보다 넓게 가운데 정렬 */
+html[data-theme="puppy"] .cover-dogs { position: relative; height: 160px; }
+html[data-theme="puppy"] .cover-dogs .pc { position: absolute; left: 50%; bottom: 0; width: 300px; height: 160px; margin-left: -150px; pointer-events: none; }
+html[data-theme="puppy"] .cover-dogs .pc-sit { position: absolute; left: 30px; bottom: 12px; width: 190px; }
+html[data-theme="puppy"] .cover-dogs .pc-sit svg { display: block; width: 100%; height: auto; }
+html[data-theme="puppy"] .cover-dogs .pc-run { position: absolute; bottom: 12px; width: 120px; height: 96px; opacity: 0; will-change: transform; }
+html[data-theme="puppy"] .cover-dogs .pc-in { width: 100%; height: 100%; transform-origin: 50% 100%; }
+html[data-theme="puppy"] .cover-dogs .pc-ball .pc-in { transform-origin: 50% 50%; }
+html[data-theme="puppy"] .cover-dogs .pc-run svg { display: block; width: 120px; height: 96px; }
+html[data-theme="puppy"] .cover-dogs .pc-k { left: 110px; }
+html[data-theme="puppy"] .cover-dogs .pc-m { left: 14px; }
+html[data-theme="puppy"] .cover-dogs .pc-ball { position: absolute; left: 243px; bottom: 12px; width: 14px; height: 14px; will-change: transform; }
+html[data-theme="puppy"] .cover-dogs .pc-ball svg { display: block; width: 14px; height: 14px; }
+
+/* 엔딩: 엎드린 쌍 옆 공 */
+html[data-theme="puppy"] .end-art .pe { position: relative; }
+html[data-theme="puppy"] .end-art .pe-ball { position: absolute; left: calc(100% + 4px); bottom: 2px; width: 12px; height: 12px; }
+html[data-theme="puppy"] .end-art .pe-ball svg { display: block; width: 12px; height: 12px; }
+
+/* 구분 장식 */
+html[data-theme="puppy"] .pup-orn { display: block; margin: 8px 0; }
+html[data-theme="puppy"] .pup-orn .pp { transform-box: fill-box; transform-origin: center; }
+
+/* 열기 전 초기 숨김(게이트 뒤) + 오픈~JS 시작 사이 빈틈 유지. JS 시작 후엔 WAAPI 가 이어받는다 */
+html.js:not(.opened) .fx-pc-sit, html.js:not(.opened) .fx-pc-ball { opacity: 0; }
+html.js.opened .fx-pc-sit, html.js.opened .fx-pc-ball { animation: pc-hold 1.6s steps(1, end) backwards; }
+@keyframes pc-hold { from, to { opacity: 0; } }
+
+/* 스크롤 발자국 레이어(.page 안, 텍스트 뒤) */
+.fx-pawtrail { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.fx-pawtrail .pw { position: absolute; width: 12px; height: 12px; opacity: 0; will-change: transform, opacity; }
+.fx-pawtrail .pw svg { display: block; width: 100%; height: 100%; }
+
+/* 인트로 엠블럼: 발바닥 2개 */
+.intro-emblem[data-th="puppy"] svg { display: block; width: 52px; height: 30px; margin: 0 auto; }
+.intro-emblem[data-th="puppy"] .e2 { animation: emb-stamp 0.45s 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.intro-emblem[data-th="puppy"] .e1 { animation: emb-stamp 0.45s 0.1s cubic-bezier(0.2, 0.8, 0.3, 1) backwards; }
+.intro-emblem[data-th="puppy"] .e1, .intro-emblem[data-th="puppy"] .e2 { transform-box: fill-box; transform-origin: center; }
+@keyframes emb-stamp { from { opacity: 0; transform: scale(1.25); } to { opacity: 1; transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html.js:not(.opened) .fx-pc-sit, html.js:not(.opened) .fx-pc-ball { opacity: 1; }
+  html.js.opened .fx-pc-sit, html.js.opened .fx-pc-ball { animation: none; }
+  .intro-emblem[data-th="puppy"] .e1, .intro-emblem[data-th="puppy"] .e2 { animation: none; }
+}
