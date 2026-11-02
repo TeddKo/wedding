@@ -4,6 +4,7 @@ import { hasMusic } from "../lib/music";
 import { wedding } from "../data/wedding";
 import { dateKo } from "../lib/format";
 import { url } from "../lib/url";
+import AmbientCanvas from "../components/AmbientCanvas.svelte";
 
 const pageUrl = new URL(url(""), Astro.site).href;
 const ogImage = new URL(url("og.png"), Astro.site).href;
@@ -45,6 +46,7 @@ const desc = `${dateKo} · ${wedding.venue.name}`;
   <body
     data-bgm={hasMusic ? url("audio/bgm.mp3") : ""}
   >
+    <AmbientCanvas client:idle />
     <slot />
     <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 18V6l10-2v12.2a3 3 0 1 1-2-2.8V7.3L11 8.4V18a3 3 0 1 1-2-2.8z" /></svg>

@@ -30,7 +30,9 @@ a { color: inherit; }
   background: var(--bg);
   position: relative;
 }
-.page { overflow: hidden; box-shadow: 0 0 60px #000; }
+.page { overflow: hidden; box-shadow: 0 0 60px #000; z-index: 1; }
+.footer { z-index: 1; }
+html.ambient .page, html.ambient .footer { background: transparent; }
 
 .latin {
   font-family: var(--latin);
