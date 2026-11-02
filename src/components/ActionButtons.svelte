@@ -5,6 +5,7 @@
   import { reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
   import { ICONS } from "../lib/icons";
+  import { BRAND } from "../lib/brand";
 
   type Action = { kind: "copy"; label: string; text: string; icon?: boolean; ghost?: boolean; small?: boolean } | { kind: "kakao"; label: string };
   type Kakao = { key: string; title: string; description: string; imageUrl: string; pageUrl: string };
@@ -82,9 +83,9 @@
       onclick={() => (a.kind === "copy" ? onCopy(a) : share())}
     >
       {#if a.kind === "kakao"}
-        <i class="kdot" aria-hidden="true"></i>
-      {:else if variant(a) !== "box-btn"}
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.copy} /></svg>
+        <svg class="kico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND.kakaotalk}</svg>
+      {:else}
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={variant(a) === "box-btn" ? ICONS.link : ICONS.copy} /></svg>
       {/if}
       {#if !(a.kind === "copy" && a.icon)}{a.label}{/if}
     </button>
@@ -107,12 +108,13 @@
   button { font-family: var(--f-ui, inherit); -webkit-tap-highlight-color: transparent; }
   svg { flex: none; }
   .kakao-btn, .box-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; padding: 0 8px; white-space: nowrap; border: 1px solid var(--line); border-radius: 12px;
     background: var(--surface); color: var(--ink); font-size: 14.5px; cursor: pointer;
   }
-  .kdot { flex: none; width: 18px; height: 18px; border-radius: 50%; background: #fee500; box-shadow: 0 0 0 1px #e0c400; }
+  .kakao-btn { background: #fee500; border-color: #fee500; color: #191919; }
+  .kico { width: 22px; height: 22px; }
   .btn-text { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--ink); font-size: 14.5px; cursor: pointer; }
-  .btn-text svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .box-btn svg, .btn-text svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
   .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .kakao-btn:focus-visible, .box-btn:focus-visible, .btn-text:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

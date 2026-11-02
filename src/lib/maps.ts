@@ -41,9 +41,9 @@ export function mapApps(os: Os, mac: boolean, v: Venue): MapApp[] {
       name: "카카오맵",
       hint: WEB_HINT,
       ...(os === "ios"
-        ? { href: `kakaomap://look?p=${L},${G}`, fallback: kakaoWeb }
+        ? { href: `kakaomap://route?ep=${L},${G}&by=CAR`, fallback: kakaoWeb }
         : os === "android"
-          ? { href: intent(`look?p=${L},${G}`, "kakaomap", "net.daum.android.map", kakaoWeb) }
+          ? { href: intent(`route?ep=${L},${G}&by=CAR`, "kakaomap", "net.daum.android.map", kakaoWeb) }
           : { href: kakaoWeb, blank }),
     },
     {

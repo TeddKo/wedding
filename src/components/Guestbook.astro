@@ -1,4 +1,5 @@
 ---
+import { fnv7 } from "../lib/hash";
 import GuestbookIsland from "./Guestbook.svelte";
 import { wedding } from "../data/wedding";
 ---
@@ -7,7 +8,7 @@ import { wedding } from "../data/wedding";
   wedding.guestbookApi && (
     <section class="section gb-section" data-reveal aria-labelledby="gb-h">
       <p class="eyebrow">GUESTBOOK</p>
-      <h2 class="sec-title" id="gb-h" tabindex="-1">방명록</h2>
+      <h2 class="sec-title" id="gb-h" tabindex="-1"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("guestbook")}</span>방명록</h2>
       <p class="body-copy">
         두 사람에게
         <br />

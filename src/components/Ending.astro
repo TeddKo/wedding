@@ -35,7 +35,7 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
     <ActionButtons
       client:idle
       actions={[
-        { kind: "kakao", label: "카카오톡 공유" },
+        { kind: "kakao", label: "카카오톡 공유하기" },
         { kind: "copy", label: "링크 복사", text: pageUrl, ghost: true },
       ]}
       kakao={{ key: wedding.kakaoJsKey, title: wedding.share.title, description: wedding.share.description, imageUrl, pageUrl }}
@@ -58,8 +58,7 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
   .addr { margin-top: 24px; font: 400 13px/1.6 var(--f-body); color: var(--ink-2); }
   .thanks { margin-top: 32px; font: 400 14.5px/1.79 var(--f-body); color: var(--ink-2); }
   .share { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .share :global(.btn), .share :global(.btn-primary) { width: 100%; height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: 500 14.5px/1 var(--f-ui, var(--f-body)); }
-  .share :global(.btn-primary)::before { content: ""; width: 18px; height: 18px; border-radius: 50%; background: #fee500; flex: none; }
+  .share:has(button[hidden]) { grid-template-columns: 1fr; }
   .end-art { width: 140px; margin: 32px auto 0; }
   .end-art :global(svg) { display: block; width: 100%; height: auto; }
   .credits { margin-top: 40px; font-size: 11px; line-height: 1.6; color: var(--ink-3); }

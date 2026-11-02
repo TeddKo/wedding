@@ -1,4 +1,5 @@
 ---
+import { fnv7 } from "../lib/hash";
 import { getImage } from "astro:assets";
 import GalleryIsland from "./Gallery.svelte";
 import { photos } from "../lib/photos";
@@ -22,7 +23,7 @@ const items = await Promise.all(
   items.length > 0 && (
     <section class="section" data-reveal aria-labelledby="gal-h">
       <p class="eyebrow">GALLERY</p>
-      <h2 id="gal-h" class="sec-title">갤러리</h2>
+      <h2 id="gal-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
       <GalleryIsland client:idle items={items} />
     </section>
   )

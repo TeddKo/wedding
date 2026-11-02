@@ -17,7 +17,7 @@
           else queue.add(e.target);
         }
       },
-      { threshold: 0.15 },
+      { threshold: 0, rootMargin: "0px 0px -15% 0px" },
     );
     for (const el of document.querySelectorAll("[data-reveal]")) {
       el.classList.add("rv");

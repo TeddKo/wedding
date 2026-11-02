@@ -9,21 +9,24 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 | 컴포넌트 | 하이드레이션 | 역할 |
 |---|---|---|
 | `IntroGate.svelte` | load | 타이포 인트로(이름 + 날짜) + "초대장 열기" + 테마 세그먼트. 탭 시 0.6s 페이드아웃, 오디오 모듈 호출. 키보드 가능 |
-| `CoverHero.svelte` | load | 테마별 커버(할로윈 첨두 아치, dev 커밋 그래프, puppy 잔디 위 강아지). 실제 사진에만 약한 패럴랙스/켄번스. 사진이 없으면 테마별 플레이스홀더 |
+| `CoverHero.svelte` | 없음(서버 렌더) | 테마별 커버를 CSS 만으로 그린다: 할로윈 첨두 아치 + 촛불(CSS 불꽃) + 랜싯 창, dev `git log --graph` 커밋 그래프, puppy 강아지(`ui/DogsCover.svelte`). 사진이 없으면 테마별 플레이스홀더 |
 | `Reveal.svelte` | idle | `data-reveal` 섹션에 fadeInUp 1s(CSS) 1회. 모션 감소/JS 없음이면 즉시 표시 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
-| `MapChooser.svelte` | visible | 길찾기 바텀시트(Spring, 드래그 닫기, 포커스 트랩). 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 3개 |
+| `MapApps.svelte` | visible | 길찾기 앱 버튼(네이버지도/티맵/카카오맵) 3개. 브랜드 아이콘은 `src/lib/brand.ts`, 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 |
 | `KakaoMap.svelte` | visible | 카카오맵 임베드(JS SDK 지연 로드, `autoload=false` + `kakao.maps.load`). 기본은 이동/줌 잠금, `지도 이동` 토글로 해제(페이지 스크롤 가로채기 방지). 8초 안에 타일이 안 뜨거나 SDK 오류면 주소 카드 + `카카오맵에서 보기` 링크로 대체. JS 가 꺼지면 서버 HTML 의 주소 카드 |
 | `Guestbook.svelte` | visible | 축하 글: 최신 5개 + 더보기(IntersectionObserver 무한 스크롤, 커서 페이지), 접기(로드된 앞 5개, 재요청 없음), 작성/비밀번호 삭제, 스켈레톤/빈 상태/오류 재시도. API 는 `guestbook/`(Cloudflare Worker + D1, 별도 패키지)이고 주소는 `wedding.guestbookApi`(비면 섹션 숨김). 메시지는 줄바꿈을 허용한다(서버가 `\r\n`→`\n`, 빈 줄은 최대 1줄로 정리). 그 밖의 제어문자는 거부. 모든 글은 텍스트로만 렌더링 |
+| `AccountGroups.svelte` | load | 계좌 신랑측/신부측 탭(`role="tablist"`, 방향키/Home/End 이동). JS 가 없으면 두 그룹이 모두 보인다 |
 | `ActionButtons.svelte` | idle | 복사/카카오 공유 버튼: 리플, 스프링 토스트 "복사됨", 공유 시 불씨 폭죽 |
+| `ThemeSwitch.svelte` | idle | 우하단 원형 테마 순환 버튼 |
+| `Ending.astro` + `ui/DogsRest.svelte` | 없음 | 푸터. 테마별 엔딩(dev 커밋 레일 + `v1.0.0` 태그, puppy 쉬는 강아지) |
 
 ## 테마
 
 | 키 | 이름 | 스킨 |
 |---|---|---|
-| `halloween` | 할로윈 | 밤의 초대장: 라이트 페이퍼 + 번트 시에나, 워드마크 "All Hallows" |
-| `dev` | 프로그래머 | 화이트 페이퍼 + 스틸 블루, 워드마크 "Hello, World", IBM Plex Mono 보조 |
-| `puppy` | 강아지 | 웜 크림 + 더스티 로즈, 워드마크 "We're getting MARRIED", 엔딩 `DogsRest` |
+| `halloween` | 할로윈 | 라이트 페이퍼 + 번트 시에나, 랜싯 아치 + 촛불 시그니처, 워드마크 "ALL HALLOWS' EVE" |
+| `dev` | 프로그래머 | 화이트 페이퍼 + 스틸 블루, git log --graph 커버(신랑/신부 브랜치가 merge commit 으로 합류) + 전 섹션을 잇는 커밋 레일/해시/`v1.0.0` 태그, IBM Plex Mono 보조 |
+| `puppy` | 강아지 | 웜 크림 + 더스티 로즈, 커버 강아지(`DogsCover`) + 엔딩 `DogsRest`, 문구 "TWO OF US" |
 
 - 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 우하단 원형 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
 - 테마는 스킨일 뿐이다: 배경/잉크 3단/악센트/워드마크 톤 토큰(`src/styles/global.css` 의 `[data-theme]`)과 문구만 다르고 레이아웃은 동일. 스킨별 마크업은 `data-th="dev"` 로 표시하고 CSS 로만 숨긴다.

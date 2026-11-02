@@ -1,4 +1,5 @@
 ---
+import { fnv7 } from "../lib/hash";
 import AccountGroups from "./AccountGroups.svelte";
 import { wedding } from "../data/wedding";
 import { accountRows } from "../lib/family";
@@ -13,7 +14,7 @@ const groups = [
   groups.length > 0 && (
     <section class="section acc-sec" data-reveal aria-labelledby="acc-h">
       <p class="eyebrow">ACCOUNT</p>
-      <h2 class="sec-title" id="acc-h">마음 전하실 곳</h2>
+      <h2 class="sec-title" id="acc-h"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("accounts")}</span>마음 전하실 곳</h2>
       <p class="body-copy">
         참석이 어려우신 분들을 위해
         <br />

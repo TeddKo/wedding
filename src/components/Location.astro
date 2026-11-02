@@ -1,4 +1,5 @@
 ---
+import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
 import ActionButtons from "./ActionButtons.svelte";
 import KakaoMap from "./KakaoMap.svelte";
@@ -19,14 +20,14 @@ const rows = all.filter((r) => r.lines.length > 0);
 
 <section class="section loc" data-reveal aria-labelledby="loc-h">
   <p class="eyebrow">LOCATION</p>
-  <h2 class="sec-title" id="loc-h">오시는 길</h2>
+  <h2 class="sec-title" id="loc-h"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("location")}</span>오시는 길</h2>
   <p class="venue-name">{venueLine}</p>
   <div class="address">
     <span id="address">{wedding.venue.address}</span>
     <ActionButtons client:idle actions={[{ kind: "copy", label: "주소 복사", text: wedding.venue.address, icon: true }]} />
   </div>
   <div class="bleed">
-    <KakaoMap client:visible name={name} address={wedding.venue.address} lat={lat} lng={lng} appkey={wedding.kakaoJsKey} />
+    <KakaoMap client:visible name={name} lat={lat} lng={lng} appkey={wedding.kakaoJsKey} />
   </div>
   <div class="apps-wrap"><MapApps client:visible venue={venue} /></div>
   <p class="cap">원하시는 앱을 선택하시면 길안내가 시작됩니다</p>

@@ -89,6 +89,6 @@
     min-height: 30px; padding: 0 14px; border: 0; border-radius: 9999px; background: none; color: var(--ink-3);
     font: 400 12.5px/1 var(--f-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s;
   }
-  .opt[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+  .opt[aria-pressed="true"] { background: var(--accent-text); color: var(--on-accent); }
   .opt:focus-visible, .open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>

@@ -455,6 +455,8 @@
   .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
   .del-row :global(.btn-text) { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
 
+  .del-row :global(.btn-text:focus-visible), .tail :global(.btn-text:focus-visible), .state :global(.btn-text:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   .more { display: flex; width: 100%; margin-top: 10px; }
   .stick { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; pointer-events: none; margin: 4px 0; }
   .fold { pointer-events: auto; width: auto; padding: 0 24px; }

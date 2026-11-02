@@ -1,4 +1,5 @@
 ---
+import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
 ---
 
@@ -6,7 +7,7 @@ import { wedding } from "../data/wedding";
   wedding.rsvpUrl && (
     <section class="section rsvp" data-reveal aria-labelledby="rsvp-h">
       <p class="eyebrow">R.S.V.P.</p>
-      <h2 class="sec-title" id="rsvp-h">참석 의사 전달</h2>
+      <h2 class="sec-title" id="rsvp-h"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("rsvp")}</span>참석 의사 전달</h2>
       <p class="body-copy">
         신랑, 신부에게 참석의사를
         <br />

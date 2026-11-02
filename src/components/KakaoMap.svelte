@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { ICONS } from "../lib/icons";
 
-  let { name, lat, lng, appkey }: { name: string; address?: string; lat: number; lng: number; appkey: string } = $props();
+  let { name, lat, lng, appkey }: { name: string; lat: number; lng: number; appkey: string } = $props();
 
   /* fallback: 서버 HTML/오류 상태, loading: 스켈레톤, ready: 타일 로드 완료 */
   let st = $state<"fallback" | "loading" | "ready">("fallback");

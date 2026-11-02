@@ -12,6 +12,15 @@
   onMount(() => {
     mounted = true;
   });
+
+  function onKey(e: KeyboardEvent) {
+    const n = groups.length;
+    const next = e.key === "ArrowRight" ? (sel + 1) % n : e.key === "ArrowLeft" ? (sel + n - 1) % n : e.key === "Home" ? 0 : e.key === "End" ? n - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    sel = next;
+    document.getElementById(`acc-t${next}`)?.focus();
+  }
 </script>
 
 {#snippet list(rows: AccountRow[])}
@@ -53,7 +62,7 @@
   {:else}
     <div class="seg-track seg" role="tablist" aria-label="신랑측 신부측">
       {#each groups as g, i}
-        <button type="button" role="tab" id="acc-t{i}" class="seg-btn" class:on={sel === i} aria-selected={sel === i} aria-controls="acc-p" onclick={() => (sel = i)}>{g.title}</button>
+        <button type="button" role="tab" id="acc-t{i}" class="seg-btn" class:on={sel === i} aria-selected={sel === i} tabindex={sel === i ? 0 : -1} aria-controls="acc-p" onkeydown={onKey} onclick={() => (sel = i)}>{g.title}</button>
       {/each}
     </div>
     <div id="acc-p" role="tabpanel" aria-labelledby="acc-t{sel}">
