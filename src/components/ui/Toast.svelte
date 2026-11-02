@@ -28,11 +28,11 @@
 
 <style>
   .toast {
-    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; font-size: 14px; line-height: 1; letter-spacing: 0;
-    color: var(--bg, var(--bg-2)); background: var(--ink, var(--ivory));
+    display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-family: var(--f-ui, inherit); line-height: 1; letter-spacing: 0;
+    color: var(--bg); background: var(--ink);
     opacity: 0; transform: translateY(8px); transition: opacity 200ms ease, transform 200ms ease;
   }
   .toast.on { opacity: 1; transform: none; }
-  .ico { width: 16px; height: 16px; }
+  .ico { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; transform: none; } }
 </style>

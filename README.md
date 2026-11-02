@@ -8,10 +8,9 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 | 컴포넌트 | 하이드레이션 | 역할 |
 |---|---|---|
-| `IntroGate.svelte` | load | 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 날아감 -> 3D 문(Spring) -> 테마별 조각(박쥐/+−/발자국) -> 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
-| `AmbientCanvas.svelte` | idle | 캔버스 1장: 할로윈 전용 불씨 10개. 다른 테마는 그리지 않고, 숨김/화면 밖 정지 |
+| `IntroGate.svelte` | load | 타이포 인트로(이름 + 날짜) + "초대장 열기" + 테마 세그먼트. 탭 시 0.6s 페이드아웃, 오디오 모듈 호출. 키보드 가능 |
 | `CoverHero.svelte` | load | 테마별 커버(할로윈 첨두 아치, dev 커밋 그래프, puppy 잔디 위 강아지). 실제 사진에만 약한 패럴랙스/켄번스. 사진이 없으면 테마별 플레이스홀더 |
-| `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
+| `Reveal.svelte` | idle | `data-reveal` 섹션에 fadeInUp 1s(CSS) 1회. 모션 감소/JS 없음이면 즉시 표시 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
 | `MapChooser.svelte` | visible | 길찾기 바텀시트(Spring, 드래그 닫기, 포커스 트랩). 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 3개 |
 | `KakaoMap.svelte` | visible | 카카오맵 임베드(JS SDK 지연 로드, `autoload=false` + `kakao.maps.load`). 기본은 이동/줌 잠금, `지도 이동` 토글로 해제(페이지 스크롤 가로채기 방지). 8초 안에 타일이 안 뜨거나 SDK 오류면 주소 카드 + `카카오맵에서 보기` 링크로 대체. JS 가 꺼지면 서버 HTML 의 주소 카드 |
@@ -20,15 +19,15 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 ## 테마
 
-| 키 | 이름 | 연출 |
+| 키 | 이름 | 스킨 |
 |---|---|---|
-| `halloween` | 할로윈 | 첨두 아치 창 커버(촛불 불꽃), 선으로 그린 초승달, 밀랍 인장, 박쥐(인트로만), 불씨 10개 |
-| `dev` | 프로그래머 | 밝은 git log. 커버의 파랑/분홍 브랜치가 병합되어 한 줄 레일로 이어짐, `GitGraph` 인트로, 무광 Enter 키캡 인장, `+`/`−` 조각 |
-| `puppy` | 강아지 | 말티즈 + 네눈박이(면 분리 평면 일러스트, 꼬리 흔들기 1개), 잔디 띠 위 커버, 평면 발바닥 인장, 엔딩 `DogsRest` |
+| `halloween` | 할로윈 | 밤의 초대장: 라이트 페이퍼 + 번트 시에나, 워드마크 "All Hallows" |
+| `dev` | 프로그래머 | 화이트 페이퍼 + 스틸 블루, 워드마크 "Hello, World", IBM Plex Mono 보조 |
+| `puppy` | 강아지 | 웜 크림 + 더스티 로즈, 워드마크 "We're getting MARRIED", 엔딩 `DogsRest` |
 
-- 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 왼쪽 아래 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
-- 색은 `src/styles/global.css` 의 `[data-theme]` 토큰. 테마별 마크업은 `data-th="dev"` 처럼 표시하고 CSS 로만 숨긴다(SSR 과 하이드레이션 일치). 캔버스/날아가는 요소처럼 JS 연출만 `src/lib/theme.svelte.ts` 를 읽는다.
-- 테마 추가: `src/lib/themes.ts` 에 키를 넣고, `global.css` 토큰 블록과 `data-th` 변형, `AmbientCanvas` 의 `make` 에 항목을 더한다.
+- 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 우하단 원형 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
+- 테마는 스킨일 뿐이다: 배경/잉크 3단/악센트/워드마크 톤 토큰(`src/styles/global.css` 의 `[data-theme]`)과 문구만 다르고 레이아웃은 동일. 스킨별 마크업은 `data-th="dev"` 로 표시하고 CSS 로만 숨긴다.
+- 테마 추가: `src/lib/themes.ts` 에 키를 넣고 `global.css` 에 토큰 블록을 더한다.
 
 ## 확대 잠금
 

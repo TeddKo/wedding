@@ -72,7 +72,7 @@
 </script>
 
 {#if st === "fallback"}
-  <div class="km-card pattern">
+  <div class="km-card">
     <svg class="ico km-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.pin} /></svg>
     <a class="btn-text" href={link} target="_blank" rel="noopener noreferrer">카카오맵에서 보기</a>
   </div>
@@ -92,33 +92,22 @@
 </div>
 
 <style>
-  .km, .km-card { margin: 0 0 16px; aspect-ratio: 16 / 10; border: 1px solid var(--line, rgb(var(--gold-rgb) / 0.4)); border-radius: var(--radius-lg, 12px); overflow: hidden; background-color: var(--surface, var(--bg-2)); }
+  .km, .km-card { height: 260px; background-color: var(--surface); overflow: hidden; }
   .km { position: relative; isolation: isolate; }
   .km[hidden] { display: none; }
   .km-map { position: absolute; inset: 0; }
   .km.locked .km-map, .km.locked .km-map :global(*) { touch-action: pan-y !important; }
   .km-shield { position: absolute; inset: 0; z-index: 2; touch-action: pan-y; }
-  .km-skel {
-    position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--bg-2) 30%, rgb(var(--gold-rgb) / 0.16) 50%, var(--bg-2) 70%) 0 0 / 220% 100%;
-    animation: km-shimmer 1.4s linear infinite;
-  }
+  .km-skel { position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--surface) 30%, var(--line) 50%, var(--surface) 70%) 0 0 / 220% 100%; animation: km-shimmer 1.4s linear infinite; }
   @keyframes km-shimmer { to { background-position: -220% 0; } }
   @media (prefers-reduced-motion: reduce) { .km-skel { animation: none; } }
-  .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid rgb(var(--gold-rgb) / 0.6); border-radius: 10px; overflow: hidden; background: rgb(var(--bg-rgb) / 0.88); }
+  .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
   .km-z { width: 36px; height: 36px; border: 0; background: none; color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
-  .km-z + .km-z { border-top: 1px solid rgb(var(--gold-rgb) / 0.35); }
-  .km-tg {
-    position: absolute; z-index: 5; left: 10px; bottom: 10px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
-    border: 1px solid var(--line-strong); background: rgb(var(--bg-rgb) / 0.88); color: var(--ink); font: inherit; font-size: 14px;
-  }
-  .km-tg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .km-z + .km-z { border-top: 1px solid var(--line); }
+  .km-tg { position: absolute; z-index: 5; left: 10px; bottom: 10px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+  .km-tg[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
   .km :global(.km-pin) { display: grid; justify-items: center; transform: translateY(2px); pointer-events: none; }
-  .km :global(.km-pin b) {
-    margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink);
-    font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
-  }
-  .km :global(.km-pin svg) { filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5)); }
-  .km-card { display: grid; align-content: center; justify-items: center; gap: 8px; text-align: center; color: var(--ink-2, var(--ivory-dim)); }
+  .km :global(.km-pin b) { margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgb(26 26 26 / 0.06); }
+  .km-card { display: grid; align-content: center; justify-items: center; gap: 8px; text-align: center; color: var(--ink-3); }
   .km-ic { width: 32px; height: 32px; }
-  :global([data-theme="dev"]) .km-card { justify-items: start; padding: 0 24px; }
 </style>

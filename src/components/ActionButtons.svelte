@@ -6,12 +6,12 @@
   import { portal } from "../lib/portal";
   import { ICONS } from "../lib/icons";
 
-  type Action = { kind: "copy"; label: string; text: string; ghost?: boolean; small?: boolean } | { kind: "kakao"; label: string };
+  type Action = { kind: "copy"; label: string; text: string; icon?: boolean; ghost?: boolean; small?: boolean } | { kind: "kakao"; label: string };
   type Kakao = { key: string; title: string; description: string; imageUrl: string; pageUrl: string };
   let { actions, kakao }: { actions: Action[]; kakao?: Kakao } = $props();
 
-  /* ghost = secondary, small = text, 그 외 primary */
-  const variant = (a: Action) => (a.kind === "copy" && a.small ? "btn-text" : a.kind === "copy" && a.ghost ? "btn" : "btn-primary");
+  /* 복사: 텍스트 버튼(icon 이면 아이콘 전용), 카카오: 노란 버튼 */
+  const variant = (a: Action) => (a.kind === "kakao" ? "kakao-btn" : a.icon ? "icon-btn" : a.ghost && !a.small ? "box-btn" : "btn-text");
 
   let kakaoReady = $state(false);
   let toasts = $state<{ id: number }[]>([]);
@@ -78,12 +78,15 @@
       type="button"
       class={variant(a)}
       hidden={a.kind === "kakao" && !kakaoReady}
+      aria-label={a.kind === "copy" && a.icon ? a.label : undefined}
       onclick={() => (a.kind === "copy" ? onCopy(a) : share())}
     >
-      {#if variant(a) === "btn-text"}
+      {#if a.kind === "kakao"}
+        <i class="kdot" aria-hidden="true"></i>
+      {:else if variant(a) !== "box-btn"}
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.copy} /></svg>
       {/if}
-      {a.label}
+      {#if !(a.kind === "copy" && a.icon)}{a.label}{/if}
     </button>
   {/each}
 </div>
@@ -101,6 +104,17 @@
 <style>
   .row { display: contents; }
   button[hidden] { display: none; }
-  .btn-text svg { flex: none; }
+  button { font-family: var(--f-ui, inherit); -webkit-tap-highlight-color: transparent; }
+  svg { flex: none; }
+  .kakao-btn, .box-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); color: var(--ink); font-size: 14.5px; cursor: pointer;
+  }
+  .kdot { flex: none; width: 18px; height: 18px; border-radius: 50%; background: #fee500; box-shadow: 0 0 0 1px #e0c400; }
+  .btn-text { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--ink); font-size: 14.5px; cursor: pointer; }
+  .btn-text svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
+  .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .kakao-btn:focus-visible, .box-btn:focus-visible, .btn-text:focus-visible, .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom); display: grid; justify-items: center; gap: 8px; z-index: 150; pointer-events: none; }
 </style>

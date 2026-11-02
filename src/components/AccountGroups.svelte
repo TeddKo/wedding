@@ -1,17 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import ActionButtons from "./ActionButtons.svelte";
-  import { ICONS } from "../lib/icons";
   import type { AccountRow } from "../lib/family";
 
   let { groups }: { groups: { title: string; rows: AccountRow[] }[] } = $props();
 
-  /* JS 가 없으면 서버 HTML 의 <details open> 그대로 열려 있고, 마운트 후 접힌 아코디언으로 바뀐다 */
+  /* JS 가 없으면 서버 HTML 의 두 그룹이 모두 보이고, 마운트 후 세그먼트 토글로 바뀐다 */
   let mounted = $state(false);
-  let open = $state<boolean[]>([]);
+  let sel = $state(0);
 
   onMount(() => {
-    open = groups.map(() => false);
     mounted = true;
   });
 </script>
@@ -19,19 +17,25 @@
 {#snippet list(rows: AccountRow[])}
   <ul class="acc-list">
     {#each rows as r}
-      <li>
-        <span class="acc-rel">{r.label}</span>
+      <li class="acc-card">
         {#if r.number}
-          <span class="acc-bank">{r.bank} {r.holder}</span>
-          <span class="acc-num">{r.number}</span>
-          <span class="acc-btns">
-            <ActionButtons actions={[{ kind: "copy", label: "복사", text: `${r.bank} ${r.number}`.trim(), ghost: true, small: true }]} />
+          <div class="acc-main">
+            <span class="acc-rel">{r.label}</span>
+            <span class="acc-name">{r.holder}</span>
+            <span class="acc-num">{r.bank} {r.number}</span>
             {#if r.payLink}
-              <a class="btn-text" href={r.payLink} target="_blank" rel="noopener noreferrer">송금</a>
+              <a class="pay" href={r.payLink} target="_blank" rel="noopener noreferrer">송금</a>
             {/if}
+          </div>
+          <span class="acc-copy">
+            <ActionButtons actions={[{ kind: "copy", label: "계좌번호 복사", text: `${r.bank} ${r.number}`.trim(), icon: true }]} />
           </span>
         {:else}
-          <span class="acc-soon">준비 중</span>
+          <div class="acc-main">
+            <span class="acc-rel">{r.label}</span>
+            <span class="acc-name">{r.holder}</span>
+            <span class="acc-soon">준비 중</span>
+          </div>
         {/if}
       </li>
     {/each}
@@ -41,47 +45,43 @@
 <div class="accs">
   {#if !mounted}
     {#each groups as g}
-      <details class="acc" open>
-        <summary class="acc-head">{g.title}</summary>
+      <div class="grp">
+        <p class="grp-title">{g.title}</p>
         {@render list(g.rows)}
-      </details>
-    {/each}
-  {:else}
-    {#each groups as g, i}
-      <div class="acc" class:is-open={open[i]}>
-        <button type="button" class="acc-head" aria-expanded={open[i]} aria-controls="acc-p{i}" onclick={() => (open[i] = !open[i])}>
-          <span>{g.title}</span>
-          <svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS["chevron-down"]} /></svg>
-        </button>
-        <div id="acc-p{i}" class="acc-panel" role="region" inert={!open[i]}>
-          <div class="acc-inner">{@render list(g.rows)}</div>
-        </div>
       </div>
     {/each}
+  {:else}
+    <div class="seg-track seg" role="tablist" aria-label="신랑측 신부측">
+      {#each groups as g, i}
+        <button type="button" role="tab" id="acc-t{i}" class="seg-btn" class:on={sel === i} aria-selected={sel === i} aria-controls="acc-p" onclick={() => (sel = i)}>{g.title}</button>
+      {/each}
+    </div>
+    <div id="acc-p" role="tabpanel" aria-labelledby="acc-t{sel}">
+      {@render list(groups[sel].rows)}
+    </div>
   {/if}
 </div>
 
 <style>
-  .accs { border-bottom: 1px solid var(--line, rgb(var(--gold-rgb) / 0.3)); }
-  .acc { border-top: 1px solid var(--line, rgb(var(--gold-rgb) / 0.3)); }
-  .acc-head {
-    all: unset; box-sizing: border-box; display: flex; width: 100%; height: 56px; justify-content: space-between; align-items: center;
-    cursor: pointer; font-family: inherit; font-size: 16px; font-weight: 600; color: var(--ink, var(--ivory)); list-style: none;
+  .accs { text-align: left; }
+  .seg-track { display: flex; width: 220px; height: 40px; padding: 3px; margin: 0 auto 16px; border-radius: 9999px; background: var(--track, var(--line)); box-sizing: border-box; }
+  .seg-btn {
+    all: unset; box-sizing: border-box; flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 9999px; cursor: pointer;
+    font: 400 14px/1 var(--f-ui, inherit); color: var(--ink-3); -webkit-tap-highlight-color: transparent; transition: background-color 0.3s ease, color 0.3s ease;
   }
-  .acc-head::-webkit-details-marker { display: none; }
-  .acc-head:focus-visible { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: -2px; }
-  .chev { color: var(--ink-2, var(--ivory-dim)); transition: transform 200ms ease; }
-  .is-open .chev { transform: rotate(180deg); }
-  .acc-panel { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 200ms ease, visibility 200ms; }
-  .is-open .acc-panel { grid-template-rows: 1fr; visibility: visible; }
-  .acc-inner { overflow: hidden; min-height: 0; }
-  .acc-list { list-style: none; margin: 0; padding: 0 0 8px; }
-  .acc-list li { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: center; padding: 12px 0; }
-  .acc-list li + li { border-top: 1px solid var(--line, rgb(var(--gold-rgb) / 0.3)); }
-  .acc-rel { grid-column: 1 / -1; font-size: 13px; line-height: 1.5; color: var(--ink-2, var(--ivory-dim)); }
-  .acc-bank { grid-column: 1; font-size: 15px; line-height: 1.6; }
-  .acc-num { grid-column: 1; font-family: var(--f-mono, ui-monospace, "SF Mono", Menlo, monospace); font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }
-  .acc-btns { grid-column: 2; grid-row: 2 / span 2; display: flex; gap: 12px; align-items: center; }
-  .acc-soon { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2, var(--ivory-dim)); }
-  @media (prefers-reduced-motion: reduce) { .chev, .acc-panel { transition: none; } }
+  .seg-btn.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgb(26 26 26 / 0.06); }
+  .seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .grp + .grp { margin-top: 24px; }
+  .grp-title { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); text-align: center; }
+  .acc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .acc-card { position: relative; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .acc-main { display: grid; justify-items: start; gap: 2px; min-width: 0; padding-right: 36px; }
+  .acc-rel { font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+  .acc-name { font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--ink); }
+  .acc-num { font: 400 14px/1.6 var(--f-ui, inherit); font-variant-numeric: tabular-nums; color: var(--ink-2); overflow-wrap: anywhere; }
+  .pay { margin-top: 8px; display: inline-flex; align-items: center; height: 28px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9999px; color: var(--ink); text-decoration: none; font: 400 13px/1 var(--f-ui, inherit); }
+  .acc-soon { font-size: 13px; color: var(--ink-3); }
+  .acc-copy { position: absolute; top: 12px; right: 12px; }
+  .acc-copy :global(.icon-btn) { width: 32px; height: 32px; border: 1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { .seg-btn { transition: none; } }
 </style>

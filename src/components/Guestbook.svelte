@@ -48,7 +48,7 @@
   const open = $derived(expanded && canExpand);
   const visible = $derived(open ? items : items.slice(0, HEAD));
   const hiddenN = $derived(Math.max(items.length - HEAD, 0));
-  const toggleLabel = $derived(`축하 글 더보기${cursor !== null ? ` (${hiddenN}+)` : hiddenN ? ` (${hiddenN})` : ""}`);
+  const toggleLabel = $derived(`메시지 더보기${cursor !== null ? ` (${hiddenN}+)` : hiddenN ? ` (${hiddenN})` : ""}`);
 
   const motion = (ms: number) => (reduced() ? 0 : ms);
   const say = (s: string) => {
@@ -272,7 +272,7 @@
   <p class="sr" role="status" aria-live="polite">{announce}</p>
 
   {#if mounted && !formOpen}
-    <button type="button" id="gb-open" class="btn-primary open-form" aria-expanded="false" aria-controls="gb-form" onclick={openForm}>축하 글 남기기</button>
+    <button type="button" id="gb-open" class="btn gbtn open-form" aria-expanded="false" aria-controls="gb-form" onclick={openForm}>방명록 작성하기</button>
   {/if}
 
   {#if mounted && formOpen}
@@ -310,8 +310,8 @@
       </div>
       {#if errs.form}<p class="err" role="alert">{errs.form}</p>{/if}
       <div class="form-btns">
-        <button type="button" class="btn" onclick={closeForm}>닫기</button>
-        <button type="submit" class="btn-primary" disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
+        <button type="button" class="gbtn" onclick={closeForm}>닫기</button>
+        <button type="submit" class="gbtn solid" disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
       </div>
     </form>
   {/if}
@@ -330,24 +330,7 @@
         <button type="button" class="btn-text" onclick={() => load(true)}>다시 시도</button>
       </div>
     {:else if items.length === 0}
-      <div class="state empty">
-        <svg data-th="halloween" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
-          <path d="M26 6a17 17 0 1 0 16 24A14 14 0 0 1 26 6z" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round" />
-          <rect x="44" y="30" width="9" height="20" rx="1.5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
-          <path d="M40 50h17" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round" />
-          <path class="flame" d="M48.5 28c-3-3-3-6 0-10 3 4 3 7 0 10z" fill="var(--pumpkin)" />
-        </svg>
-        <svg data-th="dev" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
-          <rect x="6" y="8" width="60" height="40" rx="5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
-          <path d="M16 22l7 6-7 6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <rect class="caret" x="28" y="32" width="10" height="2.5" fill="var(--pumpkin)" />
-        </svg>
-        <svg data-th="puppy" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
-          <g fill="var(--gold)" opacity="0.55"><ellipse cx="22" cy="40" rx="7" ry="6" /><circle cx="14" cy="31" r="2.8" /><circle cx="19" cy="26" r="2.8" /><circle cx="25" cy="26" r="2.8" /><circle cx="30" cy="31" r="2.8" /></g>
-          <g fill="var(--pumpkin)"><ellipse cx="48" cy="24" rx="7" ry="6" /><circle cx="40" cy="15" r="2.8" /><circle cx="45" cy="10" r="2.8" /><circle cx="51" cy="10" r="2.8" /><circle cx="56" cy="15" r="2.8" /></g>
-        </svg>
-        <p>아직 축하 글이 없어요. 첫 마음을 남겨 주세요</p>
-      </div>
+      <p class="cap empty">첫 축하 글을 남겨 주세요.</p>
     {:else}
       <ul class="cards">
         {#each visible as e, i (e.id)}
@@ -384,18 +367,18 @@
                 {#if delErr}<p class="err" id="gb-de-{e.id}" role="alert">{delErr}</p>{/if}
               </form>
             {:else}
-              <button type="button" class="rm" id="gb-del-{e.id}" aria-label="{e.name}님의 축하 글 삭제" onclick={() => askDelete(e.id)}>삭제</button>
+              <button type="button" class="rm" id="gb-del-{e.id}" aria-label="{e.name}님의 글 삭제" onclick={() => askDelete(e.id)}>&times;</button>
             {/if}
           </li>
         {/each}
       </ul>
 
       {#if canExpand && !open}
-        <button type="button" class="btn more" aria-expanded="false" aria-controls="gb-list" onclick={expand}>{toggleLabel}</button>
+        <button type="button" class="gbtn more" aria-expanded="false" aria-controls="gb-list" onclick={expand}>{toggleLabel}</button>
       {/if}
 
       {#if open}
-        <div class="stick"><button type="button" class="btn fold" onclick={collapse}>접기</button></div>
+        <div class="stick"><button type="button" class="gbtn fold" onclick={collapse}>접기</button></div>
         {#if cursor !== null}
           <div class="tail" bind:this={sentinel}>
             {#if moreErr}
@@ -429,72 +412,68 @@
   .gb { text-align: left; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  .open-form { width: 100%; margin-bottom: 32px; }
-  .form { display: grid; gap: 16px; margin-bottom: 32px; }
+  .gbtn {
+    display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 48px; padding: 0 20px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); color: var(--ink); font: 400 14.5px/1 var(--f-ui, inherit); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .gbtn.solid { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .gbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .open-form { width: 100%; margin-bottom: 24px; }
+  .form { display: grid; gap: 16px; margin-bottom: 28px; }
   .field { display: grid; gap: 8px; }
-  label { font-size: 13px; line-height: 1.5; color: var(--ink-2, var(--ivory-dim)); }
+  label { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
   input, textarea {
-    width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line, rgb(var(--gold-rgb) / 0.4)); border-radius: var(--radius, var(--btn-r)); background: var(--surface, var(--field)); color: var(--ink, var(--ivory));
+    width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink);
     font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box;
   }
   textarea { resize: vertical; min-height: 112px; }
-  input:focus, textarea:focus { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 0; }
-  input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--sun); }
-  .count, .hint { font-size: 12px; color: var(--ink-2, var(--ivory-dim)); line-height: 1.5; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: #c0392b; }
+  .count, .hint { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; margin: 0; }
   .count { text-align: right; }
-  .err { font-size: 14px; color: var(--sun); line-height: 1.5; }
+  .err { margin: 0; font-size: 14px; color: #c0392b; line-height: 1.5; }
 
   .form-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .form-btns :global(button:disabled) { opacity: 0.7; cursor: progress; }
 
   .list { position: relative; }
-  .cards { list-style: none; margin: 0; padding: 0; position: relative; }
-  .card { position: relative; padding: 16px 0; border-top: 1px solid var(--line, rgb(var(--gold-rgb) / 0.3)); outline: none; }
-  .card:first-child { border-top: 0; padding-top: 0; }
-  .card:focus-visible { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 4px; }
+  .cards { list-style: none; margin: 0; padding: 0; position: relative; display: grid; gap: 10px; }
+  .card { position: relative; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); outline: none; }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .who { font-size: 15px; font-weight: 600; color: var(--ink, var(--ivory)); overflow-wrap: anywhere; line-height: 1.5; }
-  .when { flex: none; font-size: 12px; color: var(--ink-2, var(--ivory-dim)); letter-spacing: 0; }
-  .msg { margin-top: 4px; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; color: var(--ink, var(--ivory)); }
+  .who { font-size: 14px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; line-height: 1.5; }
+  .when { flex: none; font-size: 12px; color: var(--ink-3); letter-spacing: 0; }
+  .msg { margin: 6px 0 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; color: var(--ink-2); }
   .rm {
-    all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; margin-top: 4px; cursor: pointer;
-    font-size: 13px; color: var(--ink-2, var(--ivory-dim)); text-decoration: underline; text-underline-offset: 4px;
+    all: unset; box-sizing: border-box; position: absolute; top: 6px; right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer;
+    font-size: 18px; line-height: 1; color: var(--ink-3);
   }
-  .rm:focus-visible { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 2px; }
+  .meta { padding-right: 28px; }
+  .rm:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .del { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; }
   .del-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
+  .del-row :global(.btn-text) { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
 
-  .more { display: block; width: 100%; margin-top: 4px; }
+  .more { display: flex; width: 100%; margin-top: 10px; }
   .stick { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; pointer-events: none; margin: 4px 0; }
-  .fold { pointer-events: auto; background: var(--bg, var(--bg-2)); width: auto; padding: 0 24px; }
-  .tail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0 6px; font-size: 14px; color: var(--ivory-dim); }
+  .fold { pointer-events: auto; width: auto; padding: 0 24px; }
+  .tail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0 6px; font-size: 13px; color: var(--ink-3); }
+  .tail p { margin: 0; }
   .tail.end { padding-top: 10px; }
+  .tail :global(.btn-text), .state :global(.btn-text) { all: unset; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font-size: 14px; color: var(--ink); cursor: pointer; }
   .dots { display: inline-flex; gap: 6px; }
-  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--pumpkin); animation: blink 1s ease-in-out infinite; }
-  .dots i:nth-child(2) { animation-delay: 0.15s; }
-  .dots i:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
 
-  .state { display: grid; justify-items: center; gap: 12px; padding: 28px 0; text-align: center; color: var(--ivory-dim); }
-  .empty svg { width: 72px; height: 56px; }
-  .caret { animation: caret 1.1s steps(1) infinite; }
-  @keyframes caret { 50% { opacity: 0; } }
-  .flame { transform-origin: 48.5px 28px; animation: flick 1.6s ease-in-out infinite; }
-  @keyframes flick { 0%, 100% { transform: scale(1, 1); opacity: 1; } 50% { transform: scale(0.9, 1.12); opacity: 0.8; } }
+  .state { display: grid; justify-items: center; gap: 8px; padding: 12px 0; text-align: center; font-size: 13px; color: var(--ink-3); }
+  .state p { margin: 0; }
+  .empty { padding: 12px 0; margin: 0; text-align: center; }
 
-  .sk { display: grid; gap: 10px; padding: 16px 0; }
-  .sk i { display: block; height: 12px; border-radius: 6px; background: rgb(var(--gold-rgb) / 0.14); }
+  .sk { display: grid; gap: 10px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 10px; }
+  .sk i { display: block; height: 12px; border-radius: 6px; background: var(--line); }
   .sk .l1 { width: 40%; }
   .sk .l2 { width: 92%; }
   .sk .l3 { width: 64%; }
-  .live .sk i { background: linear-gradient(90deg, rgb(var(--gold-rgb) / 0.1) 20%, rgb(var(--gold-rgb) / 0.28) 50%, rgb(var(--gold-rgb) / 0.1) 80%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
-  @keyframes shimmer { to { background-position: -200% 0; } }
 
-  .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .dots i, .flame, .caret, .live .sk i { animation: none; }
-    .card, input, textarea { transition: none; }
-  }
+  .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
 </style>

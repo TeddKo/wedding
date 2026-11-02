@@ -1,0 +1,67 @@
+---
+import ActionButtons from "./ActionButtons.svelte";
+import DogsRest from "./ui/DogsRest.svelte";
+import { wedding } from "../data/wedding";
+import { url } from "../lib/url";
+
+interface Props {
+  hasMusic: boolean;
+}
+const { hasMusic } = Astro.props;
+
+const pageUrl = new URL(url(""), Astro.site).href;
+const imageUrl = new URL(url("og.png"), Astro.site).href;
+const [Y, M, D] = wedding.date.split("-").map(Number);
+const [H, MIN] = wedding.time.split(":").map(Number);
+const wd = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][new Date(Date.UTC(Y, M - 1, D)).getUTCDay()];
+const dateText = `${Y}. ${M}. ${D} ${wd}`;
+const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart(2, "0")}`;
+---
+
+<footer class="footer ending" data-reveal>
+  <p class="script" data-th="halloween">till death do us part</p>
+  <p class="script" data-th="dev">Save the Date</p>
+  <p class="script" data-th="puppy">made for each other</p>
+  <i class="rule ink" aria-hidden="true"></i>
+  <dl class="meta">
+    <div><dt>DATE</dt><dd>{dateText}</dd></div>
+    <div><dt>TIME</dt><dd>{timeText}</dd></div>
+  </dl>
+  <i class="rule" aria-hidden="true"></i>
+  <p class="addr">{wedding.venue.address}</p>
+  <div class="end-art" data-th="puppy"><DogsRest /></div>
+  <p class="thanks">함께해 주셔서 고맙습니다.</p>
+  <div class="share">
+    <ActionButtons
+      client:idle
+      actions={[
+        { kind: "kakao", label: "카카오톡 공유" },
+        { kind: "copy", label: "링크 복사", text: pageUrl, ghost: true },
+      ]}
+      kakao={{ key: wedding.kakaoJsKey, title: wedding.share.title, description: wedding.share.description, imageUrl, pageUrl }}
+    />
+  </div>
+  <p class="credits">
+    <span>© Made by TeddKo</span>
+    {hasMusic && <span>{wedding.musicCredit}</span>}
+  </p>
+</footer>
+
+<style>
+  .footer.ending { max-width: 440px; margin: 0 auto; padding: 60px 40px 112px; text-align: center; display: block; }
+  .script { font: 400 54px/1.15 var(--f-script, var(--f-latin)); color: var(--accent); transform: rotate(-6deg); }
+  .rule { display: block; height: 1px; margin: 32px 0 0; background: var(--line); }
+  .rule.ink { background: var(--ink); margin-top: 36px; }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0 0; padding: 0; }
+  .meta dt { font: 400 11px/1.4 var(--f-latin); letter-spacing: 0.14em; color: var(--ink-3); }
+  .meta dd { margin: 4px 0 0; font: 400 13px/1.5 var(--f-ui, var(--f-body)); color: var(--ink); }
+  .addr { margin-top: 24px; font: 400 13px/1.6 var(--f-body); color: var(--ink-2); }
+  .thanks { margin-top: 32px; font: 400 14.5px/1.79 var(--f-body); color: var(--ink-2); }
+  .share { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .share :global(.btn), .share :global(.btn-primary) { width: 100%; height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: 500 14.5px/1 var(--f-ui, var(--f-body)); }
+  .share :global(.btn-primary)::before { content: ""; width: 18px; height: 18px; border-radius: 50%; background: #fee500; flex: none; }
+  .end-art { width: 140px; margin: 32px auto 0; }
+  .end-art :global(svg) { display: block; width: 100%; height: auto; }
+  .credits { margin-top: 40px; font-size: 11px; line-height: 1.6; color: var(--ink-3); }
+  .credits span { display: block; }
+</style>

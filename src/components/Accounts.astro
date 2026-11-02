@@ -1,20 +1,32 @@
 ---
-import { fnv7 } from "../lib/hash";
 import AccountGroups from "./AccountGroups.svelte";
 import { wedding } from "../data/wedding";
 import { accountRows } from "../lib/family";
 
 const groups = [
-  { title: "신랑 측", rows: accountRows("groom", wedding.groom, wedding.accounts.groom) },
-  { title: "신부 측", rows: accountRows("bride", wedding.bride, wedding.accounts.bride) },
+  { title: "신랑측", rows: accountRows("groom", wedding.groom, wedding.accounts.groom) },
+  { title: "신부측", rows: accountRows("bride", wedding.bride, wedding.accounts.bride) },
 ].filter((g) => g.rows.length > 0);
 ---
 
 {
   groups.length > 0 && (
-    <section class="section" data-reveal aria-labelledby="acc-h">
-      <h2 id="acc-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("accounts")}</span>마음 전하실 곳</h2>
+    <section class="section acc-sec" data-reveal aria-labelledby="acc-h">
+      <p class="eyebrow">ACCOUNT</p>
+      <h2 class="sec-title" id="acc-h">마음 전하실 곳</h2>
+      <p class="body-copy">
+        참석이 어려우신 분들을 위해
+        <br />
+        계좌번호를 기재하였습니다.
+        <br />
+        너그러운 마음으로 양해 부탁드립니다.
+      </p>
       <AccountGroups client:load groups={groups} />
     </section>
   )
 }
+
+<style>
+  .acc-sec { text-align: center; }
+  .acc-sec .body-copy { margin: 20px 0 28px; }
+</style>

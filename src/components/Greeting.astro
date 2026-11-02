@@ -1,35 +1,47 @@
 ---
-import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
 import { givenName, hasParents } from "../lib/family";
 
-const families = [wedding.groom, wedding.bride].filter(hasParents);
+const people = [wedding.groom, wedding.bride];
 ---
 
 <section class="section" data-reveal aria-labelledby="greeting-h">
-  <h2 id="greeting-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("greeting")}</span>{wedding.greeting.title}</h2>
-  <div class="greeting">
+  <p class="eyebrow">INVITATION</p>
+  <h2 id="greeting-h" class="sec-title">소중한 분들을 초대합니다</h2>
+  <div class="greeting body-copy">
     {wedding.greeting.body.map((p) => <p>{p}</p>)}
   </div>
-  {
-    families.length > 0 && (
-      <div class="family">
-        {families.map((p) => {
-          const parents = [p.father, p.mother].filter((x) => x.name);
-          return (
-            <p>
-              {parents.map((x, i) => (
-                <>
-                  {i > 0 && <span class="sep" aria-hidden="true"></span>}
-                  <span class="par">{x.deceased && <span class="dec">故</span>}{x.name}</span>
-                </>
-              ))}
-              <span class="of">의</span> {p.relation} <b>{givenName(p)}</b>
-            </p>
-          );
-        })}
-      </div>
-    )
-  }
-  <p class="signature">신랑 <b>{wedding.groom.name}</b><span class="sep" aria-hidden="true"></span>신부 <b>{wedding.bride.name}</b></p>
+  <div class="family">
+    {!people.some(hasParents) && <p><span class="rel">신랑</span> <b>{wedding.groom.name}</b> · <span class="rel">신부</span> <b>{wedding.bride.name}</b></p>}
+    {
+      people.map((p) => {
+        if (!hasParents(p)) return null;
+        const parents = [p.father, p.mother].filter((x) => x.name);
+        return (
+          <p>
+            {parents.map((x, i) => (
+              <>
+                {i > 0 && <span class="dot" aria-hidden="true">·</span>}
+                <span class="par">{x.deceased && <span class="dec">故</span>}{x.name}</span>
+              </>
+            ))}
+            의 <span class="rel">{p.relation}</span> <b>{givenName(p)}</b>
+          </p>
+        );
+      })
+    }
+  </div>
 </section>
+
+<style>
+  .section { text-align: center; }
+  .greeting { margin-top: 32px; }
+  .greeting p { margin: 0 0 1.8em; }
+  .greeting p:last-child { margin-bottom: 0; }
+  .family { margin-top: 40px; display: grid; gap: 6px; font-size: 15px; line-height: 1.7; color: var(--ink-2); }
+  .family p { margin: 0; }
+  .family b { color: var(--ink); font-weight: 700; }
+  .rel { font-size: 13px; color: var(--ink-3); }
+  .dot { margin: 0 0.4em; color: var(--ink-3); }
+  .dec { font-size: 0.85em; margin-right: 0.15em; opacity: 0.7; }
+</style>
