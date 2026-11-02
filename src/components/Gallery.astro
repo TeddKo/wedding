@@ -8,7 +8,7 @@ const items = real ? photos : Array.from({ length: 9 }, () => null);
 const fulls = real ? await Promise.all(photos.map((p) => getImage({ src: p, width: 1400, format: "webp" }))) : [];
 ---
 
-<section class="section reveal" aria-labelledby="gal-h">
+<section class="section" data-reveal="rise" aria-labelledby="gal-h">
   <h2 id="gal-h" class="sec-title"><span class="latin">Gallery</span>갤러리</h2>
   <Ornament name="divider" />
   <ul class="gallery" data-lightbox={real ? "" : undefined}>
