@@ -21,7 +21,12 @@
   --today-ink: #14090a;
   --serif: "Gowun Batang", "Nanum Myeongjo", serif;
   --latin: "Cinzel", "Gowun Batang", serif;
-  --arch-r: 999px 999px 0 0;
+  --hand: "Nanum Brush Script", "Gowun Batang", cursive;
+  --script: "Pinyon Script", "Gowun Batang", cursive;
+  --hero-inset: 0px;
+  --hero-r: 999px 999px 0 0;
+  --hero-line: none;
+  --card-r: 2px;
   /* 인트로 */
   --gate-bg: radial-gradient(ellipse at 50% 28%, #2a1a33 0%, #120d16 72%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #ffd89a 0%, #e07a2f 28%, #5b2a12 58%, #1a0d0a 85%);
@@ -54,7 +59,12 @@
   --shade-rgb: 1 4 9;
   --today-ink: #fff;
   --latin: "JetBrains Mono", ui-monospace, Menlo, monospace;
-  --arch-r: 10px;
+  --hand: "Nanum Pen Script", "Gowun Batang", cursive;
+  --script: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --hero-inset: 16px;
+  --hero-r: 10px;
+  --hero-line: 0 0 0 1px var(--gold);
+  --card-r: 10px;
   --gate-bg: radial-gradient(ellipse at 50% 28%, #132235 0%, #0d1117 72%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #eafff0 0%, #3fb950 30%, #0f3d1f 60%, #010409 88%);
   --gate-door: linear-gradient(#161b22, #0b0f14);
@@ -88,6 +98,12 @@
   --today-ink: #fff;
   --flip-line: 0.15;
   --latin: "Gaegu", "Gowun Batang", serif;
+  --hand: "Gaegu", "Gowun Batang", cursive;
+  --script: "Dancing Script", "Gowun Batang", cursive;
+  --hero-inset: 16px;
+  --hero-r: 28px;
+  --hero-line: 0 0 0 2px var(--pumpkin), 0 0 0 5px var(--bg), 0 0 0 6.5px var(--gold);
+  --card-r: 20px;
   --gate-bg: radial-gradient(ellipse at 50% 28%, #fff6ea 0%, #f6e3cc 75%);
   --gate-hall: radial-gradient(ellipse at 50% 55%, #fff 0%, #ffe1c2 30%, #f7b9c4 62%, #e8a17a 90%);
   --gate-door: linear-gradient(#f9e6cf, #efd3b2);
@@ -149,7 +165,10 @@ html.ambient .page, html.ambient .footer { background: transparent; }
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  color: var(--pumpkin);
 }
+/* 카드형 섹션 */
+.section.card { background: var(--bg-2); margin: 16px; padding: 56px 20px; border-top: 0; border-radius: var(--card-r); }
 .sec-title .latin { display: block; margin-bottom: 8px; }
 .orn-divider { width: 200px; height: 20px; color: var(--gold); margin: 20px auto 28px; display: block; }
 
@@ -181,6 +200,13 @@ html.js .page, html.js .footer { transition: opacity 1.1s ease, transform 1.3s c
 html.gated .page, html.gated .footer { opacity: 0; transform: translateY(28px); }
 
 /* greeting */
+.illus { height: 150px; margin: -24px 0 16px; display: flex; justify-content: center; align-items: center; }
+.illus > div { height: 100%; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.illus svg { height: 100%; width: auto; max-width: 100%; display: block; }
+.illus .orn-moon { height: 120px; }
+.illus .orn-bat { height: 26px; color: var(--ivory-dim); opacity: 0.7; }
+.illus .orn-bat:last-child { height: 18px; }
+.illus .orn-term, .illus .orn-dogs { height: 140px; }
 .greeting p { margin-bottom: 1.2em; }
 .greeting p:last-child { margin-bottom: 0; }
 .family { margin-top: 28px; display: grid; gap: 4px; color: var(--ivory-dim); }

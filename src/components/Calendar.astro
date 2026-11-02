@@ -1,7 +1,7 @@
 ---
 import CalendarDday from "./CalendarDday.svelte";
 import { wedding } from "../data/wedding";
-import { dateKo, dayNames, day, month, monthGrid, year } from "../lib/format";
+import { dateKo, venueLine, dayNames, day, month, monthGrid, year } from "../lib/format";
 ---
 
-<CalendarDday client:idle year={year} month={month} day={day} date={wedding.date} dateKo={dateKo} dayNames={dayNames} grid={monthGrid()} />
+<CalendarDday client:idle year={year} month={month} day={day} date={wedding.date} dateKo={dateKo} venue={venueLine} dayNames={dayNames} grid={monthGrid()} />

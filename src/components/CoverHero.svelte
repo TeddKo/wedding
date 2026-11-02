@@ -1,46 +1,42 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
-  import { Spring, Tween } from "svelte/motion";
-  import { cubicInOut, cubicOut, quartOut } from "svelte/easing";
-  import Moon from "./ui/Moon.svelte";
-  import Dogs from "./ui/Dogs.svelte";
-  import Terminal from "./ui/Terminal.svelte";
-  import { reduced, rand } from "../lib/motion";
+  import { Tween } from "svelte/motion";
+  import { cubicInOut, cubicOut } from "svelte/easing";
+  import { BAT_PATH } from "../lib/bat";
+  import { reduced } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
 
   let {
     groom,
     bride,
+    date,
     dateKo,
     venue,
+    focus,
     hasPhoto,
     photo,
-  }: { groom: string; bride: string; dateKo: string; venue: string; hasPhoto: boolean; photo?: Snippet } = $props();
+  }: { groom: string; bride: string; date: string; dateKo: string; venue: string; focus: string; hasPhoto: boolean; photo?: Snippet } = $props();
 
-  const tokens = dateKo.split(/(\d+)/);
-  /* 날짜의 숫자 조각마다 카운트업 Tween. 초기값은 최종값이라 SSR/무JS 에서는 그대로 보인다 */
-  const counters = tokens.map((t, i) => (i % 2 ? new Tween(Number(t), { duration: 1500, easing: cubicOut }) : null));
+  const parts = date.split("-").map(Number);
+  const weekday = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay()];
+  /* 연·월·일 카운트업 Tween. 초기값은 최종값이라 SSR/무JS 에서는 그대로 보인다 */
+  const counters = parts.map((n) => new Tween(n, { duration: 1500, easing: cubicOut }));
+  const widths = [4, 2, 2];
+  const num = (i: number) => String(Math.round(counters[i].current)).padStart(widths[i], "0");
 
   const DASH = 260;
   let armed = $state(false);
   let rootEl = $state<HTMLElement>();
-  let inView = $state(true);
   let scrollY = $state(0);
 
-  const rise = new Tween(0, { duration: 2200, easing: quartOut });
-  const arch = new Tween(0, { duration: 1400, easing: cubicOut });
+  const arch = new Tween(0, { duration: 2400, easing: cubicOut });
   const ink = new Tween(0, { duration: 2300, easing: cubicInOut });
   const fill = new Tween(0, { duration: 1000, easing: cubicOut });
-  const flame = new Spring({ sx: 1, sy: 1, r: 0, o: 1 }, { stiffness: 0.14, damping: 0.32 });
 
   onMount(() => {
     if (reduced()) return;
     armed = true;
-    arch.set(0, { duration: 0 });
-    for (const c of counters) c?.set(0, { duration: 0 });
-
-    const io = new IntersectionObserver(([e]) => (inView = e.isIntersecting));
-    if (rootEl) io.observe(rootEl);
+    for (const c of counters) c.set(0, { duration: 0 });
 
     let pending = false;
     const onScroll = () => {
@@ -52,17 +48,7 @@
       });
     };
     addEventListener("scroll", onScroll, { passive: true });
-
-    const tick = setInterval(() => {
-      if (document.hidden || !inView) return;
-      flame.target = { sx: 1 + rand(-0.07, 0.06), sy: 1 + rand(-0.08, 0.12), r: rand(-3.5, 3.5), o: rand(0.82, 1) };
-    }, 140);
-
-    return () => {
-      io.disconnect();
-      removeEventListener("scroll", onScroll);
-      clearInterval(tick);
-    };
+    return () => removeEventListener("scroll", onScroll);
   });
 
   let played = false;
@@ -70,71 +56,79 @@
     if (!armed || !stage.open || played) return;
     played = true;
     arch.target = 1;
-    rise.set(1, { delay: 250 });
-    ink.set(1, { delay: 500 }).then(() => fill.target = 1);
-    let k = 0;
-    for (const [i, c] of counters.entries()) if (c) c.set(Number(tokens[i]), { delay: 1700 + k++ * 140 });
+    ink.set(1, { delay: 500 }).then(() => (fill.target = 1));
+    for (const [i, c] of counters.entries()) c.set(parts[i], { delay: 1700 + i * 140 });
   });
 
   const parY = $derived(Math.min(scrollY, 900) * 0.14);
-  const ratio = (n: Tween<number>, v: string) => String(Math.round(n.current)).padStart(v.length, "0");
+  const scale = $derived(armed ? 1.1 - arch.current * 0.06 : 1.04);
+  const overOpacity = $derived(1 - Math.min(scrollY, 200) / 200 * 0.4);
 </script>
 
-<header class="cover" bind:this={rootEl}>
-  <p class="corner-code" data-th="dev" aria-hidden="true">// TODO: 평생 행복하기</p>
-  <svg class="paws" data-th="puppy" viewBox="0 0 110 90" aria-hidden="true" focusable="false">
-    {#each [[14, 74, -30], [40, 52, -20], [62, 30, -30], [88, 12, -20]] as [x, y, r], i}
-      <g fill="rgb(var(--gold-rgb) / {0.22 + i * 0.08})" transform="translate({x} {y}) rotate({r}) scale(0.5)">
-        <ellipse cx="0" cy="6" rx="8" ry="7" /><circle cx="-9" cy="-4" r="3.4" /><circle cx="-3" cy="-9" r="3.4" /><circle cx="3" cy="-9" r="3.4" /><circle cx="9" cy="-4" r="3.4" />
-      </g>
-    {/each}
-  </svg>
-  <div class="cobweb tl" data-th="halloween">
-    <svg class="orn-cobweb" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-      <g fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round">
-        <path d="M0 0 L120 0 M0 0 L0 120 M0 0 L104 62 M0 0 L62 104 M0 0 L116 28 M0 0 L28 116" />
-        <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
-      </g>
-    </svg>
-  </div>
-  <p class="latin">
-    <span data-th="halloween">The Wedding · Hallow's Eve</span>
-    <span data-th="dev">git merge --no-ff us</span>
-    <span data-th="puppy">The Wedding · 우리 둘, 그리고 멍멍</span>
-  </p>
-  <div class="arch" style:transform={armed ? `scale(${0.93 + arch.current * 0.07})` : undefined} style:opacity={armed ? arch.current : undefined}>
-    {#if hasPhoto}
-      <div class="photo" style:transform="translate3d(0, {parY * 0.4}px, 0) scale(1.1)">{@render photo?.()}</div>
-    {:else}
-      <div class="arch-placeholder" role="img" aria-label="사진이 들어갈 자리">
-        <div class="art" data-th="dev puppy" style:transform="translate3d(0, {armed ? (1 - rise.current) * 40 + parY * 0.3 : 0}px, 0)" style:opacity={armed ? Math.min(1, rise.current * 1.6) : 1}>
-          <span data-th="dev"><Terminal {groom} {bride} /></span>
-          <span data-th="puppy"><Dogs /></span>
-        </div>
-        <div class="moon" data-th="halloween" style:transform="translate3d(-50%, {armed ? (1 - rise.current) * 130 + parY : 0}px, 0)" style:opacity={armed ? Math.min(1, rise.current * 2) : 1}>
-          <Moon />
-        </div>
-        <div class="candle-wrap" data-th="halloween">
-          <i class="halo" style:opacity={flame.current.o * 0.55}></i>
-          <svg class="orn-candle" viewBox="0 0 40 90" aria-hidden="true" focusable="false">
-            <g class="fl" style:transform="scale({flame.current.sx}, {flame.current.sy}) rotate({flame.current.r}deg)" style:opacity={flame.current.o}>
-              <path d="M20 4c5 7 8 12 8 18a8 8 0 0 1-16 0c0-6 3-11 8-18Z" fill="#e07a2f" />
-              <path d="M20 12c2.6 4 4 7 4 10a4 4 0 0 1-8 0c0-3 1.4-6 4-10Z" fill="#f6d27a" />
-            </g>
-            <rect x="19.4" y="28" width="1.2" height="6" fill="#3a2e3f" />
-            <path d="M11 36h18v46a3 3 0 0 1-3 3H14a3 3 0 0 1-3-3V36Z" fill="#f2e8d5" />
-            <path d="M11 36h18l-1 6c-2 2-4 0-6 2s-4 0-6 0-3-2-5-2l-0-6Z" fill="#fffaf0" opacity="0.6" />
+<header class="cover" bind:this={rootEl} style:--focus={focus}>
+  <div class="hero">
+    <div class="frame">
+      <p class="bar" data-th="dev" aria-hidden="true"><span class="dots">● ● ●</span>~/us/cover.jpg</p>
+      <div class="stage">
+        {#if hasPhoto}
+          <div class="photo" style:transform="translate3d(0, {parY * 0.4}px, 0) scale({scale})">{@render photo?.()}</div>
+        {:else}
+          <div class="placeholder" role="img" aria-label="사진이 들어갈 자리">
+            <div class="ph-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.6" />
+              </svg>
+              <b>사진 자리</b>
+              <small>PHOTO</small>
+            </div>
+          </div>
+        {/if}
+        <div class="shade"></div>
+        <div class="arch-line" data-th="halloween"></div>
+        <svg class="cobweb tl" data-th="halloween" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round">
+            <path d="M0 0 L120 0 M0 0 L0 120 M0 0 L104 62 M0 0 L62 104 M0 0 L116 28 M0 0 L28 116" />
+            <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
+          </g>
+        </svg>
+        <svg class="cobweb br" data-th="halloween" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round">
+            <path d="M0 0 L120 0 M0 0 L0 120 M0 0 L104 62 M0 0 L62 104 M0 0 L116 28 M0 0 L28 116" />
+            <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
+          </g>
+        </svg>
+        <p class="code tl" data-th="dev" aria-hidden="true">// TODO: 평생 행복하기</p>
+        <p class="code br" data-th="dev" aria-hidden="true">{"{ }"}</p>
+        {#each ["tl", "br"] as pos}
+          <svg class="paws {pos}" data-th="puppy" viewBox="0 0 110 90" aria-hidden="true" focusable="false">
+            {#each [[14, 74, -30], [40, 52, -20], [62, 30, -30], [88, 12, -20]] as [x, y, r], i}
+              <g fill="rgb(var(--gold-rgb) / {0.4 + i * 0.1})" transform="translate({x} {y}) rotate({r}) scale(0.5)">
+                <ellipse cx="0" cy="6" rx="8" ry="7" /><circle cx="-9" cy="-4" r="3.4" /><circle cx="-3" cy="-9" r="3.4" /><circle cx="3" cy="-9" r="3.4" /><circle cx="9" cy="-4" r="3.4" />
+              </g>
+            {/each}
           </svg>
+        {/each}
+        <div class="over" style:opacity={armed ? overOpacity : undefined} aria-hidden="true">
+          <p class="of">The Wedding of</p>
+          <p class="dateh"><span>{num(0)}</span><i>|</i><span>{num(1)}</span><i>|</i><span>{num(2)}</span></p>
+          <p class="wk">{weekday}</p>
         </div>
       </div>
-    {/if}
+    </div>
   </div>
 
+  <p class="script">
+    <span data-th="halloween">Save the date · Hallow's Eve</span>
+    <span data-th="dev">&gt; git merge --no-ff us</span>
+    <span data-th="puppy">Save the date, paws &amp; hearts</span>
+  </p>
+
   <h1 class="names" class:inked={armed}>
-    <span class="names-text">{groom}<span class="amp">&amp;</span>{bride}</span>
+    <span class="names-text"><span class="l1">{groom}<span class="dot">·</span>{bride}</span><span class="l2">결혼합니다</span></span>
     {#if armed}
-      <svg class="ink" viewBox="0 0 300 45" aria-hidden="true" focusable="false" style:--dash={DASH} style:--off={(1 - ink.current) * DASH} style:--fill={fill.current}>
-        <text x="150" y="33" text-anchor="middle">{groom}<tspan class="a" dx="13">&amp;</tspan><tspan dx="13">{bride}</tspan></text>
+      <svg class="ink" viewBox="0 0 300 80" aria-hidden="true" focusable="false" style:--dash={DASH} style:--off={(1 - ink.current) * DASH} style:--fill={fill.current}>
+        <text x="150" y="33" text-anchor="middle" class="t1">{groom}<tspan class="a" dx="14">·</tspan><tspan dx="14">{bride}</tspan></text>
+        <text x="150" y="69" text-anchor="middle" class="t2">결혼합니다</text>
       </svg>
     {/if}
   </h1>
@@ -145,59 +139,94 @@
       <path d="M92 12c8 0 10-8 18-8m-18 8c8 0 10 8 18 8m-18-8h8" />
       <path d="M148 12c-8 0-10-8-18-8m18 8c-8 0-10 8-18 8m18-8h-8" />
     </g>
-    <path d="M120 3l5 9-5 9-5-9Z" fill="currentColor" style:opacity={armed ? fill.current : undefined} />
+    <g style:opacity={armed ? fill.current : undefined}>
+      <path data-th="halloween" transform="translate(104 4) scale(0.5)" fill="currentColor" d={BAT_PATH} />
+      <text data-th="dev" x="120" y="16" text-anchor="middle" font-size="11" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" fill="currentColor">&lt;/&gt;</text>
+      <g data-th="puppy" fill="currentColor" transform="translate(120 12) scale(0.55)">
+        <ellipse cx="0" cy="6" rx="8" ry="7" /><circle cx="-9" cy="-4" r="3.4" /><circle cx="-3" cy="-9" r="3.4" /><circle cx="3" cy="-9" r="3.4" /><circle cx="9" cy="-4" r="3.4" />
+      </g>
+    </g>
   </svg>
 
-  <p class="cover-date">
-    <span class="sr">{dateKo}</span>
-    <span aria-hidden="true" class="digits">
-      {#each tokens as t, i}{#if i % 2 && counters[i]}{ratio(counters[i]!, t)}{:else}{t}{/if}{/each}
-    </span>
-  </p>
+  <p class="cover-date">{dateKo}</p>
   <p class="cover-venue" style:opacity={armed ? Math.min(1, fill.current * 1.5) : undefined}>{venue}</p>
+  <svg class="cue" class:gone={scrollY > 40} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
 </header>
 
 <style>
-  .cover { padding: 56px 28px 40px; text-align: center; position: relative; }
-  .cobweb { position: absolute; top: 0; left: 0; width: 110px; color: rgb(var(--gold-rgb) / 0.35); }
-  .cobweb :global(svg) { width: 100%; display: block; }
-  .arch {
-    width: 80%; max-width: 320px; aspect-ratio: 3 / 4; margin: 24px auto 32px; will-change: transform, opacity;
-    border: 1px solid var(--gold); border-radius: var(--arch-r); padding: 6px; overflow: hidden;
+  .cover { text-align: center; position: relative; padding-bottom: 28px; }
+  .hero { padding: var(--hero-inset) var(--hero-inset) 0; }
+  .frame {
+    position: relative; width: 100%; aspect-ratio: 4 / 5; max-height: calc(100svh - 190px);
+    display: flex; flex-direction: column; overflow: hidden; background: var(--bg-2);
+    border-radius: 0; box-shadow: var(--hero-line);
   }
-  .arch > :global(*) { width: 100%; height: 100%; border-radius: var(--arch-r); display: block; }
-  .photo { overflow: hidden; will-change: transform; }
-  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .arch-placeholder { background: linear-gradient(var(--panel-a), var(--panel-b) 70%) ; position: relative; overflow: hidden; }
-  .art { position: absolute; inset: 6% 6% 10%; display: grid; align-content: end; will-change: transform, opacity; }
-  :global([data-theme="dev"]) .art { align-content: center; }
-  .art :global(svg) { width: 100%; height: auto; display: block; }
-  .corner-code { position: absolute; top: 14px; left: 16px; font: 12px/1.4 var(--latin); color: var(--ivory-dim); opacity: 0.7; }
-  .paws { position: absolute; top: 8px; left: 6px; width: 110px; }
-  .moon { position: absolute; top: 12%; left: 50%; width: 38%; will-change: transform, opacity; filter: drop-shadow(0 0 18px rgb(242 232 213 / 0.4)); }
-  .moon :global(svg) { width: 100%; height: auto; display: block; }
-  .candle-wrap { position: absolute; bottom: 8%; left: 50%; width: 15%; transform: translateX(-50%); }
-  .candle-wrap .orn-candle { width: 100%; height: auto; display: block; border-radius: 0; }
-  .fl { transform-box: fill-box; transform-origin: 50% 100%; }
-  .halo {
-    position: absolute; left: 50%; top: -30%; width: 420%; aspect-ratio: 1; margin-left: -210%; border-radius: 50%; pointer-events: none;
-    background: radial-gradient(closest-side, rgb(255 190 100 / 0.45), rgb(var(--accent-rgb) / 0));
+  :global([data-theme="dev"]) .frame, :global([data-theme="puppy"]) .frame { border-radius: var(--hero-r); }
+  .bar {
+    flex: none; height: 30px; padding: 0 12px; display: flex; align-items: center; gap: 12px; text-align: left;
+    background: rgb(var(--bg2-rgb)); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.4);
+    font: 12px/1 var(--latin); color: var(--ivory-dim);
   }
+  .dots { color: var(--gold); letter-spacing: 0.1em; }
+  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .photo { position: absolute; inset: 0; will-change: transform; }
+  .photo :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: var(--focus); display: block; }
+  .placeholder {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: repeating-linear-gradient(45deg, var(--panel-a) 0 14px, var(--panel-b) 14px 28px);
+  }
+  .ph-box {
+    display: grid; justify-items: center; gap: 2px; padding: 18px 26px; color: var(--ivory-dim);
+    border: 1.5px dashed rgb(var(--gold-rgb) / 0.7); background: rgb(var(--bg-rgb) / 0.55);
+  }
+  .ph-box b { font-size: 15px; line-height: 1.6; }
+  .ph-box small { font: 11px/1 var(--latin); letter-spacing: 0.2em; }
+  .shade { position: absolute; inset: 0 0 auto; height: 40%; background: linear-gradient(rgb(var(--shade-rgb) / 0.55), transparent); pointer-events: none; }
+  .arch-line { position: absolute; inset: 14px; border: 3px double var(--gold); border-radius: var(--hero-r); pointer-events: none; }
+  .cobweb { position: absolute; width: 84px; color: rgb(var(--gold-rgb) / 0.55); pointer-events: none; }
+  .cobweb.tl { top: 0; left: 0; }
+  .cobweb.br { bottom: 0; right: 0; transform: rotate(180deg); }
+  .code { position: absolute; font: 12px/1.4 var(--latin); color: #fff; opacity: 0.85; text-shadow: 0 1px 4px rgb(0 0 0 / 0.6); }
+  .code.tl { bottom: 22px; left: 12px; }
+  .code.br { bottom: 22px; right: 12px; }
+  .paws { position: absolute; width: 96px; pointer-events: none; }
+  .paws.tl { top: 4px; left: 4px; }
+  .paws.br { bottom: 4px; right: 4px; transform: rotate(180deg); }
 
-  .names { font-size: 32px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.4; position: relative; }
-  .amp { color: var(--pumpkin); margin: 0 0.4em; font-weight: 400; }
+  .over { position: absolute; inset: 0 0 auto; padding-top: 22px; color: #fff; text-shadow: 0 1px 8px rgb(0 0 0 / 0.55); pointer-events: none; }
+  .of { font: 11px/1.6 var(--latin); letter-spacing: 0.3em; text-transform: uppercase; }
+  .dateh { font: 700 28px/1.3 var(--latin); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+  .dateh i { font-style: normal; margin: 0 0.5em; opacity: 0.7; }
+  .wk { font: 12px/1.6 var(--latin); letter-spacing: 0.4em; text-indent: 0.4em; }
+
+  .script {
+    position: relative; z-index: 2; margin: -0.55em 16px 0; font: 26px/1.2 var(--script); color: var(--pumpkin);
+    text-shadow: 0 1px 8px rgb(var(--shade-rgb) / 0.6);
+  }
+  :global([data-theme="dev"]) .script { font-size: 18px; text-shadow: none; }
+  :global([data-theme="puppy"]) .script { text-shadow: none; }
+
+  .names { width: 300px; height: 84px; margin: 14px auto 0; position: relative; font-family: var(--hand); font-weight: 400; letter-spacing: 0.08em; }
+  .names-text { display: block; }
+  .l1 { display: block; height: 44px; line-height: 44px; font-size: 34px; }
+  .l2 { display: block; height: 36px; line-height: 36px; font-size: 22px; }
+  .dot { color: var(--pumpkin); margin: 0 0.4em; }
   .names.inked .names-text { color: transparent; }
-  .names.inked .names-text .amp { color: transparent; }
+  .names.inked .names-text .dot { color: transparent; }
   .ink { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .ink text {
-    font-family: var(--serif); font-weight: 700; font-size: 32px; letter-spacing: 0.08em; white-space: pre;
+    font-family: var(--hand); font-weight: 400; letter-spacing: 0.08em; white-space: pre;
     fill: var(--ivory); fill-opacity: var(--fill); stroke: var(--gold); stroke-width: 0.9; stroke-linejoin: round;
     stroke-dasharray: var(--dash); stroke-dashoffset: var(--off);
   }
-  .ink .a { fill: var(--pumpkin); stroke: var(--pumpkin); font-weight: 400; }
+  .ink .t1 { font-size: 34px; }
+  .ink .t2 { font-size: 22px; }
+  .ink .a { fill: var(--pumpkin); stroke: var(--pumpkin); }
 
-  .cover-date { font-size: 18px; margin-top: 4px; }
-  .digits { font-variant-numeric: tabular-nums; }
-  .cover-venue { color: var(--ivory-dim); margin-top: 4px; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .cover-date { font-size: 17px; margin-top: 4px; color: var(--ivory-dim); }
+  .cover-venue { color: var(--ivory-dim); margin-top: 2px; }
+  .cue { display: block; width: 28px; height: 28px; margin: 14px auto 0; color: var(--gold); transition: opacity 0.4s; animation: cue 1.6s ease-in-out infinite; }
+  .cue.gone { opacity: 0; }
+  @keyframes cue { 50% { transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .cue { animation: none; } }
 </style>

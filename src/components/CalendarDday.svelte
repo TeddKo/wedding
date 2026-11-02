@@ -11,9 +11,10 @@
     day,
     date,
     dateKo,
+    venue,
     dayNames,
     grid,
-  }: { year: number; month: number; day: number; date: string; dateKo: string; dayNames: string[]; grid: (number | null)[] } = $props();
+  }: { year: number; month: number; day: number; date: string; dateKo: string; venue: string; dayNames: string[]; grid: (number | null)[] } = $props();
 
   let root = $state<HTMLElement>();
   let armed = $state(false);
@@ -55,10 +56,10 @@
   });
 </script>
 
-<section class="section" aria-labelledby="cal-h" bind:this={root} data-reveal="line">
+<section class="section card" aria-labelledby="cal-h" bind:this={root} data-reveal="line">
   <h2 id="cal-h" class="sec-title"><span class="latin">Calendar</span>{year}년 {month}월</h2>
   <Divider />
-  <p class="cal-time">{dateKo}</p>
+  <p class="when">{dateKo}<br />{venue}</p>
   <div class="cal" role="table" aria-label={`${year}년 ${month}월 달력`}>
     <div class="cal-row" role="row">
       {#each dayNames as d, i}
@@ -125,7 +126,7 @@
 </section>
 
 <style>
-  .cal-time { margin-bottom: 20px; color: var(--ivory-dim); }
+  .when { max-width: 340px; margin: 0 auto 20px; padding: 2px 0 2px 14px; border-left: 3px solid var(--pumpkin); text-align: left; color: var(--ivory-dim); }
   .cal { max-width: 340px; margin: 0 auto; border-top: 1px solid rgb(var(--gold-rgb) / 0.5); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.5); padding: 14px 0; }
   .cal-row, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
   .cal-h { font-size: 13px; color: var(--gold); padding-bottom: 8px; }

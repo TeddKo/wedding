@@ -37,6 +37,8 @@ export const wedding = {
   bride,
   /** 기본 테마. 방문자는 하단 버튼이나 `?theme=halloween|dev|puppy` 로 바꿀 수 있다 */
   theme: "halloween" as ThemeName,
+  /** 커버 사진 초점(object-position). 얼굴이 잘리면 값을 조정 */
+  cover: { focus: "50% 35%" },
   date: "2027-10-31",
   time: "10:30",
   timezone: "Asia/Seoul",
