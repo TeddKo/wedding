@@ -4,14 +4,13 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 ## 구조 (인터랙션 = Svelte 아일랜드)
 
-콘텐츠는 모두 서버 HTML 에 들어 있고 아일랜드는 그 위에 연출만 얹는다. JS 가 꺼져도 이름, 날짜, 장소, 인사말, 달력, 링크가 그대로 보인다.
+콘텐츠는 모두 서버 HTML 에 들어 있고 아일랜드는 그 위에 연출만 얹는다. JS 가 꺼져도 이름, 날짜, 장소, 인사말, 링크가 그대로 보인다.
 
 | 컴포넌트 | 하이드레이션 | 역할 |
 |---|---|---|
-| `IntroGate.svelte` | load | 밀랍 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 S 곡선으로 날아감 -> 3D 문(Spring) -> 박쥐 떼 -> 촛불 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
-| `AmbientCanvas.svelte` | idle | 캔버스 1장: 안개, 불씨, 달 앞을 지나는 박쥐. 숨김/화면 밖 정지, 저사양 자동 감량 |
-| `CoverHero.svelte` | load | 4:5 대표 사진(켄번스 + 패럴랙스), 사진 위 날짜 헤더 카운트업, 테마별 필기체 문구, 잉크로 쓰이는 이름. 사진이 없으면 "사진 자리" 표시(캐릭터는 인트로/인사말에만) |
-| `CalendarDday.svelte` | idle | 날짜 칸 캐스케이드, 31일 잭오랜턴, 플립카드 D-day(KST) |
+| `IntroGate.svelte` | load | 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 날아감 -> 3D 문(Spring) -> 테마별 조각(박쥐/+−/발자국) -> 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
+| `AmbientCanvas.svelte` | idle | 캔버스 1장: 할로윈 전용 불씨 10개. 다른 테마는 그리지 않고, 숨김/화면 밖 정지 |
+| `CoverHero.svelte` | load | 테마별 커버(할로윈 첨두 아치, dev 커밋 그래프, puppy 잔디 위 강아지). 실제 사진에만 약한 패럴랙스/켄번스. 사진이 없으면 테마별 플레이스홀더 |
 | `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
 | `MapChooser.svelte` | visible | 길찾기 바텀시트(Spring, 드래그 닫기, 포커스 트랩). 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 3개 |
@@ -23,9 +22,9 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 
 | 키 | 이름 | 연출 |
 |---|---|---|
-| `halloween` | 할로윈 | 밀랍 인장, 달, 박쥐, 촛불, 잭오랜턴 |
-| `dev` | 프로그래머 | 터미널 창(`git merge 신랑 신부`), Enter 키캡 인장, 떨어지는 코드 조각, 픽셀 하트 |
-| `puppy` | 강아지 | 말티즈(리본) + 네눈박이(나비넥타이, 끝이 접힌 큰 귀), 발바닥 인장, 발자국/하트 |
+| `halloween` | 할로윈 | 첨두 아치 창 커버(촛불 불꽃), 선으로 그린 초승달, 밀랍 인장, 박쥐(인트로만), 불씨 10개 |
+| `dev` | 프로그래머 | 밝은 git log. 커버의 파랑/분홍 브랜치가 병합되어 한 줄 레일로 이어짐, `GitGraph` 인트로, 무광 Enter 키캡 인장, `+`/`−` 조각 |
+| `puppy` | 강아지 | 말티즈 + 네눈박이(면 분리 평면 일러스트, 꼬리 흔들기 1개), 잔디 띠 위 커버, 평면 발바닥 인장, 엔딩 `DogsRest` |
 
 - 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 왼쪽 아래 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
 - 색은 `src/styles/global.css` 의 `[data-theme]` 토큰. 테마별 마크업은 `data-th="dev"` 처럼 표시하고 CSS 로만 숨긴다(SSR 과 하이드레이션 일치). 캔버스/날아가는 요소처럼 JS 연출만 `src/lib/theme.svelte.ts` 를 읽는다.
@@ -66,7 +65,7 @@ corepack pnpm build    # astro check + astro build -> dist/
   - `payLink`: 있으면 "송금" 버튼(토스/카카오페이 등 링크). 복사 버튼은 `은행 번호` 를 복사
 - 축하 글 API: `guestbookApi` (Worker URL). 비면 섹션 숨김. 서버는 `guestbook/` 참고(루트 빌드/CI 와 무관, `tsconfig` 에서 제외)
 - 참석 여부: `rsvpUrl` 에 구글폼 URL. 비면 섹션 숨김.
-- 날짜/시간: `date`, `time` (달력, D-day, 공유 문구 제외 전부 자동 반영)
+- 날짜/시간: `date`, `time` (공유 문구 제외 전부 자동 반영)
 - 공유 문구: `share` (카카오 공유 제목/설명)
 
 ## 사진

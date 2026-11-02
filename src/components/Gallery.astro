@@ -1,6 +1,6 @@
 ---
 import { getImage } from "astro:assets";
-import Ornament from "./Ornament.astro";
+import { fnv7 } from "../lib/hash";
 import GalleryIsland from "./Gallery.svelte";
 import { photos } from "../lib/photos";
 
@@ -19,8 +19,8 @@ const items = await Promise.all(
 );
 ---
 
-<section class="section" data-reveal="rise" aria-labelledby="gal-h">
-  <h2 id="gal-h" class="sec-title"><span class="latin">Gallery</span>갤러리</h2>
-  <Ornament name="divider" />
-  <GalleryIsland client:idle items={items} count={9} />
+<section class="section" data-reveal aria-labelledby="gal-h">
+  <h2 id="gal-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
+  <GalleryIsland client:idle items={items} />
+  {items.length === 0 && <p class="cap gal-cap">사진은 촬영 후에 채워집니다</p>}
 </section>

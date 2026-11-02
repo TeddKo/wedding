@@ -1,37 +1,16 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import { Spring } from "svelte/motion";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import Tilt from "./ui/Tilt.svelte";
   import { lerp, reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
 
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
-  let { items, count = 9 }: { items: Item[]; count?: number } = $props();
+  let { items }: { items: Item[] } = $props();
 
   const real = items.length > 0;
-  const n = real ? items.length : count;
-
-  let list = $state<HTMLElement>();
-  let armed = $state(false);
-  let shown = $state(false);
-  const delayOf = (i: number) => ((i % 3) + Math.floor(i / 3)) * 70;
-
-  onMount(() => {
-    if (reduced()) return;
-    armed = true;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return;
-        shown = true;
-        io.disconnect();
-      },
-      { threshold: 0.15 },
-    );
-    if (list) io.observe(list);
-    return () => io.disconnect();
-  });
+  const n = real ? items.length : 3;
 
   /* ---------- 라이트박스 ---------- */
   let open = $state(false);
@@ -265,9 +244,9 @@
   }
 </script>
 
-<ul class="gallery" bind:this={list}>
+<ul class="gallery" class:empty={!real}>
   {#each { length: n } as _, i}
-    <li class="cell" class:real class:armed class:in={shown} style:--d="{delayOf(i)}ms">
+    <li class="cell" class:real>
       {#if real}
         {@const it = items[i]}
         <a
@@ -283,9 +262,7 @@
           <img src={it.thumb} srcset={it.srcset} sizes="(max-width: 480px) 33vw, 160px" width="360" height="360" alt="갤러리 사진 {i + 1}" loading="lazy" decoding="async" />
         </a>
       {:else}
-        <div class="ph-wrap" style:--d="{i * 0.45}s">
-          <Tilt label="사진 {i + 1} 자리"><span class="latin num">{String(i + 1).padStart(2, "0")}</span></Tilt>
-        </div>
+        <div class="ph" data-pattern role="img" aria-label="사진 {i + 1} 자리"></div>
       {/if}
     </li>
   {/each}
@@ -341,13 +318,14 @@
   .gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .cell { aspect-ratio: 1; position: relative; }
   .cell.real { overflow: hidden; }
-  .cell.armed { opacity: 0; transform: scale(0.82); }
-  .cell.armed.in { opacity: 1; transform: none; transition: opacity 0.6s ease var(--d), transform 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) var(--d); }
+  .gallery.empty .cell { aspect-ratio: auto; }
+  .gallery.empty .cell:nth-child(1) { grid-column: 1 / 3; grid-row: 1 / 3; aspect-ratio: 1; }
+  .gallery.empty .cell:nth-child(2) { grid-column: 3; grid-row: 1; }
+  .gallery.empty .cell:nth-child(3) { grid-column: 3; grid-row: 2; }
   .thumb { display: block; width: 100%; height: 100%; cursor: zoom-in; overflow: hidden; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .thumb:hover img, .thumb:focus-visible img { transform: scale(1.07); }
-  .ph-wrap { width: 100%; height: 100%; perspective: 600px; }
-  .num { font-size: 12px; transform: translateZ(24px); }
+  .ph { width: 100%; height: 100%; border-radius: var(--radius); }
 
   .lb { position: fixed; inset: 0; z-index: 200; color: #fff; outline: none; }
   .backdrop { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #1b1322, #07040a 80%); }
@@ -365,5 +343,5 @@
   .prev { left: 10px; top: 50%; margin-top: -24px; }
   .next { right: 10px; top: 50%; margin-top: -24px; }
   .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: var(--gold); }
-  @media (prefers-reduced-motion: reduce) { .cell.armed, .thumb img { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .thumb img { transition: none; } }
 </style>

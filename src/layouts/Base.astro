@@ -7,11 +7,12 @@ import { url } from "../lib/url";
 import AmbientCanvas from "../components/AmbientCanvas.svelte";
 import ThemeSwitch from "../components/ThemeSwitch.svelte";
 import { THEMES } from "../lib/themes";
+import { ICONS } from "../lib/icons";
 
 const pageUrl = new URL(url(""), Astro.site).href;
 const ogImage = new URL(url("og.png"), Astro.site).href;
 const title = wedding.share.title;
-const desc = `${dateKo} · ${wedding.venue.name}`;
+const desc = `${dateKo} ${wedding.venue.name}`;
 const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.color]));
 ---
 
@@ -33,7 +34,7 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
           if (q === t) localStorage.setItem("theme", t);
         }
       } catch (e) {}
-      document.documentElement.classList.add("js", "gated");
+      document.documentElement.classList.add("js", "gated", "has-js");
       setTimeout(function () {
         var h = document.documentElement;
         if (h.dataset.gate !== "ready") h.classList.remove("js", "gated");
@@ -53,7 +54,7 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Dancing+Script:wght@600&family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Nanum+Brush+Script&family=Pinyon+Script&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Gowun+Batang:wght@400;700&family=IM+Fell+English:ital@0;1&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400;500&family=Jua&family=Gowun+Dodum&display=swap"
     />
   </head>
   <body
@@ -61,10 +62,18 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
   >
     <AmbientCanvas client:idle />
     <slot />
-    <ThemeSwitch client:idle />
-    <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 18V6l10-2v12.2a3 3 0 1 1-2-2.8V7.3L11 8.4V18a3 3 0 1 1-2-2.8z" /></svg>
-    </button>
+    <div class="dock" id="dock">
+      <ThemeSwitch client:idle />
+      <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.music} /></svg>
+      </button>
+    </div>
+    <script>
+      const root = document.documentElement;
+      const sync = () => root.classList.toggle("dock-on", scrollY > innerHeight * 0.8);
+      addEventListener("scroll", sync, { passive: true });
+      sync();
+    </script>
     <script>
       import "../scripts/main";
     </script>

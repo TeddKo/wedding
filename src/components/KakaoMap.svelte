@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { ICONS } from "../lib/icons";
 
-  let { name, address, lat, lng, appkey }: { name: string; address: string; lat: number; lng: number; appkey: string } = $props();
+  let { name, lat, lng, appkey }: { name: string; address?: string; lat: number; lng: number; appkey: string } = $props();
 
   /* fallback: 서버 HTML/오류 상태, loading: 스켈레톤, ready: 타일 로드 완료 */
   let st = $state<"fallback" | "loading" | "ready">("fallback");
@@ -13,7 +14,7 @@
   const TIMEOUT = 8000;
 
   const pin = (label: string) =>
-    `<div class="km-pin"><b>${label}</b><svg viewBox="0 0 24 32" width="28" height="38" aria-hidden="true"><path d="M12 31C12 31 2 19.5 2 12a10 10 0 0 1 20 0c0 7.5-10 19-10 19z" style="fill:var(--pumpkin);stroke:var(--gold)" stroke-width="1.6"/><circle cx="12" cy="12" r="4" style="fill:var(--bg)"/></svg></div>`;
+    `<div class="km-pin"><b>${label}</b><svg viewBox="0 0 24 32" width="28" height="38" aria-hidden="true"><path d="M12 31C12 31 2 19.5 2 12a10 10 0 0 1 20 0c0 7.5-10 19-10 19z" style="fill:var(--accent);stroke:var(--ink)" stroke-width="1.6"/><circle cx="12" cy="12" r="4" style="fill:var(--bg)"/></svg></div>`;
 
   onMount(() => {
     st = "loading";
@@ -71,10 +72,9 @@
 </script>
 
 {#if st === "fallback"}
-  <div class="km-card">
-    <b>{name}</b>
-    <span>{address}</span>
-    <a class="btn btn-sm" href={link} target="_blank" rel="noopener noreferrer">카카오맵에서 보기</a>
+  <div class="km-card pattern">
+    <svg class="ico km-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.pin} /></svg>
+    <a class="btn-text" href={link} target="_blank" rel="noopener noreferrer">카카오맵에서 보기</a>
   </div>
 {/if}
 
@@ -89,17 +89,15 @@
     </div>
     <button type="button" class="km-tg" onclick={toggle} aria-pressed={free}>{free ? "고정" : "지도 이동"}</button>
   {/if}
-  <i class="km-vig" aria-hidden="true"></i>
 </div>
 
 <style>
-  .km, .km-card { margin: 4px 0 18px; border: 1px solid rgb(var(--gold-rgb) / 0.55); border-radius: 14px; overflow: hidden; background: var(--bg-2); }
-  .km { position: relative; height: 260px; isolation: isolate; }
+  .km, .km-card { margin: 0 0 16px; aspect-ratio: 16 / 10; border: 1px solid var(--line, rgb(var(--gold-rgb) / 0.4)); border-radius: var(--radius-lg, 12px); overflow: hidden; background-color: var(--surface, var(--bg-2)); }
+  .km { position: relative; isolation: isolate; }
   .km[hidden] { display: none; }
   .km-map { position: absolute; inset: 0; }
   .km.locked .km-map, .km.locked .km-map :global(*) { touch-action: pan-y !important; }
   .km-shield { position: absolute; inset: 0; z-index: 2; touch-action: pan-y; }
-  .km-vig { position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 28px 6px rgb(var(--bg-rgb) / 0.55); border-radius: inherit; }
   .km-skel {
     position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--bg-2) 30%, rgb(var(--gold-rgb) / 0.16) 50%, var(--bg-2) 70%) 0 0 / 220% 100%;
     animation: km-shimmer 1.4s linear infinite;
@@ -107,20 +105,20 @@
   @keyframes km-shimmer { to { background-position: -220% 0; } }
   @media (prefers-reduced-motion: reduce) { .km-skel { animation: none; } }
   .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid rgb(var(--gold-rgb) / 0.6); border-radius: 10px; overflow: hidden; background: rgb(var(--bg-rgb) / 0.88); }
-  .km-z { width: 36px; height: 36px; border: 0; background: none; color: var(--gold); font-size: 20px; line-height: 1; cursor: pointer; }
+  .km-z { width: 36px; height: 36px; border: 0; background: none; color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
   .km-z + .km-z { border-top: 1px solid rgb(var(--gold-rgb) / 0.35); }
   .km-tg {
     position: absolute; z-index: 5; left: 10px; bottom: 10px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
-    border: 1px solid var(--gold); background: rgb(var(--bg-rgb) / 0.88); color: var(--gold); font: inherit; font-size: 14px;
+    border: 1px solid var(--line-strong); background: rgb(var(--bg-rgb) / 0.88); color: var(--ink); font: inherit; font-size: 14px;
   }
-  .km-tg[aria-pressed="true"] { background: var(--gold); color: var(--bg); }
+  .km-tg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .km :global(.km-pin) { display: grid; justify-items: center; transform: translateY(2px); pointer-events: none; }
   .km :global(.km-pin b) {
-    margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--gold); background: var(--bg); color: var(--gold);
+    margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink);
     font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
   }
   .km :global(.km-pin svg) { filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5)); }
-  .km-card { display: grid; justify-items: center; gap: 6px; padding: 22px 16px; text-align: center; }
-  .km-card b { font-size: 18px; color: var(--gold); }
-  .km-card span { color: var(--ivory-dim); font-size: 15px; margin-bottom: 8px; }
+  .km-card { display: grid; align-content: center; justify-items: center; gap: 8px; text-align: center; color: var(--ink-2, var(--ivory-dim)); }
+  .km-ic { width: 32px; height: 32px; }
+  :global([data-theme="dev"]) .km-card { justify-items: start; padding: 0 24px; }
 </style>

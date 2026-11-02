@@ -1,20 +1,13 @@
 ---
-import Ornament from "./Ornament.astro";
-import Terminal from "./ui/Terminal.svelte";
-import Dogs from "./ui/Dogs.svelte";
+import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
 import { givenName, hasParents } from "../lib/family";
 
 const families = [wedding.groom, wedding.bride].filter(hasParents);
 ---
 
-<section class="section" data-reveal="blur" aria-labelledby="greeting-h">
-  <div class="illus" data-th="dev puppy" aria-hidden="true">
-    <div data-th="dev"><Terminal groom={wedding.groom.name} bride={wedding.bride.name} /></div>
-    <div data-th="puppy"><Dogs /></div>
-  </div>
-  <h2 id="greeting-h" class="sec-title"><span class="latin">Invitation</span>{wedding.greeting.title}</h2>
-  <Ornament name="divider" />
+<section class="section" data-reveal aria-labelledby="greeting-h">
+  <h2 id="greeting-h" class="sec-title"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("greeting")}</span>{wedding.greeting.title}</h2>
   <div class="greeting">
     {wedding.greeting.body.map((p) => <p>{p}</p>)}
   </div>
@@ -27,7 +20,7 @@ const families = [wedding.groom, wedding.bride].filter(hasParents);
             <p>
               {parents.map((x, i) => (
                 <>
-                  {i > 0 && <span class="sep" aria-hidden="true">·</span>}
+                  {i > 0 && <span class="sep" aria-hidden="true"></span>}
                   <span class="par">{x.deceased && <span class="dec">故</span>}{x.name}</span>
                 </>
               ))}
@@ -38,5 +31,5 @@ const families = [wedding.groom, wedding.bride].filter(hasParents);
       </div>
     )
   }
-  <p class="signature">신랑 <b>{wedding.groom.name}</b> · 신부 <b>{wedding.bride.name}</b></p>
+  <p class="signature">신랑 <b>{wedding.groom.name}</b><span class="sep" aria-hidden="true"></span>신부 <b>{wedding.bride.name}</b></p>
 </section>

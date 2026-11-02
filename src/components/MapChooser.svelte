@@ -14,8 +14,6 @@
   let open = $state(false);
   let closing = false;
   let btn: HTMLButtonElement;
-  let ripples = $state<{ id: number; x: number; y: number; d: number }[]>([]);
-  let seq = 0;
 
   /** y: 시트 이동량(%). 0 = 열림, 100 = 아래로 숨김 */
   const sp = new Spring(100, { stiffness: 0.16, damping: 0.78 });
@@ -24,14 +22,6 @@
   onMount(() => {
     plat = detect(navigator.userAgent, navigator.maxTouchPoints);
   });
-
-  function ripple(e: PointerEvent) {
-    if (reduced()) return;
-    const r = btn.getBoundingClientRect();
-    const id = ++seq;
-    ripples.push({ id, x: e.clientX - r.left, y: e.clientY - r.top, d: Math.max(r.width, r.height) * 2.4 });
-    setTimeout(() => (ripples = ripples.filter((q) => q.id !== id)), 700);
-  }
 
   async function show() {
     apps = mapApps(plat.os, plat.mac, venue);
@@ -122,17 +112,13 @@
 
 <button
   type="button"
-  class="btn mc-btn"
+  class="btn-primary mc-btn"
   bind:this={btn}
   aria-haspopup="dialog"
   aria-expanded={open}
-  onpointerdown={ripple}
   onclick={show}
 >
-  <span class="lbl">길찾기</span>
-  {#each ripples as r (r.id)}
-    <i class="ripple" style:left="{r.x}px" style:top="{r.y}px" style:width="{r.d}px" style:height="{r.d}px"></i>
-  {/each}
+  길찾기
 </button>
 
 {#snippet glyph(id: MapApp["id"])}
@@ -181,28 +167,18 @@
 {/if}
 
 <style>
-  .mc-btn { position: relative; overflow: hidden; isolation: isolate; }
-  .mc-btn .lbl { position: relative; z-index: 1; }
-  .ripple {
-    position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0); opacity: 0.5;
-    background: radial-gradient(closest-side, rgb(var(--glow-rgb) / 0.75), rgb(var(--gold-rgb) / 0));
-    animation: ripple 650ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-  }
-  @keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .ripple { display: none; } }
-
   .mc-root { position: fixed; inset: 0; z-index: 200; }
   .mc-back { position: absolute; inset: 0; background: rgb(var(--shade-rgb) / 0.72); }
   .mc-sheet {
     position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto;
     background: var(--bg-2); border: 1px solid rgb(var(--gold-rgb) / 0.55); border-bottom: 0; border-radius: 18px 18px 0 0;
-    box-shadow: 0 -12px 40px rgb(0 0 0 / 0.55), 0 0 30px rgb(var(--gold-rgb) / 0.12);
+    box-shadow: 0 -12px 40px rgb(0 0 0 / 0.3);
     padding: 0 16px calc(20px + env(safe-area-inset-bottom)); text-align: left; will-change: transform;
   }
   .mc-sheet::after { content: ""; position: absolute; left: -1px; right: -1px; top: 100%; height: 120px; background: var(--bg-2); }
   .mc-head { position: relative; display: flex; align-items: center; justify-content: center; min-height: 64px; touch-action: none; cursor: grab; }
   .mc-grab { position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: rgb(var(--gold-rgb) / 0.45); }
-  h3 { margin: 10px 0 0; font-family: var(--latin); font-size: 17px; letter-spacing: 0.12em; color: var(--gold); font-weight: 400; }
+  h3 { margin: 10px 0 0; font-size: 17px; letter-spacing: 0; color: var(--ink, var(--ivory)); font-weight: 600; }
   .mc-x { position: absolute; right: -6px; top: 12px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--ivory-dim); cursor: pointer; }
   .mc-x svg { width: 16px; height: 16px; }
   .mc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -217,5 +193,5 @@
   .mc-tx b { font-size: 17px; font-weight: 700; }
   .mc-tx small { font-size: 13px; color: var(--ivory-dim); }
   .mc-chev { flex: none; width: 16px; height: 16px; color: var(--ivory-dim); }
-  .mc-kakao { margin: 14px 2px 0; font-size: 13px; line-height: 1.5; color: var(--pumpkin); }
+  .mc-kakao { margin: 14px 2px 0; font-size: 13px; line-height: 1.5; color: var(--accent-text); }
 </style>

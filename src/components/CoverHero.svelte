@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
   import { Tween } from "svelte/motion";
-  import { cubicInOut, cubicOut } from "svelte/easing";
-  import { BAT_PATH } from "../lib/bat";
+  import { cubicOut } from "svelte/easing";
+  import Dogs from "./ui/Dogs.svelte";
   import { reduced } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
 
@@ -17,22 +17,26 @@
     photo,
   }: { groom: string; bride: string; date: string; dateKo: string; venue: string; focus: string; hasPhoto: boolean; photo?: Snippet } = $props();
 
-  const parts = date.split("-").map(Number);
-  const weekday = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay()];
-  /* 연·월·일 카운트업 Tween. 초기값은 최종값이라 SSR/무JS 에서는 그대로 보인다 */
-  const counters = parts.map((n) => new Tween(n, { duration: 1500, easing: cubicOut }));
-  const widths = [4, 2, 2];
-  const num = (i: number) => String(Math.round(counters[i].current)).padStart(widths[i], "0");
+  const uid = $props.id();
+  const [y, m, d] = date.split("-").map(Number);
+  const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const EN_DAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const EN_MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const KO_DAY = "일월화수목금토";
+  const ord = (n: number) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
+  const longEn = `${EN_DAY[wd]}, the ${ord(d)} of ${EN_MON[m - 1]} ${y}`;
+  const longKo = `${y}년 ${m}월 ${d}일 ${KO_DAY[wd]}요일`;
 
-  const DASH = 260;
+  /* 첨두 아치: 안쪽 괘선 경로(336x440 기준, i=안쪽 간격) */
+  const arch = (i: number) => `M${i} 440V${190 + i * 0.3}C${i} ${105 + i * 0.7} ${84 + i * 0.6} ${36 + i * 1.4} 168 ${i * 2.4}C${252 - i * 0.6} ${36 + i * 1.4} ${336 - i} ${105 + i * 0.7} ${336 - i} ${190 + i * 0.3}V440`;
+
   let armed = $state(false);
   let scrollY = $state(0);
-
-  const arch = new Tween(0, { duration: 2400, easing: cubicOut });
-  const ink = new Tween(0, { duration: 2300, easing: cubicInOut });
-  const fill = new Tween(0, { duration: 1000, easing: cubicOut });
+  const settle = new Tween(0, { duration: 2400, easing: cubicOut });
 
   onMount(() => {
+    if (reduced() || !hasPhoto) return;
+    armed = true;
     let pending = false;
     const onScroll = () => {
       if (pending) return;
@@ -43,10 +47,6 @@
       });
     };
     addEventListener("scroll", onScroll, { passive: true });
-    if (!reduced()) {
-      armed = true;
-      for (const c of counters) c.set(0, { duration: 0 });
-    }
     return () => removeEventListener("scroll", onScroll);
   });
 
@@ -54,174 +54,149 @@
   $effect(() => {
     if (!armed || !stage.open || played) return;
     played = true;
-    arch.target = 1;
-    ink.set(1, { delay: 500 }).then(() => (fill.target = 1));
-    for (const [i, c] of counters.entries()) c.set(parts[i], { delay: 1700 + i * 140 });
+    settle.target = 1;
   });
 
-  const parY = $derived(armed ? Math.min(scrollY, 900) * 0.14 : 0);
-  const scale = $derived(armed ? 1.1 - arch.current * 0.06 : 1.04);
-  const overOpacity = $derived(armed ? 1 - (Math.min(scrollY, 200) / 200) * 0.4 : 1);
+  const parY = $derived(armed ? Math.min(scrollY, 900) * 0.05 : 0);
+  const scale = $derived(armed ? 1.06 - settle.current * 0.04 : 1.02);
 </script>
 
-<header class="cover" style:--focus={focus}>
-  <div class="hero">
-    <div class="frame">
-      <p class="bar" data-th="dev" aria-hidden="true"><span class="dots">● ● ●</span>~/us/cover.jpg</p>
-      <div class="stage">
-        {#if hasPhoto}
-          <div class="photo" style:transform="translate3d(0, {parY * 0.4}px, 0) scale({scale})">{@render photo?.()}</div>
-        {:else}
-          <div class="placeholder" role="img" aria-label="사진이 들어갈 자리">
-            <div class="ph-box" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false">
-                <path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.6" />
-              </svg>
-              <b>사진 자리</b>
-              <small>PHOTO</small>
-            </div>
-          </div>
-        {/if}
-        <div class="shade"></div>
-        <div class="arch-line" data-th="halloween"></div>
-        <svg class="cobweb tl" data-th="halloween" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-          <g fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round">
-            <path d="M0 0 L120 0 M0 0 L0 120 M0 0 L104 62 M0 0 L62 104 M0 0 L116 28 M0 0 L28 116" />
-            <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
-          </g>
-        </svg>
-        <svg class="cobweb br" data-th="halloween" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-          <g fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round">
-            <path d="M0 0 L120 0 M0 0 L0 120 M0 0 L104 62 M0 0 L62 104 M0 0 L116 28 M0 0 L28 116" />
-            <path d="M24 0 Q20 20 0 24 M48 0 Q42 42 0 48 M72 0 Q64 64 0 72 M96 0 Q86 86 0 96" />
-          </g>
-        </svg>
-        {#each ["tl", "br"] as pos}
-          <svg class="paws {pos}" data-th="puppy" viewBox="0 0 110 90" aria-hidden="true" focusable="false">
-            {#each [[14, 74, -30], [40, 52, -20], [62, 30, -30], [88, 12, -20]] as [x, y, r], i}
-              <g fill="rgb(var(--gold-rgb) / {0.4 + i * 0.1})" transform="translate({x} {y}) rotate({r}) scale(0.5)">
-                <ellipse cx="0" cy="6" rx="8" ry="7" /><circle cx="-9" cy="-4" r="3.4" /><circle cx="-3" cy="-9" r="3.4" /><circle cx="3" cy="-9" r="3.4" /><circle cx="9" cy="-4" r="3.4" />
-              </g>
-            {/each}
-          </svg>
-        {/each}
-        <div class="over" style:opacity={armed ? overOpacity : undefined} aria-hidden="true">
-          <p class="of">The Wedding of</p>
-          <p class="dateh"><span>{num(0)}</span><i>|</i><span>{num(1)}</span><i>|</i><span>{num(2)}</span></p>
-          <p class="wk">{weekday}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <p class="script">
-    <span data-th="halloween">the thirty-first of October</span>
-    <span data-th="dev">git tag v1.0 -m "10.31"</span>
-    <span data-th="puppy">Sunday, the thirty-first of October</span>
+<header class="cover" style:--focus={focus} style:--clip="url(#lancet-{uid})">
+  <p class="kicker">
+    <span data-th="halloween" class="k-hal">{longEn}</span>
+    <span data-th="dev" class="k-dev">$ git log --graph</span>
+    <span data-th="puppy" class="k-pup">{longKo}</span>
   </p>
 
-  <h1 class="names" class:inked={armed}>
-    <span class="names-text"><span class="l1">{groom}<span class="dot">·</span>{bride}</span> <span class="l2">결혼합니다</span></span>
-    {#if armed}
-      <svg class="ink" viewBox="0 0 300 80" aria-hidden="true" focusable="false" style:--dash={DASH} style:--off={(1 - ink.current) * DASH} style:--fill={fill.current}>
-        <text x="150" y="33" text-anchor="middle" class="t1">{groom}<tspan class="a" dx="14">·</tspan><tspan dx="14">{bride}</tspan></text>
-        <text x="150" y="69" text-anchor="middle" class="t2">결혼합니다</text>
-      </svg>
-    {/if}
+  <div class="hero">
+    <svg data-th="halloween" class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <clipPath id="lancet-{uid}" clipPathUnits="objectBoundingBox"><path d="M0 1V.432C0 .238 .25 .082 .5 0C.75 .082 1 .238 1 .432V1Z" /></clipPath>
+    </svg>
+    <span data-th="halloween" class="flame" aria-hidden="true">
+      <svg viewBox="0 0 12 22" width="12" height="22" focusable="false"><path d="M6 1C9 6 11 10 11 14a5 5 0 0 1-10 0C1 10 4 8 6 1Z" fill="#e0904a" /><path d="M6 9c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 2-3 3-7Z" fill="#f6d79a" /></svg>
+    </span>
+
+    <div class="frame">
+      {#if hasPhoto}
+        <div class="photo" style:transform="translate3d(0, {parY}px, 0) scale({scale})">{@render photo?.()}</div>
+      {:else}
+        <div class="ph" role="img" aria-label="사진이 들어갈 자리">
+          <span data-th="halloween" class="ph-hal"><b>{groom[0]}</b><i>&amp;</i><b>{bride[0]}</b></span>
+          <span data-th="dev" class="ph-dev"><span>cover.jpg</span><span>1600 × 2000</span></span>
+          <svg data-th="puppy" class="ph-pup" viewBox="0 0 360 450" preserveAspectRatio="xMidYMid slice" focusable="false">
+            <rect width="360" height="450" fill="#dcebf5" />
+            <g fill="none" stroke="#fff" stroke-width="1.500" stroke-linecap="round">
+              <path d="M40 90q10-14 26-6 8-12 24-4 14-2 16 10H40z" />
+              <path d="M230 60q9-12 22-5 8-10 22-3 12 0 14 8h-58z" />
+              <path d="M150 150q8-10 20-4 7-8 19-2 11 0 12 6h-51z" />
+            </g>
+            <path d="M0 360C70 320 140 330 200 350s110-30 160-20V450H0z" fill="#cfe5c8" />
+          </svg>
+        </div>
+      {/if}
+    </div>
+    <svg data-th="halloween" class="rules" viewBox="0 0 336 440" aria-hidden="true" focusable="false">
+      <path d={arch(10)} fill="none" stroke="var(--line-strong, var(--gold))" stroke-width="1" />
+      <path d={arch(14)} fill="none" stroke="var(--line-strong, var(--gold))" stroke-width="0.6" opacity="0.6" />
+    </svg>
+  </div>
+
+  <div class="pups" data-th="puppy" aria-hidden="true">
+    <svg class="grass" viewBox="0 0 400 40" preserveAspectRatio="none" focusable="false"><path d="M0 40V20C60 6 120 4 200 12S340 8 400 16V40Z" fill="#cfe5c8" /><path d="M0 20C60 6 120 4 200 12S340 8 400 16" fill="none" stroke="#b9d6b0" stroke-width="1" /></svg>
+    <Dogs />
+  </div>
+
+  <div class="gl" data-th="dev">
+    <div class="gl-g">
+    <svg class="gl-svg" viewBox="0 0 60 140" aria-hidden="true" focusable="false">
+      <path d="M14 20V88C14 112 28 106 28 124" fill="none" stroke="var(--groom)" stroke-width="2" />
+      <path d="M42 72V88C42 112 28 106 28 124" fill="none" stroke="var(--bride)" stroke-width="2" />
+      <circle cx="14" cy="20" r="5.500" fill="var(--bg)" stroke="var(--groom)" stroke-width="2" />
+      <circle cx="42" cy="72" r="5.500" fill="var(--bg)" stroke="var(--bride)" stroke-width="2" />
+      <circle cx="28" cy="124" r="7.500" fill="var(--ink)" stroke="var(--bg)" stroke-width="2" />
+    </svg>
+    <h1 class="sr">{groom} & {bride} 결혼합니다</h1>
+    <span class="gl-row r1">{groom}</span>
+    <span class="gl-row r2">{bride}</span>
+    <span class="gl-row r3">결혼합니다 <em>wedding</em></span>
+    </div>
+    <div class="gl-meta"><p class="when">{dateKo}</p><p class="where">{venue}</p></div>
+    <i class="trunk"></i>
+  </div>
+
+  <h1 class="names">
+    <span data-th="halloween" class="n-hal"><span>{groom}</span><i>&amp;</i><span>{bride}</span></span>
+    <span data-th="puppy" class="n-pup">{groom} 그리고 {bride}</span>
   </h1>
+  <p class="wed" data-th="puppy">결혼합니다</p>
+  <p class="rule" data-th="halloween" aria-hidden="true"><i></i><b></b><i></i></p>
 
-  <svg class="orn-divider" viewBox="0 0 240 24" aria-hidden="true" focusable="false">
-    <g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" style:opacity={armed ? fill.current : undefined}>
-      <path d="M4 12H92" /><path d="M236 12H148" />
-      <path d="M92 12c8 0 10-8 18-8m-18 8c8 0 10 8 18 8m-18-8h8" />
-      <path d="M148 12c-8 0-10-8-18-8m18 8c-8 0-10 8-18 8m18-8h-8" />
-    </g>
-    <g style:opacity={armed ? fill.current : undefined}>
-      <path data-th="halloween" transform="translate(104 4) scale(0.5)" fill="currentColor" d={BAT_PATH} />
-      <text data-th="dev" x="120" y="16" text-anchor="middle" font-size="11" font-family="JetBrains Mono, ui-monospace, Menlo, monospace" fill="currentColor">&lt;/&gt;</text>
-      <g data-th="puppy" fill="currentColor" transform="translate(120 12) scale(0.55)">
-        <ellipse cx="0" cy="6" rx="8" ry="7" /><circle cx="-9" cy="-4" r="3.4" /><circle cx="-3" cy="-9" r="3.4" /><circle cx="3" cy="-9" r="3.4" /><circle cx="9" cy="-4" r="3.4" />
-      </g>
-    </g>
-  </svg>
-
-  <p class="cover-date">{dateKo}</p>
-  <p class="cover-venue" style:opacity={armed ? Math.min(1, fill.current * 1.5) : undefined}>{venue}</p>
-  <svg class="cue" class:gone={scrollY > 40} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  <p class="when">{dateKo}</p>
+  <p class="where">{venue}</p>
 </header>
 
 <style>
-  .cover { text-align: center; position: relative; padding-bottom: 28px; }
-  .hero { padding: var(--hero-inset) var(--hero-inset) 0; }
-  .frame {
-    position: relative; width: 100%; aspect-ratio: 4 / 5; max-height: calc(100svh - 190px);
-    display: flex; flex-direction: column; overflow: hidden; background: var(--bg-2);
-    border-radius: 0; box-shadow: var(--hero-line);
-  }
-  :global([data-theme="dev"]) .frame, :global([data-theme="puppy"]) .frame { border-radius: var(--hero-r); }
-  .bar {
-    flex: none; height: 30px; padding: 0 12px; display: flex; align-items: center; gap: 12px; text-align: left;
-    background: rgb(var(--bg2-rgb)); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.4);
-    font: 12px/1 var(--latin); color: var(--ivory-dim);
-  }
-  .dots { color: var(--gold); letter-spacing: 0.1em; }
-  .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .cover { position: relative; text-align: center; padding: 28px 0 64px; }
+  .kicker { margin: 0 24px 16px; color: var(--ink-2, var(--ivory-dim)); }
+  .k-hal { font: italic 17px/1.4 var(--f-latin); }
+  .k-dev { font: 12px/1.5 var(--f-mono); }
+  .k-pup { font: 18px/1.4 var(--f-display); color: var(--ink); }
+  .defs { position: absolute; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  .hero { position: relative; margin: 0 auto; }
+  .frame { position: relative; width: 100%; overflow: hidden; background: var(--surface); }
   .photo { position: absolute; inset: 0; will-change: transform; }
   .photo :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: var(--focus); display: block; }
-  .placeholder {
-    position: absolute; inset: 0; display: grid; place-items: center;
-    background: repeating-linear-gradient(45deg, var(--panel-a) 0 14px, var(--panel-b) 14px 28px);
-  }
-  .ph-box {
-    display: grid; justify-items: center; gap: 2px; padding: 18px 26px; color: var(--ivory-dim);
-    border: 1.5px dashed rgb(var(--gold-rgb) / 0.7); background: rgb(var(--bg-rgb) / 0.55);
-  }
-  .ph-box b { font-size: 15px; line-height: 1.6; }
-  .ph-box small { font: 11px/1 var(--latin); letter-spacing: 0.2em; }
-  .shade { position: absolute; inset: 0 0 auto; height: 40%; background: linear-gradient(rgb(var(--shade-rgb) / 0.55), transparent); pointer-events: none; }
-  .arch-line { position: absolute; inset: 14px; border: 3px double var(--gold); border-radius: var(--hero-r); pointer-events: none; }
-  .cobweb { position: absolute; width: 84px; color: rgb(var(--gold-rgb) / 0.55); pointer-events: none; }
-  .cobweb.tl { top: 0; left: 0; }
-  .cobweb.br { bottom: 0; right: 0; transform: rotate(180deg); }
-  .paws { position: absolute; width: 96px; pointer-events: none; }
-  .paws.tl { top: 4px; left: 4px; }
-  .paws.br { bottom: 4px; right: 4px; transform: rotate(180deg); }
+  .ph { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; color: var(--ink-2); }
 
-  .over { position: absolute; inset: 0 0 auto; padding-top: 22px; color: #fff; text-shadow: 0 1px 8px rgb(0 0 0 / 0.55); pointer-events: none; }
-  .of { font: 11px/1.6 var(--latin); letter-spacing: 0.3em; text-transform: uppercase; }
-  .dateh { font: 700 28px/1.3 var(--latin); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
-  .dateh i { font-style: normal; margin: 0 0.5em; opacity: 0.7; }
-  .wk { font: 12px/1.6 var(--latin); letter-spacing: 0.4em; text-indent: 0.4em; }
+  :global([data-theme="halloween"]) .hero { width: min(336px, calc(100% - 48px)); margin-top: 44px; aspect-ratio: 336 / 440; }
+  :global([data-theme="halloween"]) .frame { position: absolute; inset: 0; clip-path: var(--clip); }
+  .ph-hal { font: 64px/1 var(--f-display); color: var(--ink); display: flex; gap: 6px; align-items: baseline; }
+  .ph-hal i { font: italic 40px/1 var(--f-latin); color: var(--accent); }
+  .ph-hal b { font-weight: 400; }
+  :global([data-theme="halloween"]) .ph { background: repeating-linear-gradient(45deg, rgb(var(--gold-rgb) / 0.12) 0 1px, transparent 1px 7px), var(--surface); }
+  .rules { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .flame { position: absolute; left: 50%; top: -30px; width: 12px; height: 22px; margin-left: -6px; transform-origin: 50% 100%; animation: flick 3s linear infinite; pointer-events: none; }
+  @keyframes flick { 0% { opacity: 0.95; transform: scaleY(1) } 11% { opacity: 0.85; transform: scaleY(0.94) } 23% { opacity: 1; transform: scaleY(1.04) } 37% { opacity: 0.88; transform: scaleY(0.96) rotate(-2deg) } 52% { opacity: 1; transform: scaleY(1.02) } 64% { opacity: 0.86; transform: scaleY(0.93) rotate(2deg) } 81% { opacity: 0.98; transform: scaleY(1.03) } 100% { opacity: 0.95; transform: scaleY(1) } }
 
-  .script {
-    position: relative; z-index: 2; margin: -0.55em 16px 0; font: clamp(22px, 6.4vw, 26px)/1.2 var(--script); color: var(--accent-ink);
-    text-shadow: 0 1px 8px rgb(var(--shade-rgb) / 0.6);
-  }
-  :global([data-theme="dev"]) .script { font-size: 18px; text-shadow: none; }
-  :global([data-theme="puppy"]) .script { text-shadow: 0 1px 6px rgb(var(--bg-rgb) / 0.95), 0 0 2px rgb(var(--bg-rgb)); }
-  :global([data-theme="puppy"]) .shade { background: linear-gradient(rgb(var(--shade-rgb) / 0.8), rgb(var(--shade-rgb) / 0.25) 60%, transparent); }
+  :global([data-theme="dev"]) .cover { text-align: left; padding-left: calc(var(--rail-x, 28px) + 32px); padding-right: 24px; padding-bottom: 0; }
+  :global([data-theme="dev"]) .kicker { margin: 0 0 12px; }
+  :global([data-theme="dev"]) .hero { width: 100%; max-width: 360px; aspect-ratio: 4 / 5; }
+  :global([data-theme="dev"]) .frame { position: absolute; inset: 0; border-radius: 6px; border: 1px solid var(--line); }
+  :global([data-theme="dev"]) .ph { background: radial-gradient(circle, var(--line) 1px, transparent 1.500px) 0 0 / 8px 8px, var(--surface); gap: 2px; }
+  .ph-dev { display: grid; gap: 2px; font: 13px/1.5 var(--f-mono); text-align: center; }
 
-  .names { width: 300px; height: 84px; margin: 14px auto 0; position: relative; font-family: var(--hand); font-weight: 400; letter-spacing: 0.08em; }
-  .names-text { display: block; }
-  .l1 { display: block; white-space: nowrap; height: 44px; line-height: 44px; font-size: 34px; }
-  .l2 { display: block; height: 36px; line-height: 36px; font-size: 22px; }
-  .dot { color: var(--pumpkin); margin: 0 0.4em; }
-  .names.inked .names-text { color: transparent; }
-  .names.inked .names-text .dot { color: transparent; }
-  .ink { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .ink text {
-    font-family: var(--hand); font-weight: 400; letter-spacing: 0.08em; white-space: pre;
-    fill: var(--ivory); fill-opacity: var(--fill); stroke: var(--gold); stroke-width: 0.9; stroke-linejoin: round;
-    stroke-dasharray: var(--dash); stroke-dashoffset: var(--off);
-  }
-  .ink .t1 { font-size: 34px; }
-  .ink .t2 { font-size: 22px; }
-  .ink .a { fill: var(--pumpkin); stroke: var(--pumpkin); }
+  .gl { position: relative; margin: 16px 0 0 calc(-1 * (var(--rail-x, 28px) + 32px)); padding-left: calc(var(--rail-x, 28px) + 32px); }
+  .gl-g { position: relative; height: 140px; margin-left: calc(-1 * (var(--rail-x, 28px) + 32px)); }
+  .gl-meta { padding-bottom: 64px; }
+  .gl-svg { position: absolute; top: 0; left: calc(var(--rail-x, 28px) - 28px); width: 60px; height: 140px; }
+  .gl-row { position: absolute; left: calc(var(--rail-x, 28px) + 32px); transform: translateY(-50%); font: 600 26px/1.3 var(--f-body); white-space: nowrap; color: var(--ink); }
+  .r1 { top: 20px; } .r2 { top: 72px; } .r3 { top: 124px; font-size: 18px; }
+  .gl-row em { font: 500 12px/1 var(--f-mono); font-style: normal; color: var(--groom); border: 1px solid var(--groom); border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; }
+  .trunk { position: absolute; left: var(--rail-x, 28px); top: 124px; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); }
+  :global([data-theme="dev"]) .names { display: none; }
+  :global([data-theme="dev"]) .cover > .when, :global([data-theme="dev"]) .cover > .where { display: none; }
 
-  .cover-date { font-size: 17px; margin-top: 4px; color: var(--ivory-dim); }
-  .cover-venue { color: var(--ivory-dim); margin-top: 2px; }
-  .cue { display: block; width: 28px; height: 28px; margin: 14px auto 0; color: var(--gold); transition: opacity 0.4s; animation: cue 1.6s ease-in-out infinite; }
-  .cue.gone { opacity: 0; animation: none; }
-  @keyframes cue { 50% { transform: translateY(6px); } }
-  @media (prefers-reduced-motion: reduce) { .cue { animation: none; } }
+  :global([data-theme="puppy"]) .hero { width: min(360px, calc(100% - 48px)); aspect-ratio: 4 / 5; }
+  :global([data-theme="puppy"]) .frame { position: absolute; inset: 0; border-radius: 28px; border: 6px solid #fff; box-shadow: 0 10px 30px rgb(38 50 74 / 0.12); background: #dcebf5; }
+  .ph-pup { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pups { position: relative; width: 100%; margin: -24px 0 0; height: 150px; pointer-events: none; }
+  .pups :global(.orn-dogs) { position: relative; display: block; width: 200px; height: auto; margin: 0 auto; z-index: 1; }
+  .grass { position: absolute; left: 0; right: 0; bottom: -16px; width: 100%; height: 56px; mask-image: linear-gradient(#000 55%, transparent); }
+
+  .names { margin: 28px 24px 0; font: 400 34px/1.25 var(--f-display); letter-spacing: 0.02em; color: var(--ink); }
+  .n-hal { display: flex; flex-direction: column; align-items: center; }
+  .n-hal i { font: italic 28px/1.3 var(--f-latin); color: var(--accent); }
+  .n-pup { font: 30px/1.3 var(--f-display); display: block; margin-top: 12px; }
+  :global([data-theme="puppy"]) .names { margin-top: 28px; }
+  .wed { margin-top: 4px; font-size: 17px; color: var(--ink-2); }
+  .rule { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; color: var(--line-strong, var(--gold)); }
+  .rule i { width: 52px; height: 1px; background: currentColor; }
+  .rule b { width: 6px; height: 6px; border: 1px solid currentColor; transform: rotate(45deg); }
+
+  .when { margin-top: 20px; font-size: 16px; }
+  .where { color: var(--ink-2); font-size: 15px; }
+
+  @media (prefers-reduced-motion: reduce) { .flame { animation: none; } }
 </style>

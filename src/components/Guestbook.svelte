@@ -41,7 +41,7 @@
   let delBusy = $state(false);
 
   let toast = $state<{ id: number; msg: string; warn: boolean } | null>(null);
-  let ripples = $state<{ id: number; x: number; y: number; d: number }[]>([]);
+  let formOpen = $state(false);
   let seq = 0;
 
   const canExpand = $derived(items.length > HEAD || cursor !== null);
@@ -132,6 +132,17 @@
     if (status === "ready" && !open && items.length < HEAD && cursor !== null) void load(false);
   });
 
+  async function openForm() {
+    formOpen = true;
+    await tick();
+    document.getElementById("gb-name")?.focus();
+  }
+  async function closeForm() {
+    formOpen = false;
+    await tick();
+    document.getElementById("gb-open")?.focus();
+  }
+
   function expand() {
     batchFrom = HEAD;
     expanded = true;
@@ -167,8 +178,10 @@
         freshId = entry.id;
         items = [entry, ...items];
         name = message = password = "";
+        formOpen = false;
         notify("축하 글이 등록되었습니다");
         await tick();
+        document.getElementById("gb-open")?.focus({ preventScroll: true });
         document.getElementById(`gb-c-${entry.id}`)?.scrollIntoView({ behavior: reduced() ? "instant" : "smooth", block: "nearest" });
       } else if (r.status === 429) {
         notify("잠시 후 다시 작성해 주세요", true);
@@ -237,15 +250,6 @@
     }
   }
 
-  function ripple(e: PointerEvent) {
-    if (reduced()) return;
-    const el = e.currentTarget as HTMLElement;
-    const r = el.getBoundingClientRect();
-    const id = ++seq;
-    ripples.push({ id, x: e.clientX - r.left, y: e.clientY - r.top, d: Math.max(r.width, r.height) * 2.4 });
-    setTimeout(() => (ripples = ripples.filter((q) => q.id !== id)), 700);
-  }
-
   /* 새로 쓴 글은 스프링처럼 날아들고, 나머지는 순번대로 펼쳐진다 */
   function enter(node: Element, p: { i: number; fresh: boolean }) {
     if (reduced()) return { duration: 0 };
@@ -267,8 +271,12 @@
 <div class="gb">
   <p class="sr" role="status" aria-live="polite">{announce}</p>
 
-  {#if mounted}
-    <form class="form" onsubmit={submit} novalidate aria-label="축하 글 쓰기">
+  {#if mounted && !formOpen}
+    <button type="button" id="gb-open" class="btn-primary open-form" aria-expanded="false" aria-controls="gb-form" onclick={openForm}>축하 글 남기기</button>
+  {/if}
+
+  {#if mounted && formOpen}
+    <form class="form" id="gb-form" onsubmit={submit} novalidate aria-label="축하 글 쓰기">
       <div class="field">
         <label for="gb-name">이름</label>
         <input id="gb-name" bind:value={name} maxlength="20" autocomplete="name" aria-invalid={!!errs.name} aria-describedby={errs.name ? "gb-name-e" : undefined} />
@@ -301,12 +309,10 @@
         {#if errs.password}<p class="err" id="gb-password-e" role="alert">{errs.password}</p>{/if}
       </div>
       {#if errs.form}<p class="err" role="alert">{errs.form}</p>{/if}
-      <button type="submit" class="btn send" disabled={busy} aria-busy={busy} onpointerdown={ripple}>
-        <span class="lbl">{busy ? "등록 중…" : "축하 글 남기기"}</span>
-        {#each ripples as r (r.id)}
-          <i class="ripple" style:left="{r.x}px" style:top="{r.y}px" style:width="{r.d}px" style:height="{r.d}px"></i>
-        {/each}
-      </button>
+      <div class="form-btns">
+        <button type="button" class="btn" onclick={closeForm}>닫기</button>
+        <button type="submit" class="btn-primary" disabled={busy} aria-busy={busy}>{busy ? "등록 중…" : "등록하기"}</button>
+      </div>
     </form>
   {/if}
 
@@ -321,17 +327,26 @@
     {:else if status === "error"}
       <div class="state" role="alert">
         <p>잠시 후 다시 시도해 주세요</p>
-        <button type="button" class="btn btn-sm" onclick={() => load(true)}>다시 시도</button>
+        <button type="button" class="btn-text" onclick={() => load(true)}>다시 시도</button>
       </div>
     {:else if items.length === 0}
       <div class="state empty">
-        <svg viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+        <svg data-th="halloween" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
           <path d="M26 6a17 17 0 1 0 16 24A14 14 0 0 1 26 6z" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round" />
           <rect x="44" y="30" width="9" height="20" rx="1.5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
           <path d="M40 50h17" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round" />
           <path class="flame" d="M48.5 28c-3-3-3-6 0-10 3 4 3 7 0 10z" fill="var(--pumpkin)" />
         </svg>
-        <p>첫 축하 글을 남겨 주세요</p>
+        <svg data-th="dev" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+          <rect x="6" y="8" width="60" height="40" rx="5" fill="none" stroke="var(--ivory-dim)" stroke-width="1.4" />
+          <path d="M16 22l7 6-7 6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <rect class="caret" x="28" y="32" width="10" height="2.5" fill="var(--pumpkin)" />
+        </svg>
+        <svg data-th="puppy" viewBox="0 0 72 56" aria-hidden="true" focusable="false">
+          <g fill="var(--gold)" opacity="0.55"><ellipse cx="22" cy="40" rx="7" ry="6" /><circle cx="14" cy="31" r="2.8" /><circle cx="19" cy="26" r="2.8" /><circle cx="25" cy="26" r="2.8" /><circle cx="30" cy="31" r="2.8" /></g>
+          <g fill="var(--pumpkin)"><ellipse cx="48" cy="24" rx="7" ry="6" /><circle cx="40" cy="15" r="2.8" /><circle cx="45" cy="10" r="2.8" /><circle cx="51" cy="10" r="2.8" /><circle cx="56" cy="15" r="2.8" /></g>
+        </svg>
+        <p>아직 축하 글이 없어요. 첫 마음을 남겨 주세요</p>
       </div>
     {:else}
       <ul class="cards">
@@ -363,13 +378,13 @@
                     aria-describedby={delErr ? `gb-de-${e.id}` : undefined}
                     onkeydown={(ev) => ev.key === "Escape" && cancelDelete()}
                   />
-                  <button type="submit" class="btn btn-sm" disabled={delBusy}>{delBusy ? "확인 중…" : "삭제"}</button>
-                  <button type="button" class="btn btn-sm btn-ghost" onclick={cancelDelete}>취소</button>
+                  <button type="submit" class="btn-text" disabled={delBusy}>{delBusy ? "확인 중…" : "삭제"}</button>
+                  <button type="button" class="btn-text" onclick={cancelDelete}>취소</button>
                 </div>
                 {#if delErr}<p class="err" id="gb-de-{e.id}" role="alert">{delErr}</p>{/if}
               </form>
             {:else}
-              <button type="button" class="btn btn-sm btn-ghost rm" id="gb-del-{e.id}" aria-label="{e.name}님의 축하 글 삭제" onclick={() => askDelete(e.id)}>삭제</button>
+              <button type="button" class="rm" id="gb-del-{e.id}" aria-label="{e.name}님의 축하 글 삭제" onclick={() => askDelete(e.id)}>삭제</button>
             {/if}
           </li>
         {/each}
@@ -380,12 +395,12 @@
       {/if}
 
       {#if open}
-        <div class="stick"><button type="button" class="btn btn-sm fold" onclick={collapse}>접기</button></div>
+        <div class="stick"><button type="button" class="btn fold" onclick={collapse}>접기</button></div>
         {#if cursor !== null}
           <div class="tail" bind:this={sentinel}>
             {#if moreErr}
               <p>불러오지 못했어요</p>
-              <button type="button" class="btn btn-sm" onclick={() => load(false)}>다시 시도</button>
+              <button type="button" class="btn-text" onclick={() => load(false)}>다시 시도</button>
             {:else}
               <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
               <span>불러오는 중…</span>
@@ -394,7 +409,7 @@
         {:else}
           <div class="tail end">
             <p>모든 축하 글을 다 보았어요</p>
-            <button type="button" class="btn btn-sm btn-ghost" onclick={collapse}>접기</button>
+            <button type="button" class="btn-text" onclick={collapse}>접기</button>
           </div>
         {/if}
       {/if}
@@ -414,52 +429,45 @@
   .gb { text-align: left; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  .form { display: grid; gap: 14px; padding: 20px 18px; margin-bottom: 28px; border: 1px solid rgb(var(--gold-rgb) / 0.4); background: rgb(var(--bg2-rgb) / 0.6); }
-  .field { display: grid; gap: 4px; }
-  label { font-size: 14px; color: var(--gold); letter-spacing: 0.06em; }
+  .open-form { width: 100%; margin-bottom: 32px; }
+  .form { display: grid; gap: 16px; margin-bottom: 32px; }
+  .field { display: grid; gap: 8px; }
+  label { font-size: 13px; line-height: 1.5; color: var(--ink-2, var(--ivory-dim)); }
   input, textarea {
-    width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid rgb(var(--gold-rgb) / 0.4); border-radius: 2px; background: var(--field); color: var(--ivory);
-    font: inherit; font-size: 16px; line-height: 1.5; transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line, rgb(var(--gold-rgb) / 0.4)); border-radius: var(--radius, var(--btn-r)); background: var(--surface, var(--field)); color: var(--ink, var(--ivory));
+    font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box;
   }
-  textarea { resize: vertical; min-height: 104px; }
-  input:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgb(var(--accent-rgb) / 0.25); }
+  textarea { resize: vertical; min-height: 112px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 0; }
   input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--sun); }
-  .count, .hint { font-size: 13px; color: var(--ivory-dim); line-height: 1.5; }
+  .count, .hint { font-size: 12px; color: var(--ink-2, var(--ivory-dim)); line-height: 1.5; }
   .count { text-align: right; }
   .err { font-size: 14px; color: var(--sun); line-height: 1.5; }
 
-  .send { position: relative; overflow: hidden; isolation: isolate; width: 100%; }
-  .send:disabled { opacity: 0.7; cursor: progress; }
-  .send .lbl { position: relative; z-index: 1; }
-  .ripple {
-    position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0); opacity: 0.5;
-    background: radial-gradient(closest-side, rgb(var(--glow-rgb) / 0.75), rgb(var(--gold-rgb) / 0));
-    animation: ripple 650ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-  }
-  @keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+  .form-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .form-btns :global(button:disabled) { opacity: 0.7; cursor: progress; }
 
   .list { position: relative; }
   .cards { list-style: none; margin: 0; padding: 0; position: relative; }
-  .card {
-    position: relative; margin-bottom: 12px; padding: 18px 18px 14px; border: 1px solid rgb(var(--gold-rgb) / 0.28); border-radius: 2px;
-    background: linear-gradient(180deg, rgb(var(--bg2-rgb) / 0.95), rgb(var(--bg-rgb) / 0.95)); outline: none; transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .card::before { content: ""; position: absolute; left: 14px; right: 14px; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0.8; }
-  .card:hover, .card:focus-within {
-    border-color: rgb(var(--gold-rgb) / 0.65); box-shadow: 0 0 24px rgb(var(--accent-rgb) / 0.2), 0 0 3px rgb(var(--gold-rgb) / 0.45), inset 0 0 26px rgb(var(--accent-rgb) / 0.05);
-  }
+  .card { position: relative; padding: 16px 0; border-top: 1px solid var(--line, rgb(var(--gold-rgb) / 0.3)); outline: none; }
+  .card:first-child { border-top: 0; padding-top: 0; }
+  .card:focus-visible { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 4px; }
   .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .who { font-weight: 700; color: var(--ivory); overflow-wrap: anywhere; line-height: 1.5; }
-  .when { flex: none; font-size: 13px; color: var(--ivory-dim); letter-spacing: 0.06em; }
-  .msg { margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; color: var(--ivory); }
-  .rm { margin-top: 10px; }
-  .del { display: grid; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgb(var(--gold-rgb) / 0.35); }
+  .who { font-size: 15px; font-weight: 600; color: var(--ink, var(--ivory)); overflow-wrap: anywhere; line-height: 1.5; }
+  .when { flex: none; font-size: 12px; color: var(--ink-2, var(--ivory-dim)); letter-spacing: 0; }
+  .msg { margin-top: 4px; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; color: var(--ink, var(--ivory)); }
+  .rm {
+    all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; margin-top: 4px; cursor: pointer;
+    font-size: 13px; color: var(--ink-2, var(--ivory-dim)); text-decoration: underline; text-underline-offset: 4px;
+  }
+  .rm:focus-visible { outline: 2px solid var(--accent, var(--pumpkin)); outline-offset: 2px; }
+  .del { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; }
   .del-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
 
   .more { display: block; width: 100%; margin-top: 4px; }
   .stick { position: sticky; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center; pointer-events: none; margin: 4px 0; }
-  .fold { pointer-events: auto; background: rgb(var(--bg-rgb) / 0.92); border-color: var(--gold); box-shadow: 0 6px 22px rgb(0 0 0 / 0.6), 0 0 16px rgb(var(--gold-rgb) / 0.25); }
+  .fold { pointer-events: auto; background: var(--bg, var(--bg-2)); width: auto; padding: 0 24px; }
   .tail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 0 6px; font-size: 14px; color: var(--ivory-dim); }
   .tail.end { padding-top: 10px; }
   .dots { display: inline-flex; gap: 6px; }
@@ -470,10 +478,12 @@
 
   .state { display: grid; justify-items: center; gap: 12px; padding: 28px 0; text-align: center; color: var(--ivory-dim); }
   .empty svg { width: 72px; height: 56px; }
+  .caret { animation: caret 1.1s steps(1) infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
   .flame { transform-origin: 48.5px 28px; animation: flick 1.6s ease-in-out infinite; }
   @keyframes flick { 0%, 100% { transform: scale(1, 1); opacity: 1; } 50% { transform: scale(0.9, 1.12); opacity: 0.8; } }
 
-  .sk { display: grid; gap: 10px; padding: 22px 18px; }
+  .sk { display: grid; gap: 10px; padding: 16px 0; }
   .sk i { display: block; height: 12px; border-radius: 6px; background: rgb(var(--gold-rgb) / 0.14); }
   .sk .l1 { width: 40%; }
   .sk .l2 { width: 92%; }
@@ -481,10 +491,10 @@
   .live .sk i { background: linear-gradient(90deg, rgb(var(--gold-rgb) / 0.1) 20%, rgb(var(--gold-rgb) / 0.28) 50%, rgb(var(--gold-rgb) / 0.1) 80%) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
   @keyframes shimmer { to { background-position: -200% 0; } }
 
-  .toasts { position: fixed; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom)); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
+  .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
-    .ripple, .dots i, .flame, .live .sk i { animation: none; }
+    .dots i, .flame, .caret, .live .sk i { animation: none; }
     .card, input, textarea { transition: none; }
   }
 </style>
