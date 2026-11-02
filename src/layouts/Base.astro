@@ -18,6 +18,13 @@ const desc = `${dateKo} · ${wedding.venue.name}`;
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex,nofollow" />
     <meta name="theme-color" content="#120d16" />
+    <script is:inline>
+      document.documentElement.classList.add("js", "gated");
+      setTimeout(function () {
+        var h = document.documentElement;
+        if (h.dataset.gate !== "ready") h.classList.remove("js", "gated");
+      }, 4500);
+    </script>
     <title>{title}</title>
     <meta name="description" content={desc} />
     <meta property="og:type" content="website" />
@@ -37,11 +44,6 @@ const desc = `${dateKo} · ${wedding.venue.name}`;
   </head>
   <body
     data-bgm={hasMusic ? url("audio/bgm.mp3") : ""}
-    data-kakao-key={wedding.kakaoJsKey}
-    data-page-url={pageUrl}
-    data-og-image={ogImage}
-    data-share-title={wedding.share.title}
-    data-share-desc={wedding.share.description}
   >
     <slot />
     <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>

@@ -1,21 +1,10 @@
-import { initAudio, playBgm } from "./audio";
+import { initAudio } from "./audio";
 
 const $ = <T extends Element>(s: string) => document.querySelector<T>(s);
 const $$ = <T extends Element>(s: string) => [...document.querySelectorAll<T>(s)];
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const cfg = document.body.dataset;
 
-/* 인트로 게이트 */
-const intro = $<HTMLElement>("#intro");
-if (intro) {
-  document.body.classList.add("locked");
-  $("#intro-open")?.addEventListener("click", () => {
-    intro.classList.add("open");
-    document.body.classList.remove("locked");
-    playBgm();
-    setTimeout(() => intro.remove(), reduced ? 0 : 1600);
-  });
-}
 initAudio($<HTMLButtonElement>("#bgm-toggle"), cfg.bgm ?? "");
 
 /* 스크롤 reveal */
