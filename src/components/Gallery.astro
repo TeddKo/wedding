@@ -1,41 +1,26 @@
 ---
-import { Image, getImage } from "astro:assets";
+import { getImage } from "astro:assets";
 import Ornament from "./Ornament.astro";
+import GalleryIsland from "./Gallery.svelte";
 import { photos } from "../lib/photos";
 
-const real = photos.length > 0;
-const items = real ? photos : Array.from({ length: 9 }, () => null);
-const fulls = real ? await Promise.all(photos.map((p) => getImage({ src: p, width: 1400, format: "webp" }))) : [];
+const items = await Promise.all(
+  photos.map(async (src) => {
+    const [a, b, c] = await Promise.all([180, 360, 540].map((width) => getImage({ src, width, height: width, format: "webp" })));
+    const full = await getImage({ src, width: 1400, format: "webp" });
+    return {
+      thumb: b.src,
+      srcset: `${a.src} 180w, ${b.src} 360w, ${c.src} 540w`,
+      full: full.src,
+      w: Number(full.attributes.width ?? src.width),
+      h: Number(full.attributes.height ?? src.height),
+    };
+  }),
+);
 ---
 
 <section class="section" data-reveal="rise" aria-labelledby="gal-h">
   <h2 id="gal-h" class="sec-title"><span class="latin">Gallery</span>갤러리</h2>
   <Ornament name="divider" />
-  <ul class="gallery" data-lightbox={real ? "" : undefined}>
-    {
-      items.map((p, i) => (
-        <li>
-          {p ? (
-            <button type="button" data-full={fulls[i].src} aria-label={`사진 ${i + 1} 크게 보기`}>
-              <Image src={p} alt={`갤러리 사진 ${i + 1}`} width={360} height={360} widths={[180, 360, 540]} sizes="(max-width: 480px) 33vw, 160px" format="webp" loading="lazy" />
-            </button>
-          ) : (
-            <div class="ph" role="img" aria-label={`사진 ${i + 1} 자리`}>
-              <span class="latin">{String(i + 1).padStart(2, "0")}</span>
-            </div>
-          )}
-        </li>
-      ))
-    }
-  </ul>
-  {
-    real && (
-      <dialog class="lightbox" id="lightbox" aria-label="사진 크게 보기">
-        <button type="button" class="lb-close" aria-label="닫기">×</button>
-        <button type="button" class="lb-prev" aria-label="이전 사진">‹</button>
-        <img alt="" />
-        <button type="button" class="lb-next" aria-label="다음 사진">›</button>
-      </dialog>
-    )
-  }
+  <GalleryIsland client:idle items={items} count={9} />
 </section>

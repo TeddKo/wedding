@@ -1,0 +1,371 @@
+<script lang="ts">
+  import { onMount, tick } from "svelte";
+  import { Spring } from "svelte/motion";
+  import { fade, fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import Tilt from "./ui/Tilt.svelte";
+  import { lerp, reduced } from "../lib/motion";
+
+  type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
+  let { items, count = 9 }: { items: Item[]; count?: number } = $props();
+
+  const real = items.length > 0;
+  const n = real ? items.length : count;
+
+  let list = $state<HTMLElement>();
+  let armed = $state(false);
+  let shown = $state(false);
+  const delayOf = (i: number) => ((i % 3) + Math.floor(i / 3)) * 70;
+
+  onMount(() => {
+    if (reduced()) return;
+    armed = true;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        shown = true;
+        io.disconnect();
+      },
+      { threshold: 0.15 },
+    );
+    if (list) io.observe(list);
+    return () => io.disconnect();
+  });
+
+  /* ---------- 라이트박스 ---------- */
+  let open = $state(false);
+  let idx = $state(0);
+  let dir = $state(1);
+  let fullReady = $state(false);
+  let closing = false;
+  let lb = $state<HTMLElement>();
+  let SW = $state(390);
+  let SH = $state(800);
+  const btns: HTMLElement[] = [];
+
+  const p = new Spring(0, { stiffness: 0.11, damping: 0.8 });
+  const view = new Spring({ x: 0, y: 0, s: 1 }, { stiffness: 0.12, damping: 0.62 });
+  const instant = { instant: true } as const;
+
+  const cur = $derived(items[idx]);
+  const fit = $derived.by(() => {
+    if (!cur) return { w: 0, h: 0 };
+    const k = Math.min((SW - 16) / cur.w, (SH - 88) / cur.h);
+    return { w: cur.w * k, h: cur.h * k };
+  });
+
+  function thumbRect(i: number) {
+    const img = btns[i]?.querySelector("img");
+    const r = img?.getBoundingClientRect();
+    return r && r.bottom > 0 && r.top < innerHeight ? r : null;
+  }
+  /* FLIP: 썸네일 사각형에 맞춘 시작 변환 */
+  const flipFrom = $derived.by(() => {
+    const r = open ? thumbRect(idx) : null;
+    if (!r || !fit.w) return null;
+    const s0 = Math.max(r.width / fit.w, r.height / fit.h);
+    return {
+      dx: r.left + r.width / 2 - SW / 2,
+      dy: r.top + r.height / 2 - (SH / 2 - 24),
+      s0,
+      ix: Math.max(0, (fit.w - r.width / s0) / 2),
+      iy: Math.max(0, (fit.h - r.height / s0) / 2),
+    };
+  });
+
+  const style = $derived.by(() => {
+    const k = Math.min(p.current, 1.12);
+    const f = flipFrom;
+    const v = view.current;
+    if (!f || p.current >= 1 || reduced()) return `transform: translate3d(${v.x}px, ${v.y}px, 0) scale(${v.s});`;
+    const q = 1 - p.current;
+    return `transform: translate3d(${lerp(f.dx, 0, k) + v.x}px, ${lerp(f.dy, 0, k) + v.y}px, 0) scale(${lerp(f.s0, 1, k) * v.s}); clip-path: inset(${Math.max(0, f.iy * q)}px ${Math.max(0, f.ix * q)}px);`;
+  });
+  const dim = $derived(Math.max(0, Math.min(1, p.current)) * (1 - Math.min(1, Math.abs(view.current.y) / 420)));
+
+  function setInert(on: boolean) {
+    for (const el of document.querySelectorAll(".page, .footer")) on ? el.setAttribute("inert", "") : el.removeAttribute("inert");
+    document.documentElement.style.overflow = on ? "hidden" : "";
+  }
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return { destroy: () => node.remove() };
+  }
+
+  function preload() {
+    fullReady = false;
+    const f = cur?.full;
+    if (!f) return;
+    const im = new Image();
+    im.onload = () => cur?.full === f && (fullReady = true);
+    im.src = f;
+  }
+
+  async function openAt(i: number) {
+    idx = i;
+    dir = 1;
+    closing = false;
+    SW = innerWidth;
+    SH = innerHeight;
+    view.set({ x: 0, y: 0, s: 1 }, instant);
+    p.set(0, instant);
+    open = true;
+    setInert(true);
+    preload();
+    await tick();
+    lb?.focus({ preventScroll: true });
+    if (reduced()) p.set(1, instant);
+    else p.target = 1;
+  }
+
+  async function close() {
+    if (closing) return;
+    closing = true;
+    view.target = { x: 0, y: 0, s: 1 };
+    const visible = !!thumbRect(idx) && !reduced();
+    if (visible) await p.set(0);
+    else await new Promise<void>((r) => setTimeout(r, reduced() ? 0 : 160));
+    const back = idx;
+    open = false;
+    setInert(false);
+    btns[back]?.focus({ preventScroll: true });
+  }
+
+  function go(d: number) {
+    if (n < 2) return;
+    dir = d;
+    idx = (idx + d + n) % n;
+    view.set({ x: 0, y: 0, s: 1 }, instant);
+    p.set(1, instant);
+    preload();
+  }
+
+  /* ---------- 제스처: 스와이프 / 핀치 / 드래그 / 더블탭 / 휠 ---------- */
+  const ptrs = new Map<number, { x: number; y: number }>();
+  let start = { x: 0, y: 0, vx: 0, vy: 0, s: 1, d: 0, mx: 0, my: 0, t: 0, moved: false };
+  let hist: { x: number; y: number; t: number }[] = [];
+  let lastTap = 0;
+
+  const bound = (s: number) => ({ x: Math.max(0, (fit.w * s - SW) / 2), y: Math.max(0, (fit.h * s - (SH - 88)) / 2) });
+  const clamp = (v: number, m: number) => Math.max(-m, Math.min(m, v));
+  const dist = () => {
+    const [a, b] = [...ptrs.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  const mid = () => {
+    const [a, b] = [...ptrs.values()];
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  };
+
+  function down(e: PointerEvent) {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const v = view.current;
+    if (ptrs.size === 1) {
+      start = { ...start, x: v.x, y: v.y, s: v.s, vx: e.clientX, vy: e.clientY, t: performance.now(), moved: false };
+      hist = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+    } else if (ptrs.size === 2) {
+      const m = mid();
+      start = { ...start, x: v.x, y: v.y, s: v.s, d: dist(), mx: m.x, my: m.y };
+    }
+  }
+  function move(e: PointerEvent) {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const v = view.current;
+    if (ptrs.size >= 2) {
+      const s = Math.max(0.8, Math.min(5, (start.s * dist()) / start.d));
+      const m = mid();
+      view.set({ s, x: start.x + (m.x - start.mx), y: start.y + (m.y - start.my) }, instant);
+      start.moved = true;
+      return;
+    }
+    const dx = e.clientX - start.vx;
+    const dy = e.clientY - start.vy;
+    if (Math.abs(dx) + Math.abs(dy) > 6) start.moved = true;
+    hist.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    if (hist.length > 6) hist.shift();
+    if (v.s > 1.02) {
+      const b = bound(v.s);
+      const nx = start.x + dx, ny = start.y + dy;
+      /* 경계 밖은 고무줄처럼 1/3 만 따라간다 */
+      const rb = (val: number, m: number) => (Math.abs(val) > m ? Math.sign(val) * (m + (Math.abs(val) - m) / 3) : val);
+      view.set({ s: v.s, x: rb(nx, b.x), y: rb(ny, b.y) }, instant);
+    } else if (Math.abs(dx) > Math.abs(dy) * 0.8 || Math.abs(v.x) > 0) {
+      view.set({ s: 1, x: dx, y: 0 }, instant);
+    } else {
+      view.set({ s: 1, x: 0, y: dy }, instant);
+    }
+  }
+  function up(e: PointerEvent) {
+    if (!ptrs.has(e.pointerId)) return;
+    const wasPinch = ptrs.size >= 2;
+    ptrs.delete(e.pointerId);
+    const v = view.current;
+    if (wasPinch) {
+      const [rest] = [...ptrs.values()];
+      if (rest) start = { ...start, x: v.x, y: v.y, vx: rest.x, vy: rest.y, s: v.s };
+      if (ptrs.size === 0) settleZoom();
+      return;
+    }
+    if (ptrs.size > 0) return;
+    const now = performance.now();
+    const a = hist[0], z = hist[hist.length - 1];
+    const dt = Math.max(1, z.t - a.t);
+    const vx = ((z.x - a.x) / dt) * 1, vy = ((z.y - a.y) / dt) * 1;
+    if (!start.moved) {
+      const r = lb?.querySelector(".lbp")?.getBoundingClientRect();
+      if (!r || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return void close();
+      if (now - lastTap < 300) {
+        lastTap = 0;
+        return void toggleZoom(e.clientX, e.clientY);
+      }
+      lastTap = now;
+      return;
+    }
+    if (v.s > 1.02) {
+      /* 관성: 속도에 비례한 거리만큼 더 미끄러진 뒤 경계 안으로 */
+      const b = bound(v.s);
+      view.target = { s: v.s, x: clamp(v.x + vx * 260, b.x), y: clamp(v.y + vy * 260, b.y) };
+    } else if (Math.abs(v.y) > Math.abs(v.x) && (Math.abs(v.y) > 110 || Math.abs(vy) > 0.8)) {
+      void close();
+    } else if (Math.abs(v.x) > SW * 0.2 || Math.abs(vx) > 0.5) {
+      go(v.x < 0 || vx < -0.5 ? 1 : -1);
+    } else view.target = { s: 1, x: 0, y: 0 };
+  }
+  function settleZoom() {
+    const v = view.current;
+    if (v.s < 1.05) view.target = { s: 1, x: 0, y: 0 };
+    else {
+      const b = bound(v.s);
+      view.target = { s: v.s, x: clamp(v.x, b.x), y: clamp(v.y, b.y) };
+    }
+  }
+  function toggleZoom(cx: number, cy: number) {
+    if (view.current.s > 1.1) return void (view.target = { s: 1, x: 0, y: 0 });
+    const s = 2.6;
+    const b = bound(s);
+    view.target = { s, x: clamp((SW / 2 - cx) * (s - 1), b.x), y: clamp((SH / 2 - cy) * (s - 1), b.y) };
+  }
+  function wheel(e: WheelEvent) {
+    e.preventDefault();
+    const s = Math.max(1, Math.min(5, view.current.s * Math.exp(-e.deltaY * 0.0022)));
+    const b = bound(s);
+    view.set({ s, x: s === 1 ? 0 : clamp(view.current.x, b.x), y: s === 1 ? 0 : clamp(view.current.y, b.y) }, instant);
+  }
+
+  function key(e: KeyboardEvent) {
+    if (e.key === "Escape") return void (e.preventDefault(), close());
+    if (e.key === "ArrowRight") return void (e.preventDefault(), go(1));
+    if (e.key === "ArrowLeft") return void (e.preventDefault(), go(-1));
+    if (e.key === "Tab" && lb) {
+      const f = [...lb.querySelectorAll<HTMLElement>("button")];
+      const i = f.indexOf(document.activeElement as HTMLElement);
+      const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : i === f.length - 1 ? 0 : i + 1;
+      e.preventDefault();
+      f[next]?.focus();
+    }
+  }
+</script>
+
+<ul class="gallery" bind:this={list}>
+  {#each { length: n } as _, i}
+    <li class="cell" class:armed class:in={shown} style:--d="{delayOf(i)}ms">
+      {#if real}
+        {@const it = items[i]}
+        <a
+          bind:this={btns[i]}
+          class="thumb"
+          href={it.full}
+          aria-label="사진 {i + 1} 크게 보기"
+          onclick={(e) => {
+            e.preventDefault();
+            void openAt(i);
+          }}
+        >
+          <img src={it.thumb} srcset={it.srcset} sizes="(max-width: 480px) 33vw, 160px" width="360" height="360" alt="갤러리 사진 {i + 1}" loading="lazy" decoding="async" />
+        </a>
+      {:else}
+        <div class="ph-wrap" style:--d="{i * 0.45}s">
+          <Tilt label="사진 {i + 1} 자리"><span class="latin num">{String(i + 1).padStart(2, "0")}</span></Tilt>
+        </div>
+      {/if}
+    </li>
+  {/each}
+</ul>
+
+{#if open && cur}
+  <div
+    bind:this={lb}
+    use:portal
+    class="lb"
+    role="dialog"
+    aria-modal="true"
+    aria-label="사진 크게 보기"
+    tabindex="-1"
+    onkeydown={key}
+  >
+    <div class="backdrop" style:opacity={dim}></div>
+    <div
+      class="stage"
+      bind:clientWidth={SW}
+      bind:clientHeight={SH}
+      onpointerdown={down}
+      onpointermove={move}
+      onpointerup={up}
+      onpointercancel={up}
+      onwheel={wheel}
+      role="presentation"
+    >
+      {#key idx}
+        <img
+          class="lbp"
+          src={fullReady ? cur.full : cur.thumb}
+          alt="갤러리 사진 {idx + 1}"
+          draggable="false"
+          style="width:{fit.w}px;height:{fit.h}px;left:{(SW - fit.w) / 2}px;top:{(SH - 88 - fit.h) / 2 + 20}px;{style}"
+          in:fly={{ x: reduced() ? 0 : dir * 70, duration: reduced() ? 0 : 340, easing: cubicOut }}
+          out:fade={{ duration: reduced() ? 0 : 140 }}
+        />
+      {/key}
+    </div>
+    <div class="ui" style:opacity={dim}>
+      <span class="count latin" aria-live="polite">{idx + 1} / {n}</span>
+      <button type="button" class="b close" aria-label="닫기" onclick={close}>×</button>
+      {#if n > 1}
+        <button type="button" class="b prev" aria-label="이전 사진" onclick={() => go(-1)}>‹</button>
+        <button type="button" class="b next" aria-label="다음 사진" onclick={() => go(1)}>›</button>
+      {/if}
+    </div>
+  </div>
+{/if}
+
+<style>
+  .gallery { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .cell { aspect-ratio: 1; overflow: hidden; position: relative; }
+  .cell.armed { opacity: 0; transform: scale(0.82); }
+  .cell.armed.in { opacity: 1; transform: none; transition: opacity 0.6s ease var(--d), transform 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) var(--d); }
+  .thumb { display: block; width: 100%; height: 100%; cursor: zoom-in; overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .thumb:hover img, .thumb:focus-visible img { transform: scale(1.07); }
+  .ph-wrap { width: 100%; height: 100%; perspective: 600px; }
+  .num { font-size: 12px; transform: translateZ(24px); }
+
+  .lb { position: fixed; inset: 0; z-index: 200; color: #fff; outline: none; }
+  .backdrop { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #1b1322, #07040a 80%); }
+  .stage { position: absolute; inset: 0; touch-action: none; overflow: hidden; cursor: grab; }
+  .lbp { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; will-change: transform; box-shadow: 0 10px 50px rgb(0 0 0 / 0.7); }
+  .ui { position: absolute; inset: 0; pointer-events: none; }
+  .b {
+    position: absolute; pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgb(201 164 92 / 0.55);
+    background: rgb(18 13 22 / 0.6); color: var(--ivory); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 0 3px;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .b:hover { background: var(--gold); color: var(--bg); }
+  .b:active { transform: scale(0.92); }
+  .close { top: max(14px, env(safe-area-inset-top)); right: 14px; }
+  .prev { left: 10px; top: 50%; margin-top: -24px; }
+  .next { right: 10px; top: 50%; margin-top: -24px; }
+  .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: var(--gold); }
+  @media (prefers-reduced-motion: reduce) { .cell.armed, .thumb img { transition: none; } }
+</style>

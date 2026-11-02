@@ -53,39 +53,6 @@ $<HTMLAnchorElement>("[data-tmap]")?.addEventListener("click", (e) => {
   document.addEventListener("visibilitychange", () => clearTimeout(t), { once: true });
 });
 
-/* 라이트박스: 실제 사진이 있을 때만 */
-const lb = $<HTMLDialogElement>("#lightbox");
-const thumbs = $$<HTMLButtonElement>("[data-lightbox] [data-full]");
-if (lb && thumbs.length) {
-  const img = lb.querySelector("img")!;
-  let i = 0;
-  const show = (n: number) => {
-    i = (n + thumbs.length) % thumbs.length;
-    img.src = thumbs[i].dataset.full ?? "";
-    img.alt = `갤러리 사진 ${i + 1}`;
-  };
-  thumbs.forEach((t, n) =>
-    t.addEventListener("click", () => {
-      show(n);
-      lb.showModal();
-    }),
-  );
-  lb.querySelector(".lb-close")?.addEventListener("click", () => lb.close());
-  lb.querySelector(".lb-prev")?.addEventListener("click", () => show(i - 1));
-  lb.querySelector(".lb-next")?.addEventListener("click", () => show(i + 1));
-  lb.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") show(i - 1);
-    if (e.key === "ArrowRight") show(i + 1);
-  });
-  lb.addEventListener("click", (e) => e.target === lb && lb.close());
-  let x0 = 0;
-  lb.addEventListener("touchstart", (e) => (x0 = e.touches[0].clientX), { passive: true });
-  lb.addEventListener("touchend", (e) => {
-    const dx = e.changedTouches[0].clientX - x0;
-    if (Math.abs(dx) > 40) show(dx < 0 ? i + 1 : i - 1);
-  });
-}
-
 /* 카카오 공유: SDK 로드 실패 시 버튼은 숨겨진 채로 둔다 */
 const kbtn = $<HTMLButtonElement>("#kakao-share");
 if (kbtn && cfg.kakaoKey) {
