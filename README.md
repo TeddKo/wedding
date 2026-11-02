@@ -10,7 +10,7 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 |---|---|---|
 | `IntroGate.svelte` | load | 밀랍 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 S 곡선으로 날아감 -> 3D 문(Spring) -> 박쥐 떼 -> 촛불 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
 | `AmbientCanvas.svelte` | idle | 캔버스 1장: 안개, 불씨, 달 앞을 지나는 박쥐. 숨김/화면 밖 정지, 저사양 자동 감량 |
-| `CoverHero.svelte` | load | 금빛 잉크로 쓰이는 이름, 달 상승 + 스크롤 패럴랙스, 촛불 스프링 일렁임, 날짜 카운트업 |
+| `CoverHero.svelte` | load | 4:5 대표 사진(켄번스 + 패럴랙스), 사진 위 날짜 헤더 카운트업, 테마별 필기체 문구, 잉크로 쓰이는 이름. 사진이 없으면 "사진 자리" 표시(캐릭터는 인트로/인사말에만) |
 | `CalendarDday.svelte` | idle | 날짜 칸 캐스케이드, 31일 잭오랜턴, 플립카드 D-day(KST) |
 | `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
@@ -52,6 +52,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 모든 문구와 값은 `src/data/wedding.ts` 한 곳에서 읽는다.
 
 - 홀 이름: `venue.hall` (비어 있으면 표시 안 함)
+- 대표 사진 크롭 위치: `cover.focus` (CSS `object-position`, 기본 `50% 35%`)
 - 인사말: `greeting` (TODO 표시된 문구 교체)
 - 이름/혼주: `groom` / `bride` 는 `{ name, relation, givenName?, father, mother }`. `father`/`mother` 는 `{ name, deceased }`.
   - `relation`: 아들/장남/차남/딸/장녀/차녀 등 자유 문구
@@ -71,7 +72,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 ## 사진
 
 `src/assets/photos/` 에 `jpg/png/webp` 를 넣으면 파일명 순으로 자동 사용된다.
-첫 장은 커버, 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
+첫 장은 커버(4:5, `cover.focus` 로 크롭 위치 조정), 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
 사진이 없으면 9칸 플레이스홀더가 표시되고 라이트박스는 꺼진다. 빌드 시 webp 반응형으로 변환된다.
 
 ## 배경음악
