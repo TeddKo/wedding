@@ -6,6 +6,7 @@
   --ivory-dim: #cfc4b0;
   --gold: #c9a45c;
   --pumpkin: #e07a2f;
+  --accent-ink: var(--pumpkin);
   --sun: #e58a8a;
   --field: #0d0911;
   --digit: #f6e2a8;
@@ -83,6 +84,7 @@
   --ivory-dim: #8a7464;
   --gold: #c98247;
   --pumpkin: #ec7d92;
+  --accent-ink: #c4506a;
   --sun: #e2626f;
   --field: #fffdf9;
   --digit: #b8682e;
@@ -165,7 +167,7 @@ html.ambient .page, html.ambient .footer { background: transparent; }
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--pumpkin);
+  color: var(--accent-ink);
 }
 /* 카드형 섹션 */
 .section.card { background: var(--bg-2); margin: 16px; padding: 56px 20px; border-top: 0; border-radius: var(--card-r); }

@@ -26,7 +26,6 @@
 
   const DASH = 260;
   let armed = $state(false);
-  let rootEl = $state<HTMLElement>();
   let scrollY = $state(0);
 
   const arch = new Tween(0, { duration: 2400, easing: cubicOut });
@@ -34,10 +33,6 @@
   const fill = new Tween(0, { duration: 1000, easing: cubicOut });
 
   onMount(() => {
-    if (reduced()) return;
-    armed = true;
-    for (const c of counters) c.set(0, { duration: 0 });
-
     let pending = false;
     const onScroll = () => {
       if (pending) return;
@@ -48,6 +43,10 @@
       });
     };
     addEventListener("scroll", onScroll, { passive: true });
+    if (!reduced()) {
+      armed = true;
+      for (const c of counters) c.set(0, { duration: 0 });
+    }
     return () => removeEventListener("scroll", onScroll);
   });
 
@@ -60,12 +59,12 @@
     for (const [i, c] of counters.entries()) c.set(parts[i], { delay: 1700 + i * 140 });
   });
 
-  const parY = $derived(Math.min(scrollY, 900) * 0.14);
+  const parY = $derived(armed ? Math.min(scrollY, 900) * 0.14 : 0);
   const scale = $derived(armed ? 1.1 - arch.current * 0.06 : 1.04);
-  const overOpacity = $derived(1 - Math.min(scrollY, 200) / 200 * 0.4);
+  const overOpacity = $derived(armed ? 1 - (Math.min(scrollY, 200) / 200) * 0.4 : 1);
 </script>
 
-<header class="cover" bind:this={rootEl} style:--focus={focus}>
+<header class="cover" style:--focus={focus}>
   <div class="hero">
     <div class="frame">
       <p class="bar" data-th="dev" aria-hidden="true"><span class="dots">● ● ●</span>~/us/cover.jpg</p>
@@ -124,7 +123,7 @@
   </p>
 
   <h1 class="names" class:inked={armed}>
-    <span class="names-text"><span class="l1">{groom}<span class="dot">·</span>{bride}</span><span class="l2">결혼합니다</span></span>
+    <span class="names-text"><span class="l1">{groom}<span class="dot">·</span>{bride}</span> <span class="l2">결혼합니다</span></span>
     {#if armed}
       <svg class="ink" viewBox="0 0 300 80" aria-hidden="true" focusable="false" style:--dash={DASH} style:--off={(1 - ink.current) * DASH} style:--fill={fill.current}>
         <text x="150" y="33" text-anchor="middle" class="t1">{groom}<tspan class="a" dx="14">·</tspan><tspan dx="14">{bride}</tspan></text>
@@ -200,15 +199,16 @@
   .wk { font: 12px/1.6 var(--latin); letter-spacing: 0.4em; text-indent: 0.4em; }
 
   .script {
-    position: relative; z-index: 2; margin: -0.55em 16px 0; font: 26px/1.2 var(--script); color: var(--pumpkin);
+    position: relative; z-index: 2; margin: -0.55em 16px 0; font: clamp(22px, 6.4vw, 26px)/1.2 var(--script); color: var(--accent-ink);
     text-shadow: 0 1px 8px rgb(var(--shade-rgb) / 0.6);
   }
   :global([data-theme="dev"]) .script { font-size: 18px; text-shadow: none; }
-  :global([data-theme="puppy"]) .script { text-shadow: none; }
+  :global([data-theme="puppy"]) .script { text-shadow: 0 1px 6px rgb(var(--bg-rgb) / 0.95), 0 0 2px rgb(var(--bg-rgb)); }
+  :global([data-theme="puppy"]) .shade { background: linear-gradient(rgb(var(--shade-rgb) / 0.8), rgb(var(--shade-rgb) / 0.25) 60%, transparent); }
 
   .names { width: 300px; height: 84px; margin: 14px auto 0; position: relative; font-family: var(--hand); font-weight: 400; letter-spacing: 0.08em; }
   .names-text { display: block; }
-  .l1 { display: block; height: 44px; line-height: 44px; font-size: 34px; }
+  .l1 { display: block; white-space: nowrap; height: 44px; line-height: 44px; font-size: 34px; }
   .l2 { display: block; height: 36px; line-height: 36px; font-size: 22px; }
   .dot { color: var(--pumpkin); margin: 0 0.4em; }
   .names.inked .names-text { color: transparent; }
@@ -226,7 +226,7 @@
   .cover-date { font-size: 17px; margin-top: 4px; color: var(--ivory-dim); }
   .cover-venue { color: var(--ivory-dim); margin-top: 2px; }
   .cue { display: block; width: 28px; height: 28px; margin: 14px auto 0; color: var(--gold); transition: opacity 0.4s; animation: cue 1.6s ease-in-out infinite; }
-  .cue.gone { opacity: 0; }
+  .cue.gone { opacity: 0; animation: none; }
   @keyframes cue { 50% { transform: translateY(6px); } }
   @media (prefers-reduced-motion: reduce) { .cue { animation: none; } }
 </style>

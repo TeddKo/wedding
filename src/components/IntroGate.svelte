@@ -30,8 +30,8 @@
 
   /* 문이 열릴 때 흩어지는 것: 할로윈=박쥐, dev=코드 조각, puppy=발자국/하트 */
   const GLYPHS = ["{ }", "</>", "<3", ";", "0", "1", "=>", "❤"];
-  type Bat = { dx: number; dy: number; rot: number; size: number; delay: number; dur: number; flap: number; kind: string; glyph: string };
-  let bats = $state<Bat[]>([]);
+  type BatSpec = { dx: number; dy: number; rot: number; size: number; delay: number; dur: number; flap: number; kind: string; glyph: string };
+  let bats = $state<BatSpec[]>([]);
 
   const wait = (ms: number) => new Promise<void>((res) => setTimeout(res, reduced() ? 0 : ms));
 
