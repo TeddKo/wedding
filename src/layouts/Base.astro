@@ -5,21 +5,34 @@ import { wedding } from "../data/wedding";
 import { dateKo } from "../lib/format";
 import { url } from "../lib/url";
 import AmbientCanvas from "../components/AmbientCanvas.svelte";
+import ThemeSwitch from "../components/ThemeSwitch.svelte";
+import { THEMES } from "../lib/themes";
 
 const pageUrl = new URL(url(""), Astro.site).href;
 const ogImage = new URL(url("og.png"), Astro.site).href;
 const title = wedding.share.title;
 const desc = `${dateKo} · ${wedding.venue.name}`;
+const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.color]));
 ---
 
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-theme={wedding.theme}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="robots" content="noindex,nofollow" />
-    <meta name="theme-color" content="#120d16" />
-    <script is:inline>
+    <meta name="theme-color" content={THEMES[wedding.theme].color} />
+    <script is:inline define:vars={{ colors }}>
+      try {
+        var q = new URLSearchParams(location.search).get("theme");
+        var has = function (k) { return !!k && Object.prototype.hasOwnProperty.call(colors, k); };
+        var t = has(q) ? q : localStorage.getItem("theme");
+        if (has(t)) {
+          document.documentElement.dataset.theme = t;
+          document.querySelector('meta[name="theme-color"]').content = colors[t];
+          if (q === t) localStorage.setItem("theme", t);
+        }
+      } catch (e) {}
       document.documentElement.classList.add("js", "gated");
       setTimeout(function () {
         var h = document.documentElement;
@@ -40,7 +53,7 @@ const desc = `${dateKo} · ${wedding.venue.name}`;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Gowun+Batang:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Dancing+Script:wght@600&family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Nanum+Brush+Script&family=Pinyon+Script&display=swap"
     />
   </head>
   <body
@@ -48,6 +61,7 @@ const desc = `${dateKo} · ${wedding.venue.name}`;
   >
     <AmbientCanvas client:idle />
     <slot />
+    <ThemeSwitch client:idle />
     <button type="button" class="bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 18V6l10-2v12.2a3 3 0 1 1-2-2.8V7.3L11 8.4V18a3 3 0 1 1-2-2.8z" /></svg>
     </button>

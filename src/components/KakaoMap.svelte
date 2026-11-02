@@ -13,7 +13,7 @@
   const TIMEOUT = 8000;
 
   const pin = (label: string) =>
-    `<div class="km-pin"><b>${label}</b><svg viewBox="0 0 24 32" width="28" height="38" aria-hidden="true"><path d="M12 31C12 31 2 19.5 2 12a10 10 0 0 1 20 0c0 7.5-10 19-10 19z" fill="#e07a2f" stroke="#c9a45c" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="#120d16"/></svg></div>`;
+    `<div class="km-pin"><b>${label}</b><svg viewBox="0 0 24 32" width="28" height="38" aria-hidden="true"><path d="M12 31C12 31 2 19.5 2 12a10 10 0 0 1 20 0c0 7.5-10 19-10 19z" style="fill:var(--pumpkin);stroke:var(--gold)" stroke-width="1.6"/><circle cx="12" cy="12" r="4" style="fill:var(--bg)"/></svg></div>`;
 
   onMount(() => {
     st = "loading";
@@ -93,25 +93,25 @@
 </div>
 
 <style>
-  .km, .km-card { margin: 4px 0 18px; border: 1px solid rgb(201 164 92 / 0.55); border-radius: 14px; overflow: hidden; background: var(--bg-2); }
+  .km, .km-card { margin: 4px 0 18px; border: 1px solid rgb(var(--gold-rgb) / 0.55); border-radius: 14px; overflow: hidden; background: var(--bg-2); }
   .km { position: relative; height: 260px; isolation: isolate; }
   .km[hidden] { display: none; }
   .km-map { position: absolute; inset: 0; }
   .km.locked .km-map, .km.locked .km-map :global(*) { touch-action: pan-y !important; }
   .km-shield { position: absolute; inset: 0; z-index: 2; touch-action: pan-y; }
-  .km-vig { position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 28px 6px rgb(18 13 22 / 0.55); border-radius: inherit; }
+  .km-vig { position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 28px 6px rgb(var(--bg-rgb) / 0.55); border-radius: inherit; }
   .km-skel {
-    position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--bg-2) 30%, rgb(201 164 92 / 0.16) 50%, var(--bg-2) 70%) 0 0 / 220% 100%;
+    position: absolute; inset: 0; z-index: 4; background: linear-gradient(100deg, var(--bg-2) 30%, rgb(var(--gold-rgb) / 0.16) 50%, var(--bg-2) 70%) 0 0 / 220% 100%;
     animation: km-shimmer 1.4s linear infinite;
   }
   @keyframes km-shimmer { to { background-position: -220% 0; } }
   @media (prefers-reduced-motion: reduce) { .km-skel { animation: none; } }
-  .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid rgb(201 164 92 / 0.6); border-radius: 10px; overflow: hidden; background: rgb(18 13 22 / 0.88); }
+  .km-ctl { position: absolute; z-index: 5; right: 10px; top: 10px; display: grid; border: 1px solid rgb(var(--gold-rgb) / 0.6); border-radius: 10px; overflow: hidden; background: rgb(var(--bg-rgb) / 0.88); }
   .km-z { width: 36px; height: 36px; border: 0; background: none; color: var(--gold); font-size: 20px; line-height: 1; cursor: pointer; }
-  .km-z + .km-z { border-top: 1px solid rgb(201 164 92 / 0.35); }
+  .km-z + .km-z { border-top: 1px solid rgb(var(--gold-rgb) / 0.35); }
   .km-tg {
     position: absolute; z-index: 5; left: 10px; bottom: 10px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
-    border: 1px solid var(--gold); background: rgb(18 13 22 / 0.88); color: var(--gold); font: inherit; font-size: 14px;
+    border: 1px solid var(--gold); background: rgb(var(--bg-rgb) / 0.88); color: var(--gold); font: inherit; font-size: 14px;
   }
   .km-tg[aria-pressed="true"] { background: var(--gold); color: var(--bg); }
   .km :global(.km-pin) { display: grid; justify-items: center; transform: translateY(2px); pointer-events: none; }

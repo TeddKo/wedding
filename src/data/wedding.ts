@@ -1,3 +1,5 @@
+import type { ThemeName } from "../lib/themes";
+
 export interface Parent {
   name: string;
   deceased: boolean;
@@ -30,20 +32,26 @@ const groom: Person = { name: "고민혁", relation: "아들", father: { name: "
 const bride: Person = { name: "김은정", relation: "딸", father: { name: "", deceased: false }, mother: { name: "", deceased: false } };
 const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "", holder: "" });
 
+const venue = {
+  name: "MJ컨벤션",
+  hall: "3층 다이너스티홀",
+  address: "경기도 부천시 소사구 경인로 386",
+  mapQuery: "MJ컨벤션 부천",
+  lat: 37.48179793,
+  lng: 126.79851199,
+};
+
 export const wedding = {
   groom,
   bride,
+  /** 기본 테마. 방문자는 하단 버튼이나 `?theme=halloween|dev|puppy` 로 바꿀 수 있다 */
+  theme: "halloween" as ThemeName,
+  /** 커버 사진 초점(object-position). 얼굴이 잘리면 값을 조정 */
+  cover: { focus: "50% 35%" },
   date: "2027-10-31",
   time: "10:30",
   timezone: "Asia/Seoul",
-  venue: {
-    name: "MJ컨벤션",
-    hall: "", // 홀 이름 미정: 확정되면 입력
-    address: "경기도 부천시 소사구 경인로 386",
-    mapQuery: "MJ컨벤션 부천",
-    lat: 37.48179793,
-    lng: 126.79851199,
-  },
+  venue,
   // TODO: 실제 인사말로 교체
   greeting: {
     title: "초대합니다",
@@ -65,7 +73,7 @@ export const wedding = {
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
     title: `${groom.name} · ${bride.name} 결혼합니다`,
-    description: "2027년 10월 31일 일요일 오전 10시 30분\nMJ컨벤션",
+    description: `2027년 10월 31일 일요일 오전 10시 30분\n${venue.name} ${venue.hall}`,
   },
   // public/audio/bgm.mp3 가 있을 때만 푸터에 표시
   musicCredit: "Music: generated with Suno",

@@ -1,4 +1,4 @@
-# 모바일 청첩장 (Halloween gothic)
+# 모바일 청첩장 (테마: Halloween / Programmer / Puppy)
 
 Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://teddko.github.io/wedding/`
 
@@ -10,7 +10,7 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 |---|---|---|
 | `IntroGate.svelte` | load | 밀랍 인장 탭 -> 박리(3D 틸트) -> 베일을 쓰고 S 곡선으로 날아감 -> 3D 문(Spring) -> 박쥐 떼 -> 촛불 빛 -> 디졸브. 키보드 가능, 탭 시 오디오 모듈 호출 |
 | `AmbientCanvas.svelte` | idle | 캔버스 1장: 안개, 불씨, 달 앞을 지나는 박쥐. 숨김/화면 밖 정지, 저사양 자동 감량 |
-| `CoverHero.svelte` | load | 금빛 잉크로 쓰이는 이름, 달 상승 + 스크롤 패럴랙스, 촛불 스프링 일렁임, 날짜 카운트업 |
+| `CoverHero.svelte` | load | 4:5 대표 사진(켄번스 + 패럴랙스), 사진 위 날짜 헤더 카운트업, 테마별 필기체 문구, 잉크로 쓰이는 이름. 사진이 없으면 "사진 자리" 표시(캐릭터는 인트로/인사말에만) |
 | `CalendarDday.svelte` | idle | 날짜 칸 캐스케이드, 31일 잭오랜턴, 플립카드 D-day(KST) |
 | `Reveal.svelte` | idle | `data-reveal` 값(wipe, blur, rise, line)으로 섹션별 등장 효과 선택 |
 | `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
@@ -18,6 +18,22 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 | `KakaoMap.svelte` | visible | 카카오맵 임베드(JS SDK 지연 로드, `autoload=false` + `kakao.maps.load`). 기본은 이동/줌 잠금, `지도 이동` 토글로 해제(페이지 스크롤 가로채기 방지). 8초 안에 타일이 안 뜨거나 SDK 오류면 주소 카드 + `카카오맵에서 보기` 링크로 대체. JS 가 꺼지면 서버 HTML 의 주소 카드 |
 | `Guestbook.svelte` | visible | 축하 글: 최신 5개 + 더보기(IntersectionObserver 무한 스크롤, 커서 페이지), 접기(로드된 앞 5개, 재요청 없음), 작성/비밀번호 삭제, 스켈레톤/빈 상태/오류 재시도. API 는 `guestbook/`(Cloudflare Worker + D1, 별도 패키지)이고 주소는 `wedding.guestbookApi`(비면 섹션 숨김). 메시지는 줄바꿈을 허용한다(서버가 `\r\n`→`\n`, 빈 줄은 최대 1줄로 정리). 그 밖의 제어문자는 거부. 모든 글은 텍스트로만 렌더링 |
 | `ActionButtons.svelte` | idle | 복사/카카오 공유 버튼: 리플, 스프링 토스트 "복사됨", 공유 시 불씨 폭죽 |
+
+## 테마
+
+| 키 | 이름 | 연출 |
+|---|---|---|
+| `halloween` | 할로윈 | 밀랍 인장, 달, 박쥐, 촛불, 잭오랜턴 |
+| `dev` | 프로그래머 | 터미널 창(`git merge 신랑 신부`), Enter 키캡 인장, 떨어지는 코드 조각, 픽셀 하트 |
+| `puppy` | 강아지 | 말티즈(리본) + 네눈박이(나비넥타이, 끝이 접힌 큰 귀), 발바닥 인장, 발자국/하트 |
+
+- 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 왼쪽 아래 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
+- 색은 `src/styles/global.css` 의 `[data-theme]` 토큰. 테마별 마크업은 `data-th="dev"` 처럼 표시하고 CSS 로만 숨긴다(SSR 과 하이드레이션 일치). 캔버스/날아가는 요소처럼 JS 연출만 `src/lib/theme.svelte.ts` 를 읽는다.
+- 테마 추가: `src/lib/themes.ts` 에 키를 넣고, `global.css` 토큰 블록과 `data-th` 변형, `AmbientCanvas` 의 `make` 에 항목을 더한다.
+
+## 확대 잠금
+
+모바일/태블릿(UA 판별)은 페이지 핀치 줌과 더블탭 확대를 막는다(`src/scripts/zoom.ts`: viewport `user-scalable=no` + iOS `gesture*` / 두 손가락 `touchmove` 차단 + `touch-action: pan-x pan-y`). PC 는 그대로 확대된다. 갤러리 라이트박스 핀치와 카카오맵 줌은 자체 처리라 그대로 동작한다.
 
 - 모션 감소(`prefers-reduced-motion`): 모든 연출이 즉시 정적 상태로 바뀌고 rAF 루프는 돌지 않는다.
 - 인트로는 JS 가 있을 때만 보인다(`<html class="js gated">` 를 head 인라인 스크립트가 붙이고, 4.5초 안에 섬이 못 뜨면 스스로 걷어낸다).
@@ -36,6 +52,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 모든 문구와 값은 `src/data/wedding.ts` 한 곳에서 읽는다.
 
 - 홀 이름: `venue.hall` (비어 있으면 표시 안 함)
+- 대표 사진 크롭 위치: `cover.focus` (CSS `object-position`, 기본 `50% 35%`)
 - 인사말: `greeting` (TODO 표시된 문구 교체)
 - 이름/혼주: `groom` / `bride` 는 `{ name, relation, givenName?, father, mother }`. `father`/`mother` 는 `{ name, deceased }`.
   - `relation`: 아들/장남/차남/딸/장녀/차녀 등 자유 문구
@@ -55,7 +72,7 @@ corepack pnpm build    # astro check + astro build -> dist/
 ## 사진
 
 `src/assets/photos/` 에 `jpg/png/webp` 를 넣으면 파일명 순으로 자동 사용된다.
-첫 장은 커버, 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
+첫 장은 커버(4:5, `cover.focus` 로 크롭 위치 조정), 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
 사진이 없으면 9칸 플레이스홀더가 표시되고 라이트박스는 꺼진다. 빌드 시 webp 반응형으로 변환된다.
 
 ## 배경음악

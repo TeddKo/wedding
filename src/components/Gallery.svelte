@@ -355,8 +355,8 @@
   .lbp { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; will-change: transform; box-shadow: 0 10px 50px rgb(0 0 0 / 0.7); }
   .ui { position: absolute; inset: 0; pointer-events: none; }
   .b {
-    position: absolute; pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgb(201 164 92 / 0.55);
-    background: rgb(18 13 22 / 0.6); color: var(--ivory); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 0 3px;
+    position: absolute; pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgb(var(--gold-rgb) / 0.55);
+    background: rgb(var(--bg-rgb) / 0.6); color: var(--ivory); font-size: 28px; line-height: 1; cursor: pointer; padding: 0 0 3px;
     transition: background 0.2s, transform 0.2s;
   }
   .b:hover { background: var(--gold); color: var(--bg); }

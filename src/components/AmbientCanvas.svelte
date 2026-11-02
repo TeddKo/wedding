@@ -3,14 +3,16 @@
   import { BAT_PATH } from "../lib/bat";
   import { lerp, rand, reduced } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
+  import { theme } from "../lib/theme.svelte";
+  import type { ThemeName } from "../lib/themes";
 
   let canvas: HTMLCanvasElement;
 
   /* 품질 단계: 0=최소, 1=낮음, 2=보통. 프레임 시간이 길면 한 단계씩만 내려간다 */
   const TIERS = [
-    { fog: 1, embers: 10, dpr: 1, fps: 30 },
-    { fog: 2, embers: 18, dpr: 1.25, fps: 45 },
-    { fog: 3, embers: 34, dpr: 2, fps: 60 },
+    { fog: 1, embers: 6, dpr: 1, fps: 30 },
+    { fog: 2, embers: 10, dpr: 1.25, fps: 45 },
+    { fog: 2, embers: 16, dpr: 2, fps: 60 },
   ];
   const SLOW_MS = 26;
 
@@ -63,12 +65,62 @@
     })();
     const bat = new Path2D(BAT_PATH);
 
+    const draw = (size: number, paint: (g: CanvasRenderingContext2D) => void) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = size;
+      paint(c.getContext("2d")!);
+      return c;
+    };
+    const glyph = (ch: string, col: string) =>
+      draw(64, (g) => {
+        g.font = "600 26px 'JetBrains Mono', ui-monospace, Menlo, monospace";
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.shadowColor = col;
+        g.shadowBlur = 10;
+        g.fillStyle = col;
+        g.fillText(ch, 32, 33);
+      });
+    const paw = (col: string) =>
+      draw(48, (g) => {
+        g.fillStyle = col;
+        for (const [x, y, rx, ry] of [[24, 30, 10, 9], [11, 18, 4.4, 5.4], [19, 10, 4.4, 5.4], [29, 10, 4.4, 5.4], [37, 18, 4.4, 5.4]]) {
+          g.beginPath();
+          g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+          g.fill();
+        }
+      });
+    const heart = (col: string) =>
+      draw(48, (g) => {
+        g.fillStyle = col;
+        g.fill(new Path2D("M24 41S6 30 6 17a9 9 0 0 1 18-3 9 9 0 0 1 18 3c0 13-18 24-18 24z"));
+      });
+
+    /* 테마별 배경색, 안개색, 파티클. 처음 쓰일 때 한 번만 만든다 */
+    type Look = { outer: string; col: string; fog: HTMLCanvasElement[]; parts: HTMLCanvasElement[]; scale: number; alpha: number; fall: boolean; blend: GlobalCompositeOperation; night: boolean };
+    const fogOf = (rgbs: string[]) => rgbs.map((c) => sprite(256, [[0, `rgba(${c},0.5)`], [1, `rgba(${c},0)`]]));
+    const make: Record<ThemeName, () => Look> = {
+      halloween: () => ({ outer: "#0a070d", col: "#120d16", fog: fogSpr, parts: [emberSpr, emberSpr, dustSpr], scale: 1, alpha: 0.5, fall: false, blend: "lighter", night: true }),
+      dev: () => ({
+        outer: "#010409", col: "#0d1117", fog: fogOf(["88,166,255", "63,185,80", "60,80,140"]),
+        parts: [..."01{};".split(""), "<3", "=>", "</>"].map((ch, i) => glyph(ch, i % 4 === 3 ? "#f778ba" : "#3fb950")),
+        scale: 2.4, alpha: 0.2, fall: true, blend: "lighter", night: false,
+      }),
+      puppy: () => ({
+        outer: "#f3e6d4", col: "#fff8ef", fog: fogOf(["255,190,200", "255,214,160", "250,200,210"]),
+        parts: [paw("#e8a0ae"), paw("#d9a77c"), heart("#f4a3b4"), heart("#f7c1a0")],
+        scale: 1.8, alpha: 0.22, fall: false, blend: "source-over", night: false,
+      }),
+    };
+    const looks: Partial<Record<ThemeName, Look>> = {};
+    const lookOf = (n: ThemeName) => (looks[n] ??= make[n]());
+
     let W = 0, H = 0, dpr = 1;
     let cfg = TIERS[tier];
-    type P = { x: number; y: number; v: number; a: number; k: number; ph: number; s: number; gold: boolean };
+    type P = { x: number; y: number; v: number; a: number; k: number; ph: number; s: number; pick: number };
     let ps: P[] = [];
     const seed = (p?: Partial<P>): P => ({
-      x: rand(0, W), y: rand(0, H), v: rand(10, 34), a: rand(6, 22), k: rand(0.4, 1.2), ph: rand(0, 6.28), s: rand(9, 22), gold: Math.random() < 0.35, ...p,
+      x: rand(0, W), y: rand(0, H), v: rand(10, 34), a: rand(6, 22), k: rand(0.4, 1.2), ph: rand(0, 6.28), s: rand(5, 12), pick: Math.random(), ...p,
     });
     const fogs = Array.from({ length: 3 }, (_, i) => ({ ph: rand(0, 6.28), sp: rand(0.05, 0.11) * (i % 2 ? -1 : 1), y: 0.22 + i * 0.28, h: 0.34 + i * 0.05, al: 0.5 - i * 0.08 }));
 
@@ -113,10 +165,11 @@
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx!.globalCompositeOperation = "source-over";
       ctx!.globalAlpha = 1;
+      const look = lookOf(theme.name);
       const colW = Math.min(W, 480), colX = (W - colW) / 2;
-      ctx!.fillStyle = "#0a070d";
+      ctx!.fillStyle = look.outer;
       ctx!.fillRect(0, 0, W, H);
-      ctx!.fillStyle = "#120d16";
+      ctx!.fillStyle = look.col;
       ctx!.fillRect(colX, 0, colW, H);
 
       /* 달 */
@@ -124,34 +177,35 @@
       const e = 1 - (1 - rise) ** 3;
       const mx = colX + colW - 64, my = lerp(150, 84, e);
       ctx!.globalAlpha = 0.2 * e;
-      ctx!.drawImage(moonSpr, mx - 110, my - 110);
+      if (look.night) ctx!.drawImage(moonSpr, mx - 110, my - 110);
 
       /* 안개 */
       for (let i = 0; i < cfg.fog; i++) {
         const f = fogs[i];
         const w = W * 1.5, h = H * f.h;
-        ctx!.globalAlpha = f.al * 0.22;
-        ctx!.drawImage(fogSpr[i], W / 2 - w / 2 + Math.sin(t * f.sp + f.ph) * W * 0.28, H * f.y - h / 2 + Math.cos(t * f.sp * 0.7 + f.ph) * 22, w, h);
+        ctx!.globalAlpha = f.al * 0.14;
+        ctx!.drawImage(look.fog[i], W / 2 - w / 2 + Math.sin(t * f.sp + f.ph) * W * 0.28, H * f.y - h / 2 + Math.cos(t * f.sp * 0.7 + f.ph) * 22, w, h);
       }
 
-      /* 불씨 */
-      ctx!.globalCompositeOperation = "lighter";
+      /* 불씨 / 코드 조각 / 발자국 */
+      ctx!.globalCompositeOperation = look.blend;
       for (const p of ps) {
-        p.y -= p.v * dt;
-        if (p.y < -p.s) {
-          p.y = H + p.s;
+        const s = p.s * look.scale;
+        p.y += (look.fall ? 1 : -1) * p.v * dt;
+        if (p.y < -s || p.y > H + s) {
+          p.y = look.fall ? -s : H + s;
           p.x = rand(0, W);
         }
         const x = p.x + Math.sin(t * p.k + p.ph) * p.a;
         const fl = 0.55 + 0.45 * Math.sin(t * (2 + p.k * 3) + p.ph);
         const edge = Math.min(1, p.y / (H * 0.2), (H - p.y) / (H * 0.1) + 0.4);
-        ctx!.globalAlpha = Math.max(0, 0.7 * fl * edge);
-        ctx!.drawImage(p.gold ? dustSpr : emberSpr, x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+        ctx!.globalAlpha = Math.max(0, look.alpha * fl * edge);
+        ctx!.drawImage(look.parts[Math.floor(p.pick * look.parts.length)], x - s / 2, p.y - s / 2, s, s);
       }
 
       /* 가끔 달 앞을 가로지르는 박쥐 */
       ctx!.globalCompositeOperation = "source-over";
-      if (batT < 0 && now > nextBat && e > 0.9) {
+      if (batT < 0 && now > nextBat && e > 0.9 && look.night) {
         batT = 0;
         batDir = Math.random() < 0.5 ? 1 : -1;
       }
