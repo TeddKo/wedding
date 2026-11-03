@@ -130,7 +130,8 @@ html[data-theme="halloween"] .gal-sets { position: relative; }
 .hw-bat-fly { position: absolute; top: 8px; left: -7px; width: 32px !important; fill: var(--ink); opacity: 0; }
 
 .hw-potion { left: 12px; top: 84px; width: 44px; height: 56px; color: var(--accent); }
-.hw-potion svg { position: absolute; left: 8px; bottom: 0; width: 28px; }
+.hw-potion svg { position: absolute; left: 8px; bottom: 0; width: 28px; transform-origin: 50% 100%; }
+.hw-cork { transform-box: fill-box; transform-origin: center; }
 .hw-bub { position: absolute; left: 20px; top: 24px; width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; opacity: 0; }
 .hw-bub:nth-of-type(2) { width: 4px; height: 4px; } .hw-bub:nth-of-type(3) { width: 6px; height: 6px; }
 .hw-in { transform-box: fill-box; animation: hw-in 3.2s ease-in infinite; }

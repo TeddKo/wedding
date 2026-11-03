@@ -53,7 +53,7 @@ type K = Required<Omit<FallOptions, "alpha">> & { alpha: number; life: number };
 
 interface P {
   x: number; y: number; vx: number; vy: number; rot: number; vr: number;
-  size: number; img: HTMLImageElement; phase: number; age: number; life: number; sx: number; k: K;
+  size: number; img: HTMLImageElement; phase: number; age: number; k: K;
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -141,8 +141,8 @@ export function createFall(o: FallOptions): Fall {
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
       const x = p.x + Math.sin(p.phase + p.age * p.k.sway.hz * Math.PI * 2) * p.k.sway.amp;
-      if (p.age > p.life || p.y > h + p.size) continue;
-      const f = p.age / p.life;
+      if (p.age > p.k.life || p.y > h + p.size) continue;
+      const f = p.age / p.k.life;
       const a = p.k.alpha * (f > 1 - p.k.alphaTail ? Math.max(0, (1 - f) / p.k.alphaTail) : 1);
       ctx.globalAlpha = a;
       ctx.save();
@@ -168,7 +168,7 @@ export function createFall(o: FallOptions): Fall {
       rot: rand(0, 360), vr: rand(k.spin[0], k.spin[1]) * (Math.random() < 0.5 ? -1 : 1),
       size: rand(k.size[0], k.size[1]),
       img: k.sprites[Math.floor(Math.random() * k.sprites.length)],
-      phase: rand(0, Math.PI * 2), age: 0, life: k.life, sx: x, k,
+      phase: rand(0, Math.PI * 2), age: 0, k,
     });
   };
 

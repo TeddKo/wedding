@@ -127,11 +127,10 @@ export function start(ctx: { first: boolean }): () => void {
   }
 
   /* 사탕 바구니: 탭하면 들썩이고 사탕이 튀어오른다(사탕은 아래 fall 준비 후 연결). 모션 감소면 깜빡임만 */
-  const timers: number[] = [];
   const basket = q<HTMLButtonElement>(".hw-basket");
   const jiggle = () =>
     reduced
-      ? (basket?.firstElementChild as HTMLElement | null)?.animate([{ opacity: 1 }, { opacity: 0.55 }, { opacity: 1 }], 320)
+      ? (basket?.firstElementChild as HTMLElement | null)?.animate([{}, { opacity: 0.55 }, {}], 320)
       : basket?.animate([0, -9, 7, -4, 0].map((d, i) => ({ transform: `rotate(${d}deg) scale(${i === 1 ? 0.94 : 1})` })), { duration: 520, easing: "ease-out" });
   if (basket) {
     basket.addEventListener("click", jiggle);
@@ -181,7 +180,7 @@ export function start(ctx: { first: boolean }): () => void {
             const r = basket.getBoundingClientRect();
             const x = r.left + r.width / 2;
             const y = r.top + r.height * 0.5;
-            [0, 90, 180].forEach((d) => timers.push(window.setTimeout(() => !dead && fall.spawnAt(x, y, 2, { vx: -80, vy: -620, spreadX: 110, spreadY: 90, kind: CANDY }), d)));
+            [0, 90, 180].forEach((d) => window.setTimeout(() => !dead && fall.spawnAt(x, y, 2, { vx: -80, vy: -620, spreadX: 110, spreadY: 90, kind: CANDY }), d));
           };
           basket.addEventListener("click", onBasket);
           undo.push(() => basket.removeEventListener("click", onBasket));
@@ -220,7 +219,7 @@ export function start(ctx: { first: boolean }): () => void {
   };
   const bat = (el: HTMLElement) => {
     const $ = (s: string) => el.querySelector(s)!;
-    $(".hw-bat-hang").animate([{ offset: 0, opacity: 1, transform: "rotate(0)" }, { offset: 0.03, transform: "rotate(-10deg)" }, { offset: 0.06, transform: "rotate(8deg)" }, { offset: 0.077, opacity: 1 }, { offset: 0.08, transform: "rotate(0)" }, { offset: 0.123, opacity: 0 }, { offset: 0.91, opacity: 0, transform: "rotate(14deg)" }, { offset: 0.96, transform: "rotate(-6deg)" }, { offset: 1, opacity: 1, transform: "rotate(0)" }], 3100);
+    $(".hw-bat-hang").animate([{ offset: 0, opacity: 1 }, { offset: 0.03, transform: "rotate(-10deg)" }, { offset: 0.06, transform: "rotate(8deg)" }, { offset: 0.077, opacity: 1 }, { offset: 0.08, transform: "rotate(0)" }, { offset: 0.123, opacity: 0 }, { offset: 0.91, opacity: 0, transform: "rotate(14deg)" }, { offset: 0.96, transform: "rotate(-6deg)" }, { offset: 1, opacity: 1 }], 3100);
     $(".hw-bat-fly").animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.077 }, { opacity: 1, offset: 0.12 }, { opacity: 1, offset: 0.9 }, { opacity: 0, offset: 0.93 }, { opacity: 0, offset: 1 }], 3100);
     $(".hw-bat-fly").animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.3)" }], { duration: 120, iterations: 22, direction: "alternate", easing: "ease-in-out", delay: 240 });
     $(".hw-bat-fx").animate([0, -70, -170, -110, 0].map((x, i) => ({ transform: `translateX(${x}px)`, offset: i / 4 })), { duration: 2600, delay: 260, easing: "ease-in-out" });
@@ -250,7 +249,7 @@ export function start(ctx: { first: boolean }): () => void {
       if (!play) return;
       if (reduced) {
         until = now + 320;
-        (el.firstElementChild as HTMLElement | null)?.animate([{ opacity: 1 }, { opacity: 0.45 }, { opacity: 1 }], 320);
+        el.querySelectorAll<HTMLElement>(":scope > *").forEach((c) => c.animate([{ opacity: 1 }, { opacity: 0.45 }, { opacity: 1 }], 320));
         return;
       }
       until = now + play(el);
@@ -258,13 +257,12 @@ export function start(ctx: { first: boolean }): () => void {
     el.addEventListener("click", on);
     undo.push(() => {
       el.removeEventListener("click", on);
-      el.getAnimations({ subtree: true }).forEach((a) => a instanceof CSSAnimation || a instanceof CSSTransition || a.cancel());
+      el.getAnimations({ subtree: true }).forEach((a) => "animationName" in a || "transitionProperty" in a || a.cancel());
     });
   });
 
   return () => {
     dead = true;
-    timers.forEach(clearTimeout);
     for (const f of undo.splice(0)) f();
   };
 }

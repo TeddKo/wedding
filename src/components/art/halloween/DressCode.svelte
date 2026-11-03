@@ -3,6 +3,7 @@
   import { fade } from "svelte/transition";
   import { portal } from "../../../lib/portal";
   import { reduced } from "../../../lib/motion";
+  import { BAT } from "./bat";
 
   /** 커버 유령([data-dresscode], 정적 마크업)을 누르면 드레스코드 카드가 유령 자리에서 흔들리며 날아와 펼쳐진다 */
   let open = $state(false);
@@ -25,10 +26,15 @@
 
   $effect(() => {
     if (!open) return;
+    const cover = document.querySelector(".cover");
+    cover?.classList.add("fx-paused");
     void tick().then(() => closeBtn?.focus({ preventScroll: true }));
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
+    return () => {
+      removeEventListener("keydown", onKey);
+      cover?.classList.remove("fx-paused");
+    };
   });
 
   function close() {
@@ -58,7 +64,6 @@
     if (reduced()) return { duration: 120, css: (t: number) => `opacity:${t}` };
     return { duration: 280, css: (t: number) => `opacity:${t};transform:scale(${1 + (1 - t) * 0.12}) translateY(${(1 - t) * -14}px)` };
   }
-  const BAT = "M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z";
   /** s 폭px, x/y 이동px, a 물결 진폭px, t 비행ms, dl 지연ms, f 반날갯짓ms, r 기울기deg */
   const BATS = [
     { s: 30, x: -168, y: -150, a: 18, t: 2200, dl: 480, f: 130, r: -14 },
@@ -92,7 +97,7 @@
     </div>
     <div class="dc-bats" aria-hidden="true">
       {#each BATS as b}
-        <span class="dc-bat" style="--s:{b.s}px;--x:{b.x}px;--y:{b.y}px;--a:{b.a}px;--t:{b.t}ms;--dl:{b.dl}ms;--f:{b.f}ms;--r:{b.r}deg"><span class="dc-bat-y"><svg class="dc-bat-w" viewBox="0 0 40 16" focusable="false"><path d={BAT} /></svg></span></span>
+        <span class="dc-bat" style="--s:{b.s}px;--x:{b.x}px;--y:{b.y}px;--a:{b.a}px;--t:{b.t}ms;--dl:{b.dl}ms;--f:{b.f}ms;--n:{Math.ceil(b.t / b.f)};--r:{b.r}deg"><span class="dc-bat-y"><svg class="dc-bat-w" viewBox="0 0 40 16" focusable="false"><path d={BAT} /></svg></span></span>
       {/each}
     </div>
   </div>
@@ -123,7 +128,7 @@
   .dc-bats { position: absolute; left: 50%; top: calc(50% - 100px); width: 0; height: 0; pointer-events: none; }
   .dc-bat { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -5); width: var(--s); animation: dc-bx var(--t) cubic-bezier(.33,0,.67,1) var(--dl) both; }
   .dc-bat-y { display: block; animation: dc-by var(--t) linear var(--dl) both; }
-  .dc-bat-w { display: block; width: 100%; height: auto; fill: rgb(var(--gold-rgb) / .8); rotate: var(--r); transform-origin: 50% 40%; animation: dc-flap var(--f) ease-in-out var(--dl) infinite alternate; }
+  .dc-bat-w { display: block; width: 100%; height: auto; fill: rgb(var(--gold-rgb) / .8); rotate: var(--r); transform-origin: 50% 40%; animation: dc-flap var(--f) ease-in-out var(--dl) var(--n) alternate; }
   @keyframes dc-bx { from { transform: translateX(0); } to { transform: translateX(var(--x)); } }
   @keyframes dc-by {
     0%   { opacity: 0; transform: translateY(0) scale(.3); animation-timing-function: cubic-bezier(.3,0,.5,1); }
