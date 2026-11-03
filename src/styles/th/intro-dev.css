@@ -1,0 +1,32 @@
+/* th/intro-dev: 커맨드 프롬프트 CTA, 모노 칩, 터미널 타이핑 + 와이프 진입(entry-dev.ts) */
+html[data-theme="dev"] .gate { --ig-mono: "Geist Mono", var(--f-mono); background: var(--paper), var(--bg); }
+
+.ig-term { position: absolute; left: 0; right: 0; top: 44%; padding-left: 52px; text-align: left; font: 400 12px/22px var(--ig-mono); color: var(--ink); opacity: 0; }
+.ig-term p { margin: 0; }
+.tm-p { margin-right: 10px; color: var(--accent-text); }
+.tm-cw { position: relative; display: inline-block; width: 23ch; vertical-align: top; }
+.tm-cmd { display: block; white-space: pre; }
+.tm-cur { position: absolute; left: 0; top: 4px; width: 1ch; height: 14px; background: var(--ink); }
+.tm-out { position: relative; margin-top: 6px; color: var(--ink-3); opacity: 0; }
+.tm-node { position: absolute; left: -24px; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px var(--bg); opacity: 0; }
+.tm-line { position: absolute; left: -24px; top: 50%; width: 1px; height: 60cqh; margin-left: -0.5px; background: var(--ink); transform-origin: 50% 0; transform: scaleY(0); }
+.ig-scan { position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--accent); opacity: 0; }
+
+/* CTA: 커맨드 프롬프트 */
+.ig-face-d { display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 0 12px 0 18px; border-radius: 8px; background: var(--surface); color: var(--ink); font: 400 12px/20px var(--ig-mono, var(--f-mono)); box-shadow: 0 0 0 1px rgb(10 10 10 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04); transition: box-shadow 120ms var(--e-out), background-color 120ms var(--e-out); }
+.ig-face-d .ig-lbl b { margin-right: 0.6ch; font-weight: 500; color: var(--accent-text); }
+.ig-face-d kbd { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 4px; font: 400 12px/1 var(--ig-mono, var(--f-mono)); box-shadow: 0 0 0 1px rgb(10 10 10 / 0.12); color: var(--ink-2); transition: background-color 120ms var(--e-out), transform 120ms var(--e-out); }
+.ig-cur { display: inline-block; width: 1ch; height: 14px; margin-left: 2px; background: var(--ink); }
+@media (hover: hover) { .ig-cta:hover .ig-face-d { box-shadow: 0 0 0 1px rgb(10 10 10 / 0.24), 0 1px 2px rgb(0 0 0 / 0.04); } .ig-cta:hover kbd { background: rgb(10 10 10 / 0.04); } }
+.ig-cta:active .ig-face-d { background: #f5f5f5; }
+.ig-cta:active kbd { transform: translateY(1px); }
+html[data-theme="dev"] { --ig-press: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .ig-cur { animation: ig-blink 1.06s steps(1) infinite; }
+  html[data-theme="dev"] .gate.leaving .ig-cur { animation: none; }
+}
+
+/* 칩: 각진 모노 */
+html[data-theme="dev"] .ig-sw { border-radius: 8px; box-shadow: 0 0 0 1px rgb(10 10 10 / 0.1); }
+html[data-theme="dev"] .ig-opt[aria-checked="true"] .ig-sw { box-shadow: 0 0 0 1px var(--ink), 0 1px 2px rgb(0 0 0 / 0.08); }
+html[data-theme="dev"] .ig-cap { font: 400 11px/1 var(--ig-mono, var(--f-mono)); letter-spacing: 0; }

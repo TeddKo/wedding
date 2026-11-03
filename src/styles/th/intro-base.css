@@ -1,0 +1,24 @@
+/* th/intro-base: 인트로 게이트 공통 골격. 테마별 스킨은 intro-halloween/puppy/dev.css */
+.gate { container-type: size; }
+.gate > .mid, .gate > .bottom { position: relative; z-index: 1; }
+.ig-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.gate.leaving { pointer-events: none; }
+.gate.leaving > .mid, .gate.leaving > .bottom { opacity: 0; transform: translateY(-8px); transition: opacity 300ms var(--e-out) 80ms, transform 300ms var(--e-out) 80ms; }
+.gate.leaving > .bottom { transition-delay: 140ms; }
+
+.ig-cta {
+  position: relative; display: grid; place-items: center; margin: 0; padding: 0; border: 0; background: none; color: inherit;
+  cursor: pointer; -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms var(--e-out);
+}
+.ig-cta:active { transform: scale(var(--ig-press, 0.975)); }
+.ig-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 12px; }
+.ig-face { grid-area: 1 / 1; position: relative; display: grid; place-items: center; }
+.ig-lbl { position: relative; display: inline-flex; align-items: center; white-space: nowrap; }
+.ig-cta svg, .ig-bg svg { display: block; }
+
+@keyframes ig-blink { 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ig-cta, .gate [class*="ig-"] { animation: none !important; transition: none !important; }
+}
