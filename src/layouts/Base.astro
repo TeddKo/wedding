@@ -10,14 +10,14 @@ import { wedding } from "../data/wedding";
 import { dateKo } from "../lib/format";
 import { url } from "../lib/url";
 import ThemeSwitch from "../components/ThemeSwitch.svelte";
-import { THEMES } from "../lib/themes";
+import { THEMES, THEME_NAMES } from "../lib/themes";
 import { ICONS } from "../lib/icons";
 
 const pageUrl = new URL(url(""), Astro.site).href;
 const ogImage = new URL(url("og.jpg"), Astro.site).href;
 const title = wedding.share.title;
 const desc = `${dateKo} ${wedding.venue.name}`;
-const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.color]));
+const colors = Object.fromEntries(THEME_NAMES.map((k) => [k, THEMES[k].color]));
 ---
 
 <!doctype html>
@@ -67,7 +67,7 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
   >
     <slot />
     <div class="fabs" id="dock">
-      <ThemeSwitch client:idle />
+      {THEME_NAMES.length > 1 && <ThemeSwitch client:idle />}
       <button type="button" class="fab bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.music} /></svg>
       </button>

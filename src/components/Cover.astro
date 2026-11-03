@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import CoverHero from "./CoverHero.svelte";
+import DressCode from "./art/halloween/DressCode.svelte";
 import { wedding } from "../data/wedding";
 import { dateKo, venueLine } from "../lib/format";
 import { photoSets } from "../lib/photos";
@@ -17,3 +18,4 @@ import { photoSets } from "../lib/photos";
     )
   }
 </CoverHero>
+<DressCode client:idle />

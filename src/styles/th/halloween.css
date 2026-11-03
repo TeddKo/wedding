@@ -33,7 +33,20 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
 .hw-ghost, .hw-float, .hw-pumpkin { display: block; }
 .hw-ghost svg, .hw-pumpkin svg, .hw-end svg { display: block; width: 100%; height: auto; }
 
-.hw-ghost { position: absolute; top: 26%; left: calc(100% - 28px); width: 40px; color: rgb(var(--gold-rgb) / 0.85); }
+/* 커버 유령: 누르고 싶게 밝게 빛나는 버튼. 누르면 DressCode 카드가 열린다 */
+.hw-ghost {
+  position: absolute; top: 26%; left: calc(100% - 36px); width: 56px; padding: 8px; margin: 0; border: 0; background: none; border-radius: 50%;
+  isolation: isolate; color: #2b2420; cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.hw-ghost svg > path:first-child { fill: #fffaf0; }
+.hw-ghost .hw-float { filter: drop-shadow(0 0 3px rgb(255 236 200 / 0.95)) drop-shadow(0 0 10px rgb(255 196 120 / 0.8)); }
+.hw-ghost::before { content: ""; position: absolute; inset: -6px; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgb(255 214 150 / 0.55), rgb(224 144 74 / 0.18) 60%, transparent); animation: hw-glow 2.4s ease-in-out infinite; }
+.hw-ghost::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid rgb(255 214 150 / 0.7); opacity: 0; animation: hw-ring 2.4s ease-out 1.2s infinite; pointer-events: none; }
+.hw-ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hw-ghost:active .hw-float { transform: scale(0.92); }
+@keyframes hw-glow { 0%, 100% { opacity: 0.55; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes hw-ring { 0% { opacity: 0.8; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.7); } }
+@media (prefers-reduced-motion: reduce) { .hw-ghost::before, .hw-ghost::after { animation: none; } .hw-ghost::before { opacity: 0.8; } }
 .hw-pumpkin {
   position: absolute; z-index: 2; left: -26px; top: calc(100% - 40px); width: 72px; color: var(--gold);
   transform-origin: 50% 100%; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
