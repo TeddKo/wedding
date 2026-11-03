@@ -1,0 +1,45 @@
+/* th/intro-puppy: 리본 태그 CTA, 소프트 칩, 리본 풀기 + 봉투 플랩 진입 */
+html[data-theme="puppy"] { --ig-press: 0.97; }
+
+.ig-puppy { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 0; }
+.ig-body { position: absolute; inset: 0; background: var(--paper), var(--bg); will-change: transform; }
+.ig-flap { position: absolute; left: 0; right: 0; top: 0; height: 27%; transform-origin: 50% 0; transform-style: preserve-3d; }
+.ig-flap-f, .ig-flap-b { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ig-flap-b { transform: rotateX(180deg); }
+.ig-flap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ig-flap path { vector-effect: non-scaling-stroke; stroke-width: 1px; }
+.ig-flap-f path { fill: color-mix(in srgb, var(--bg) 88%, #c8a888); stroke: rgb(var(--accent-rgb) / 0.22); }
+.ig-flap-b path { fill: #efe3d3; stroke: rgb(var(--accent-rgb) / 0.16); }
+
+html[data-theme="puppy"] .gate.leaving .ig-flap { animation: ig-flap 600ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both; }
+html[data-theme="puppy"] .gate.leaving .ig-body { transform: translateY(100%); opacity: 0; transition: transform calc(var(--ig-total) - 600ms) var(--e-ink) 500ms, opacity 450ms linear 700ms; }
+html[data-theme="puppy"] .gate.leaving > .bottom { transition-delay: 320ms; }
+html[data-theme="puppy"] .gate.leaving .ig-tag { animation: ig-tag 180ms cubic-bezier(0.34, 1.3, 0.64, 1) both; }
+html[data-theme="puppy"] .gate.leaving .ig-str-l { animation: ig-str-l 300ms var(--e-out) 120ms both; }
+html[data-theme="puppy"] .gate.leaving .ig-str-r { animation: ig-str-r 300ms var(--e-out) 120ms both; }
+@keyframes ig-flap { to { transform: rotateX(-180deg); } }
+@keyframes ig-tag { 50% { transform: scale(1.03); } }
+@keyframes ig-str-l { to { opacity: 0; transform: translateX(-24px) rotate(6deg); } }
+@keyframes ig-str-r { to { opacity: 0; transform: translateX(24px) rotate(-6deg); } }
+
+/* CTA: 리본 태그 */
+.ig-face-p { width: 172px; height: 54px; color: #5c4a45; }
+.ig-tag { position: relative; display: grid; place-items: center; width: 172px; height: 54px; transition: transform 160ms var(--e-out); filter: drop-shadow(0 6px 7px rgb(90 60 40 / 0.2)) drop-shadow(0 1px 0 rgb(255 255 255 / 0.8)); }
+.ig-tag > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ig-tag path { fill: #f3e8d8; stroke: #d9c6b0; stroke-width: 1px; }
+.ig-face-p .ig-lbl { padding-right: 14px; font: 500 14px/1 var(--f-ui); letter-spacing: 0; }
+.ig-dot { width: 6px; height: 6px; margin-right: 12px; border-radius: 50%; background: var(--accent); transition: transform 160ms var(--e-out); }
+.ig-str { position: absolute; top: 50%; width: 22px; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--accent); opacity: 0.75; }
+.ig-str-l { right: calc(100% - 6px); transform: rotate(-5deg); }
+.ig-str-r { left: calc(100% - 6px); transform: rotate(5deg); }
+@media (hover: hover) { .ig-cta:hover .ig-tag { transform: translateY(-1px); } .ig-cta:hover .ig-dot { transform: scale(1.3); } }
+.ig-cta:active .ig-dot { transform: scale(1.5); }
+@media (prefers-reduced-motion: no-preference) {
+  .ig-tag { animation: ig-sway 4s ease-in-out infinite; transform-origin: 16% 50%; }
+}
+@keyframes ig-sway { 0%, 100% { rotate: -0.6deg; } 50% { rotate: 0.6deg; } }
+
+/* 칩: 부드러운 크림 */
+html[data-theme="puppy"] .ig-sw { border-radius: 50%; border: 1px solid rgb(60 40 30 / 0.1); box-shadow: 0 1px 0 #fff inset, 0 6px 10px -7px rgb(90 60 40 / 0.35); }
+html[data-theme="puppy"] .ig-opt[aria-checked="true"] .ig-sw { transform: translateY(-1px); border-color: transparent; box-shadow: 0 0 0 3px var(--bg), 0 0 0 4.500px var(--accent); }
+html[data-theme="puppy"] .ig-cap { font-weight: 500; }
