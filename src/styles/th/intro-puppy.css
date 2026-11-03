@@ -42,4 +42,3 @@ html[data-theme="puppy"] .gate.leaving .ig-str-r { animation: ig-str-r 300ms var
 /* 칩: 부드러운 크림 */
 html[data-theme="puppy"] .ig-sw { border-radius: 50%; border: 1px solid rgb(60 40 30 / 0.1); box-shadow: 0 1px 0 #fff inset, 0 6px 10px -7px rgb(90 60 40 / 0.35); }
 html[data-theme="puppy"] .ig-opt[aria-checked="true"] .ig-sw { transform: translateY(-1px); border-color: transparent; box-shadow: 0 0 0 3px var(--bg), 0 0 0 4.500px var(--accent); }
-html[data-theme="puppy"] .ig-cap { font-weight: 500; }

@@ -27,9 +27,9 @@ export interface Account {
   payLink?: string;
 }
 
-// TODO: 혼주 성함과 관계(장남/차녀 등)를 확정되면 입력. 부모 이름이 모두 비면 해당 쪽 혼주 줄은 숨겨진다.
-const groom: Person = { name: "고민혁", relation: "아들", father: { name: "", deceased: false }, mother: { name: "", deceased: false } };
-const bride: Person = { name: "김은정", relation: "딸", father: { name: "", deceased: false }, mother: { name: "", deceased: false } };
+// TODO: 혼주 성함 "ㅇㅇㅇ" 은 템플릿 자리. 실제 성함으로 교체. 부모 이름이 모두 비면 해당 쪽 혼주 줄은 숨겨진다.
+const groom: Person = { name: "고민혁", relation: "장남", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
+const bride: Person = { name: "김은정", relation: "장녀", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
 const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "", holder: "" });
 
 export interface Transit {

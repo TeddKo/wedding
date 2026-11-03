@@ -2,29 +2,40 @@
 import { fnv7 } from "../lib/hash";
 import { getImage } from "astro:assets";
 import GalleryIsland from "./Gallery.svelte";
-import { photos } from "../lib/photos";
+import { photoSets } from "../lib/photos";
 
-const items = await Promise.all(
-  photos.map(async (src) => {
-    const [a, b, c] = await Promise.all([180, 360, 540].map((width) => getImage({ src, width, height: width, format: "webp" })));
-    const full = await getImage({ src, width: 1400, format: "webp" });
-    return {
-      thumb: b.src,
-      srcset: `${a.src} 180w, ${b.src} 360w, ${c.src} 540w`,
-      full: full.src,
-      w: Number(full.attributes.width ?? src.width),
-      h: Number(full.attributes.height ?? src.height),
-    };
-  }),
+const sets = await Promise.all(
+  photoSets
+    .filter((s) => s.gallery.length > 0)
+    .map(async (s) => ({
+      th: s.th,
+      items: await Promise.all(
+        s.gallery.map(async (src) => {
+          const [a, b, c] = await Promise.all([180, 360, 540].map((width) => getImage({ src, width, height: width, format: "webp" })));
+          const full = await getImage({ src, width: Math.min(1400, src.width), format: "webp" });
+          return {
+            thumb: b.src,
+            srcset: `${a.src} 180w, ${b.src} 360w, ${c.src} 540w`,
+            full: full.src,
+            w: Number(full.attributes.width ?? src.width),
+            h: Number(full.attributes.height ?? src.height),
+          };
+        }),
+      ),
+    })),
 );
 ---
 
 {
-  items.length > 0 && (
+  sets.length > 0 && (
     <section class="section" data-reveal aria-labelledby="gal-h">
       <p class="eyebrow" data-rv="fade">GALLERY</p>
       <h2 id="gal-h" class="sec-title" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
-      <GalleryIsland client:idle items={items} />
+      {sets.map((s) => (
+        <div data-th={s.th}>
+          <GalleryIsland client:idle items={s.items} />
+        </div>
+      ))}
     </section>
   )
 }

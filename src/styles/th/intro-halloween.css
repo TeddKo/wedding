@@ -39,4 +39,3 @@ html[data-theme="halloween"] .gate.leaving .ig-ember { animation: ig-ember 600ms
 /* 칩: 이중 금빛 링 */
 html[data-theme="halloween"] .ig-sw { border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.3); }
 html[data-theme="halloween"] .ig-opt[aria-checked="true"] .ig-sw { box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--ig-gold); border-color: transparent; }
-html[data-theme="halloween"] .ig-cap { font-family: var(--f-name); letter-spacing: 0.14em; }

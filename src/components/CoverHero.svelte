@@ -64,7 +64,7 @@
     </div>
   {/if}
 
-  <div class="hero" data-th={hasPhoto ? undefined : "halloween puppy"}>
+  <div class="hero">
     <svg class="defs" data-th="halloween" width="0" height="0" aria-hidden="true" focusable="false">
       <clipPath id="lancet-{uid}" clipPathUnits="objectBoundingBox"><path d="M0 1V.432C0 .238 .25 .082 .5 0C.75 .082 1 .238 1 .432V1Z" /></clipPath>
     </svg>
@@ -186,9 +186,9 @@
   .kicker { margin-bottom: 16px; font: 400 12px/20px var(--f-mono); color: var(--ink-3); }
   .kicker::after { content: ""; display: inline-block; width: 7px; height: 14px; margin-left: 4px; vertical-align: -2px; background: var(--accent); animation: caret 1.2s steps(1, end) infinite; }
   @keyframes caret { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
-  :global([data-theme="dev"]) .hero { width: 100%; max-width: 360px; aspect-ratio: 4 / 5; }
+  :global([data-theme="dev"]) .hero { width: 100%; max-width: 360px; aspect-ratio: 4 / 5; margin-bottom: 16px; }
   :global([data-theme="dev"]) .frame { border-radius: 6px; border: 1px solid var(--line); }
-  .pr { order: 3; width: 100%; max-width: 360px; margin-bottom: 16px; padding: 16px; border-radius: 12px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 2px 4px rgb(0 0 0 / 0.04), 0 16px 32px -20px rgb(0 0 0 / 0.14); }
+  .pr { order: 4; width: 100%; max-width: 360px; margin-bottom: 16px; padding: 16px; border-radius: 12px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 2px 4px rgb(0 0 0 / 0.04), 0 16px 32px -20px rgb(0 0 0 / 0.14); }
   .pr-h { display: flex; align-items: center; justify-content: space-between; font: 500 12px/20px var(--f-mono); color: var(--ink-3); }
   .pr-st { padding: 0 8px; border-radius: 999px; background: rgb(var(--accent-rgb) / 0.08); color: var(--accent-text); font-size: 11px; }
   .pr-t { margin-top: 8px; font: 600 17px/24px var(--f-ui); letter-spacing: -0.02em; color: var(--ink); }

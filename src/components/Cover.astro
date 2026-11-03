@@ -3,15 +3,17 @@ import { Image } from "astro:assets";
 import CoverHero from "./CoverHero.svelte";
 import { wedding } from "../data/wedding";
 import { dateKo, venueLine } from "../lib/format";
-import { photos } from "../lib/photos";
-
-const cover = photos[0];
+import { photoSets } from "../lib/photos";
 ---
 
-<CoverHero groom={wedding.groom.name} bride={wedding.bride.name} date={wedding.date} dateKo={dateKo} time={wedding.time} venue={venueLine} focus={wedding.cover.focus} hasPhoto={!!cover}>
+<CoverHero groom={wedding.groom.name} bride={wedding.bride.name} date={wedding.date} dateKo={dateKo} time={wedding.time} venue={venueLine} focus={wedding.cover.focus} hasPhoto={photoSets.length > 0}>
   {
-    cover && (
-      <Image slot="photo" src={cover} alt={`${wedding.groom.name}, ${wedding.bride.name}`} width={960} format="webp" widths={[400, 800, 960]} sizes="(max-width: 480px) 80vw, 360px" loading="eager" />
+    photoSets.length > 0 && (
+      <Fragment slot="photo">
+        {photoSets.map((s) => (
+          <Image data-th={s.th} src={s.cover} alt={`${wedding.groom.name}, ${wedding.bride.name}`} width={960} format="webp" widths={[400, 800, 960]} sizes="(max-width: 480px) 80vw, 360px" loading="eager" />
+        ))}
+      </Fragment>
     )
   }
 </CoverHero>

@@ -18,7 +18,7 @@
 
 <div class="ig-pick" role="radiogroup" aria-label="초대장 분위기 고르기" {onkeydown}>
   {#each THEME_NAMES as k, i (k)}
-    <button bind:this={opts[i]} type="button" role="radio" class="ig-opt" data-k={k} aria-checked={theme.name === k} tabindex={theme.name === k ? 0 : -1} onclick={() => setTheme(k)}>
+    <button bind:this={opts[i]} type="button" role="radio" class="ig-opt" data-k={k} aria-label={THEMES[k].label} aria-checked={theme.name === k} tabindex={theme.name === k ? 0 : -1} onclick={() => setTheme(k)}>
       <span class="ig-sw" aria-hidden="true">
         {#if k === "halloween"}
           <svg viewBox="0 0 20 20" focusable="false"><path d="M5 17V9.5C5 6.2 7.6 3.6 10 2c2.4 1.6 5 4.2 5 7.500V17" /><path d="M8 17V10.5c0-1.400.8-2.600 2-3.500 1.200.9 2 2.100 2 3.500V17" /></svg>
@@ -28,7 +28,6 @@
           <svg viewBox="0 0 20 20" focusable="false"><path d="M10 2.500v15" /><circle class="b" cx="10" cy="10" r="3.300" /></svg>
         {/if}
       </span>
-      <span class="ig-cap">{THEMES[k].label}</span>
     </button>
   {/each}
 </div>
@@ -43,8 +42,6 @@
   .ig-sw svg { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.200; stroke-linecap: round; stroke-linejoin: round; }
   .ig-sw .f, .ig-sw .b { fill: currentColor; stroke: none; }
   .ig-sw .b { fill: var(--sw-bg); stroke: currentColor; stroke-width: 1.600; }
-  .ig-cap { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); white-space: nowrap; font: 500 11px/1 var(--f-ui); letter-spacing: 0.06em; color: var(--ink-2); opacity: 0; transition: opacity 220ms var(--e-io); pointer-events: none; }
-  .ig-opt[aria-checked="true"] .ig-cap { opacity: 1; }
   .ig-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-radius: 12px; }
 
   .ig-opt[data-k="halloween"] { --sw-bg: #eee7de; --sw-ink: #8c3f1a; }
@@ -53,6 +50,6 @@
   .ig-sw { background: var(--sw-bg); color: var(--sw-ink); }
 
   @media (prefers-reduced-motion: reduce) {
-    .ig-sw, .ig-cap { transition: none; }
+    .ig-sw { transition: none; }
   }
 </style>
