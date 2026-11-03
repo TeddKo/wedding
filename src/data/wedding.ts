@@ -86,7 +86,7 @@ export const wedding = {
     title: `${groom.name} & ${bride.name} 결혼합니다`,
     description: `2027년 10월 31일 일요일 오전 10시 30분\n${venue.name} ${venue.hall}`,
     /** "링크 복사" 버튼이 복사하는 주소(단축 URL). 비우면 페이지 주소 */
-    copyUrl: "https://bit.ly/3X29e4R",
+    copyUrl: "https://url.kr/1hud9d",
   },
   // public/audio/bgm.mp3 가 있을 때만 푸터에 표시
   musicCredit: "Music: generated with Suno",
