@@ -22,12 +22,12 @@ export function splitWords(text: string): string[][] {
 
 /**
  * 숫자 롤. text 안의 모든 숫자 덩어리를 from → 목표값으로 보간한다.
- * 자릿수는 원문 길이로 0 채움(폭 고정). p>=1 이면 원문 그대로.
+ * 자릿수는 원문 길이로 0 채움(폭 고정). 4자리 이상(연도 등)은 롤하지 않고 고정. p>=1 이면 원문 그대로.
  */
 export function countText(text: string, p: number, from = 0): string {
   if (p >= 1) return text;
   const e = easeOutCubic(p);
-  return text.replace(/\d+/g, (m) => String(Math.round(lerp(from, Number(m), e))).padStart(m.length, "0"));
+  return text.replace(/\d+/g, (m) => m.length >= 4 ? m : String(Math.round(lerp(from, Number(m), e))).padStart(m.length, "0"));
 }
 
 /** 텍스트에 롤 가능한 숫자가 있는가 */

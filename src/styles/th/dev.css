@@ -69,7 +69,6 @@ html.opened[data-theme="dev"] .gl .nd-m .pulse { animation: none; opacity: 0; }
 html[data-theme="dev"] .gl .core { opacity: 0.5; }
 html[data-theme="dev"] .gl .br.blink { animation: none; }
 html[data-theme="dev"] .rail-glow { background: var(--accent); box-shadow: 0 0 8px rgb(0 112 243 / 0.28); }
-html[data-theme="dev"] [data-reveal].in .sec-title::before { border-color: var(--accent); box-shadow: 0 0 0 4px rgb(0 112 243 / 0.12); }
 @keyframes dev-ver { 0%, 100% { text-shadow: none; } 40% { text-shadow: 0 0 8px rgb(0 112 243 / 0.3); } }
 html[data-theme="dev"] .footer.ending::after { background: rgb(0 112 243 / 0.08); border: 0; font-size: 11px; line-height: 18px; padding: 1px 8px; }
 
