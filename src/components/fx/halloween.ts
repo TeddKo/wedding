@@ -1,9 +1,9 @@
 import { createFall, svgToImage, type Fall } from "../../lib/fx/fall";
-import { FLECKS } from "../../lib/fx/sprites-candy";
+import { CANDIES, FLECKS } from "../../lib/fx/sprites-candy";
 
 /**
  * halloween 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출한다.
- * 오픈 버스트, 호박·사탕 바구니 탭, 촛불 끄기/켜기, 엔딩 유령 인사·도망, 유령 float 오프스크린 일시정지를 DOM 조회로 연결한다.
+ * 오픈 버스트, 호박·사탕 바구니 탭, 촛불 끄기/켜기, 엔딩 유령 인사·도망, 섹션 장난감 탭, 무한 장식 오프스크린 일시정지를 DOM 조회로 연결한다.
  * @param ctx first=true 면 시그니처 연출 1회 재생 시점
  * @returns 정리 함수(타이머/캔버스/리스너 해제)
  */
@@ -13,13 +13,14 @@ export function start(ctx: { first: boolean }): () => void {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const q = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s);
 
-  const float = q(".hw-float");
-  if (float && "IntersectionObserver" in window) {
-    const io = new IntersectionObserver(([e]) => float.classList.toggle("fx-paused", !e.isIntersecting));
-    io.observe(float);
+  /* 무한 장식(.hw-float, .hw-idle)은 화면 밖이면 일시정지 */
+  if ("IntersectionObserver" in window) {
+    const els = document.querySelectorAll<HTMLElement>(".hw-float, .hw-idle");
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("fx-paused", !e.isIntersecting)));
+    els.forEach((el) => io.observe(el));
     undo.push(() => {
       io.disconnect();
-      float.classList.remove("fx-paused");
+      els.forEach((el) => el.classList.remove("fx-paused"));
     });
   }
 
@@ -125,18 +126,21 @@ export function start(ctx: { first: boolean }): () => void {
     });
   }
 
-  /* 사탕 바구니: 탭하면 들썩이고(사탕 이펙트는 아래 fall 준비 후 연결) */
+  /* 사탕 바구니: 탭하면 들썩이고 사탕이 튀어오른다(사탕은 아래 fall 준비 후 연결). 모션 감소면 깜빡임만 */
+  const timers: number[] = [];
   const basket = q<HTMLButtonElement>(".hw-basket");
   const jiggle = () =>
-    basket?.animate([0, -9, 7, -4, 0].map((d, i) => ({ transform: `rotate(${d}deg) scale(${i === 1 ? 0.94 : 1})` })), { duration: reduced ? 1 : 520, easing: "ease-out" });
+    reduced
+      ? (basket?.firstElementChild as HTMLElement | null)?.animate([{ opacity: 1 }, { opacity: 0.55 }, { opacity: 1 }], 320)
+      : basket?.animate([0, -9, 7, -4, 0].map((d, i) => ({ transform: `rotate(${d}deg) scale(${i === 1 ? 0.94 : 1})` })), { duration: 520, easing: "ease-out" });
   if (basket) {
     basket.addEventListener("click", jiggle);
     undo.push(() => basket.removeEventListener("click", jiggle));
   }
 
   if (!reduced) {
-    Promise.all(FLECKS.map(svgToImage))
-      .then((sprites) => {
+    Promise.all([Promise.all(FLECKS.map(svgToImage)), Promise.all(CANDIES.map(svgToImage))])
+      .then(([sprites, candies]) => {
         if (dead) return;
         const fall: Fall = createFall({
           sprites,
@@ -169,12 +173,15 @@ export function start(ctx: { first: boolean }): () => void {
 
         if (basket) {
           let last = 0;
+          const CANDY = { sprites: candies, size: [22, 30] as [number, number], gravity: 1150, drag: 0.004, sway: { amp: 0, hz: 0 }, spin: [160, 420] as [number, number], alpha: 1, alphaTail: 0.35, life: 1.35 };
           const onBasket = () => {
             const now = performance.now();
-            if (now - last < 600) return;
+            if (now - last < 450) return;
             last = now;
             const r = basket.getBoundingClientRect();
-            fall.spawnAt(r.left + r.width / 2, r.top + r.height * 0.45, 7, { vy: -190, spreadX: 60, spreadY: 30 });
+            const x = r.left + r.width / 2;
+            const y = r.top + r.height * 0.5;
+            [0, 90, 180].forEach((d) => timers.push(window.setTimeout(() => !dead && fall.spawnAt(x, y, 2, { vx: -80, vy: -620, spreadX: 110, spreadY: 90, kind: CANDY }), d)));
           };
           basket.addEventListener("click", onBasket);
           undo.push(() => basket.removeEventListener("click", onBasket));
@@ -198,8 +205,66 @@ export function start(ctx: { first: boolean }): () => void {
       .catch(() => {});
   }
 
+  /* 섹션 장식: 탭 1회=연출 1회, 연출 중 탭 무시. 각 연출은 점유 ms 를 반환. 모션 감소면 불투명도 깜빡임만 */
+  const Y: [number, number, string][] = [[0, 0, "cubic-bezier(.5,0,.75,0)"], [0.14, 30, "cubic-bezier(.2,.7,.3,1)"], [0.24, 21, "cubic-bezier(.5,0,.75,0)"], [0.32, 30, "ease-out"], [0.38, 27, "linear"], [0.58, 27, "ease-in-out"], [0.68, 18, "linear"], [0.74, 18, "ease-in-out"], [0.84, 9, "linear"], [0.9, 9, "ease-in-out"], [1, 0, "linear"]];
+  const spider = (el: HTMLElement) => {
+    el.querySelector(".hw-drop")!.animate(Y.map(([offset, y, easing]) => ({ offset, easing, transform: `translateY(${y}px)` })), 2000);
+    el.querySelector(".hw-silk")!.animate(Y.map(([offset, y, easing]) => ({ offset, easing, transform: `scaleY(${(42 + y) / 42})` })), 2000);
+    return 2000;
+  };
+  const cat = (el: HTMLElement) => {
+    el.querySelector(".hw-cat-art")!.animate([{ transform: "none", easing: "cubic-bezier(.5,0,.75,0)" }, { transform: "translateY(78%)", offset: 0.15 }, { transform: "translateY(78%)", offset: 0.5, easing: "cubic-bezier(.34,1.56,.64,1)" }, { transform: "none", offset: 0.72 }, { transform: "none" }], 1500);
+    el.querySelector(".hw-cat-tail")!.animate([0, 22, -12, 8, 0].map((d) => ({ transform: `rotate(${d}deg)` })), { duration: 800, delay: 1000, easing: "ease-in-out" });
+    el.querySelector(".hw-cat-eyes")!.animate([1, 0.1, 1, 0.1, 1].map((s) => ({ transform: `scaleY(${s})` })), { duration: 360, delay: 1080 });
+    return 1800;
+  };
+  const bat = (el: HTMLElement) => {
+    const $ = (s: string) => el.querySelector(s)!;
+    $(".hw-bat-hang").animate([{ offset: 0, opacity: 1, transform: "rotate(0)" }, { offset: 0.03, transform: "rotate(-10deg)" }, { offset: 0.06, transform: "rotate(8deg)" }, { offset: 0.077, opacity: 1 }, { offset: 0.08, transform: "rotate(0)" }, { offset: 0.123, opacity: 0 }, { offset: 0.91, opacity: 0, transform: "rotate(14deg)" }, { offset: 0.96, transform: "rotate(-6deg)" }, { offset: 1, opacity: 1, transform: "rotate(0)" }], 3100);
+    $(".hw-bat-fly").animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.077 }, { opacity: 1, offset: 0.12 }, { opacity: 1, offset: 0.9 }, { opacity: 0, offset: 0.93 }, { opacity: 0, offset: 1 }], 3100);
+    $(".hw-bat-fly").animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.3)" }], { duration: 120, iterations: 22, direction: "alternate", easing: "ease-in-out", delay: 240 });
+    $(".hw-bat-fx").animate([0, -70, -170, -110, 0].map((x, i) => ({ transform: `translateX(${x}px)`, offset: i / 4 })), { duration: 2600, delay: 260, easing: "ease-in-out" });
+    $(".hw-bat-fy").animate([[0, 0], [0.2, 36], [0.45, -24], [0.7, -58], [0.9, -12], [1, 0]].map(([offset, y]) => ({ offset, transform: `translateY(${y}px)` })), { duration: 2600, delay: 260, easing: "ease-in-out" });
+    return 3100;
+  };
+  const potion = (el: HTMLElement) => {
+    el.querySelector("svg")!.animate([0, -9, 7, -4, 2, 0].map((d) => ({ transform: `rotate(${d}deg)` })), { duration: 700, easing: "ease-out" });
+    el.querySelector(".hw-cork")!.animate([{ transform: "none" }, { transform: "translateY(-9px) rotate(18deg)", offset: 0.3 }, { transform: "translateY(-9px) rotate(18deg)", offset: 0.6 }, { transform: "none" }], { duration: 900, easing: "cubic-bezier(.34,1.56,.64,1)" });
+    el.querySelectorAll(".hw-bub").forEach((b, i) =>
+      b.animate([{ opacity: 0, transform: "translate(0,0) scale(.6)" }, { opacity: 1, offset: 0.2 }, { opacity: 0, transform: `translate(${[-6, 4, -2][i]}px,-34px) scale(1)` }], { duration: 1100, delay: i * 140, easing: "cubic-bezier(.2,.7,.3,1)" }),
+    );
+    return 1400;
+  };
+  const web = (el: HTMLElement) => {
+    el.querySelector("svg")!.animate([0, -6, 4.5, -3, 1.5, 0].map((d) => ({ transform: `rotate(${d}deg)` })), { duration: 900, easing: "cubic-bezier(.2,.7,.3,1)" });
+    el.querySelector(".hw-dew")!.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], 700);
+    return 900;
+  };
+  const TOYS: Record<string, (el: HTMLElement) => number> = { spider, cat, bat, potion, web };
+  document.querySelectorAll<HTMLElement>("[data-hw]").forEach((el) => {
+    let until = 0;
+    const on = () => {
+      const now = performance.now();
+      if (now < until) return;
+      const play = TOYS[el.dataset.hw ?? ""];
+      if (!play) return;
+      if (reduced) {
+        until = now + 320;
+        (el.firstElementChild as HTMLElement | null)?.animate([{ opacity: 1 }, { opacity: 0.45 }, { opacity: 1 }], 320);
+        return;
+      }
+      until = now + play(el);
+    };
+    el.addEventListener("click", on);
+    undo.push(() => {
+      el.removeEventListener("click", on);
+      el.getAnimations({ subtree: true }).forEach((a) => a instanceof CSSAnimation || a instanceof CSSTransition || a.cancel());
+    });
+  });
+
   return () => {
     dead = true;
+    timers.forEach(clearTimeout);
     for (const f of undo.splice(0)) f();
   };
 }

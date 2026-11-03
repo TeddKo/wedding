@@ -1,6 +1,7 @@
 ---
 import { fnv7 } from "../lib/hash";
 import { getImage } from "astro:assets";
+import HDeco from "./art/halloween/Deco.svelte";
 import GalleryIsland from "./Gallery.svelte";
 import { photoSets } from "../lib/photos";
 
@@ -31,11 +32,14 @@ const sets = await Promise.all(
     <section class="section" data-reveal aria-labelledby="gal-h">
       <p class="eyebrow" data-rv="fade">GALLERY</p>
       <h2 id="gal-h" class="sec-title" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("gallery")}</span>갤러리</h2>
-      {sets.map((s) => (
-        <div data-th={s.th}>
-          <GalleryIsland client:idle items={s.items} />
-        </div>
-      ))}
+      <div class="gal-sets">
+        <HDeco kind="cat" />
+        {sets.map((s) => (
+          <div data-th={s.th}>
+            <GalleryIsland client:idle items={s.items} />
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

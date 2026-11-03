@@ -2,6 +2,7 @@
 import { fnv7 } from "../lib/hash";
 import { wedding } from "../data/wedding";
 import { ICONS } from "../lib/icons";
+import HDeco from "./art/halloween/Deco.svelte";
 import ActionButtons from "./ActionButtons.svelte";
 import KakaoMap from "./KakaoMap.svelte";
 import MapApps from "./MapApps.svelte";
@@ -21,6 +22,7 @@ const rows = all.filter((r) => r.lines.length > 0);
 
 <section class="section loc" data-reveal aria-labelledby="loc-h">
   <p class="eyebrow" data-rv="fade">LOCATION</p>
+  <HDeco kind="bat" />
   <h2 class="sec-title" id="loc-h" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("location")}</span>오시는 길</h2>
   <p class="venue-name" data-rv="mask" style="--d:240ms">{venueLine}</p>
   <div class="address" data-rv="fade" style="--d:200ms">

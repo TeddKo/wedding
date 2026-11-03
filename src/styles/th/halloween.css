@@ -60,10 +60,26 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
 .hw-basket:focus-visible, .hw-end:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 12px; }
 .hw-pumpkin::before { content: ""; position: absolute; inset: -30%; z-index: -1; background: radial-gradient(closest-side, rgb(224 144 74 / 0.28), transparent); pointer-events: none; }
 
+/* 촛불 = 커버 광원. 켜짐(기본) 전환은 재점화용, :has(.out) 전환은 소등용 */
+html[data-theme="halloween"] .hero::before { transition: opacity 520ms cubic-bezier(.2,.7,.3,1) 200ms; }
+.hw-ghost .hw-float { transition: opacity 520ms cubic-bezier(.2,.7,.3,1) 260ms, filter 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
+.hw-ghost::before, .hw-ghost::after { transition: filter 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
+:is(.hw-pumpkin, .hw-basket) > svg, .hw-pumpkin::before, .hw-basket::before { transition: opacity 560ms cubic-bezier(.2,.7,.3,1) 320ms; }
+
+html[data-theme="halloween"] .cover:has(.flame.out) .hero::before { transition: opacity 700ms cubic-bezier(.4,0,.2,1) 60ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost .hw-float {
+  opacity: .55; filter: drop-shadow(0 0 2px rgb(255 236 200 / .22)) drop-shadow(0 0 10px rgb(255 196 120 / 0));
+  transition: opacity 700ms cubic-bezier(.4,0,.2,1) 120ms, filter 700ms cubic-bezier(.4,0,.2,1) 120ms;
+}
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost::before { filter: opacity(.12); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost::after { filter: opacity(0); transition: filter 400ms ease-in 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket) > svg { opacity: .42; transition: opacity 700ms cubic-bezier(.4,0,.2,1) 220ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket)::before { opacity: 0; transition: opacity 600ms cubic-bezier(.4,0,.2,1) 220ms; }
+
 html.js:not(.opened) .fx-ghost { opacity: 0; transform: translateX(-14px); }
 html.opened .fx-ghost { animation: hw-peek 700ms var(--e-out) 300ms backwards; }
 html.opened .fx-float { animation: hw-float 6s ease-in-out 1s infinite; }
-.fx-paused { animation-play-state: paused !important; }
+.fx-paused, .fx-paused * { animation-play-state: paused !important; }
 @keyframes hw-peek { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 @keyframes hw-float { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
 
@@ -83,3 +99,43 @@ html.opened .fx-float { animation: hw-float 6s ease-in-out 1s infinite; }
 .hw-orn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 0; color: var(--accent); }
 .hw-orn i { display: block; width: 40px; height: 1px; background: rgb(var(--accent-rgb) / 0.45); }
 .hw-orn svg { display: block; width: 22px; height: auto; flex: none; }
+
+/* 섹션 장난감: 탭하면 한 번 움직이는 장식(연출은 fx/halloween 의 TOYS) */
+.hw-deco { position: absolute; z-index: 2; display: block; padding: 0; margin: 0; border: 0; background: none; color: var(--ink-2); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.hw-deco svg { display: block; width: 100%; height: auto; overflow: visible; }
+.hw-deco:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { .hw-deco, .hw-deco * { animation: none !important; } }
+
+.hw-spider { top: 0; right: 20px; width: 44px; height: 76px; }
+.hw-sway, .hw-drop { position: absolute; inset: 0; }
+.hw-sway { transform-origin: 50% 0; animation: hw-sway 5.6s ease-in-out infinite alternate; }
+@keyframes hw-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.hw-silk { position: absolute; left: 50%; top: 0; width: 1px; height: 42px; margin-left: -.5px; background: currentColor; opacity: .5; transform-origin: 50% 0; }
+.hw-drop svg { position: absolute; left: 50%; top: 34px; width: 26px; margin-left: -13px; }
+@media (max-width: 360px) { .hw-spider { right: 8px; } }
+
+html[data-theme="halloween"] .gal-sets { position: relative; }
+.hw-cat { left: 4px; top: -44px; width: 44px; height: 44px; overflow: hidden; }
+.hw-cat-art { position: absolute; left: 0; bottom: 0; width: 44px; }
+.hw-cat-eyes { transform-box: fill-box; transform-origin: center; animation: hw-blink 6.5s infinite; }
+@keyframes hw-blink { 0%, 94%, 100% { transform: scaleY(1); } 95.5% { transform: scaleY(.1); } 97% { transform: scaleY(1); } }
+.hw-cat-tail { transform-box: fill-box; transform-origin: 0% 100%; }
+
+.hw-bat { top: 6px; right: 0; width: 56px; height: 56px; color: var(--accent); }
+.hw-twig { position: absolute; top: 4px; right: 0; width: 56px; }
+.hw-bat-pos { position: absolute; left: 25px; top: 15px; width: 18px; color: var(--ink); }
+.hw-bat-fx, .hw-bat-fy { display: block; }
+.hw-bat-hang { transform-origin: 50% 0; animation: hw-hang 4.8s ease-in-out infinite alternate; }
+@keyframes hw-hang { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.hw-bat-fly { position: absolute; top: 8px; left: -7px; width: 32px !important; fill: var(--ink); opacity: 0; }
+
+.hw-potion { left: 12px; top: 84px; width: 44px; height: 56px; color: var(--accent); }
+.hw-potion svg { position: absolute; left: 8px; bottom: 0; width: 28px; }
+.hw-bub { position: absolute; left: 20px; top: 24px; width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; opacity: 0; }
+.hw-bub:nth-of-type(2) { width: 4px; height: 4px; } .hw-bub:nth-of-type(3) { width: 6px; height: 6px; }
+.hw-in { transform-box: fill-box; animation: hw-in 3.2s ease-in infinite; }
+@keyframes hw-in { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .7; } 100% { transform: translateY(-9px); opacity: 0; } }
+@media (max-width: 360px) { .hw-potion { left: 4px; } }
+
+html[data-theme="halloween"] .footer.ending > .hw-web { position: absolute; top: 4px; right: 0; z-index: 2; width: 72px; height: 72px; color: var(--gold); }
+.hw-web svg { position: absolute; top: 0; right: 0; width: 64px; opacity: .6; transform-origin: 100% 0; }

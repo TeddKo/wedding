@@ -1,5 +1,6 @@
 ---
 import { fnv7 } from "../lib/hash";
+import HDeco from "./art/halloween/Deco.svelte";
 import GuestbookIsland from "./Guestbook.svelte";
 import { wedding } from "../data/wedding";
 ---
@@ -8,6 +9,7 @@ import { wedding } from "../data/wedding";
   wedding.guestbookApi && (
     <section class="section gb-section" data-reveal aria-labelledby="gb-h">
       <p class="eyebrow" data-rv="fade">GUESTBOOK</p>
+      <HDeco kind="potion" />
       <h2 class="sec-title" id="gb-h" tabindex="-1" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("guestbook")}</span>방명록</h2>
       <p class="body-copy" data-rv="lines" style="--d:320ms">
         두 사람에게

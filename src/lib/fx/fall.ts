@@ -18,6 +18,13 @@ export interface FallOptions {
   alpha?: number;
 }
 
+/** 분사 단위 물리·스프라이트 덮어쓰기 */
+export interface Kind extends Partial<Omit<FallOptions, "alpha">> {
+  alpha?: number;
+  /** 수명(s) */
+  life?: number;
+}
+
 export interface SpawnOpts {
   /** 초기 속도(px/s) */
   vx?: number;
@@ -25,6 +32,8 @@ export interface SpawnOpts {
   /** 초기 속도 무작위 폭(±) */
   spreadX?: number;
   spreadY?: number;
+  /** 이 분사만 물리·스프라이트 덮어쓰기 */
+  kind?: Kind;
 }
 
 export interface Fall {
@@ -36,13 +45,15 @@ export interface Fall {
   destroy(): void;
 }
 
-const MAX = 30;
+const MAX = 40;
 const MAX_DPR = 2;
 const MAX_W = 440;
 
+type K = Required<Omit<FallOptions, "alpha">> & { alpha: number; life: number };
+
 interface P {
   x: number; y: number; vx: number; vy: number; rot: number; vr: number;
-  size: number; img: HTMLImageElement; phase: number; age: number; life: number; sx: number;
+  size: number; img: HTMLImageElement; phase: number; age: number; life: number; sx: number; k: K;
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -72,6 +83,7 @@ export function createFall(o: FallOptions): Fall {
   let h = 0;
   let dpr = 1;
   let dead = false;
+  const base: K = { ...o, alpha: o.alpha ?? 1, life: 4 };
 
   const resize = () => {
     if (!canvas) return;
@@ -118,21 +130,20 @@ export function createFall(o: FallOptions): Fall {
     last = t;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const base = o.alpha ?? 1;
     const keep: P[] = [];
     for (const p of parts) {
       p.age += dt;
-      p.vy += o.gravity * dt;
-      const k = Math.max(0, 1 - o.drag * dt * 60);
-      p.vx *= k;
-      p.vy *= k;
+      p.vy += p.k.gravity * dt;
+      const d = Math.max(0, 1 - p.k.drag * dt * 60);
+      p.vx *= d;
+      p.vy *= d;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
-      const x = p.x + Math.sin(p.phase + p.age * o.sway.hz * Math.PI * 2) * o.sway.amp;
+      const x = p.x + Math.sin(p.phase + p.age * p.k.sway.hz * Math.PI * 2) * p.k.sway.amp;
       if (p.age > p.life || p.y > h + p.size) continue;
       const f = p.age / p.life;
-      const a = base * (f > 1 - o.alphaTail ? Math.max(0, (1 - f) / o.alphaTail) : 1);
+      const a = p.k.alpha * (f > 1 - p.k.alphaTail ? Math.max(0, (1 - f) / p.k.alphaTail) : 1);
       ctx.globalAlpha = a;
       ctx.save();
       ctx.translate(x, p.y);
@@ -150,14 +161,14 @@ export function createFall(o: FallOptions): Fall {
     if (!raf && !document.hidden && parts.length) raf = requestAnimationFrame(tick);
   };
 
-  const add = (x: number, y: number, vx: number, vy: number) => {
+  const add = (x: number, y: number, vx: number, vy: number, k = base) => {
     if (parts.length >= MAX) return;
     parts.push({
       x, y, vx, vy,
-      rot: rand(0, 360), vr: rand(o.spin[0], o.spin[1]) * (Math.random() < 0.5 ? -1 : 1),
-      size: rand(o.size[0], o.size[1]),
-      img: o.sprites[Math.floor(Math.random() * o.sprites.length)],
-      phase: rand(0, Math.PI * 2), age: 0, life: 4, sx: x,
+      rot: rand(0, 360), vr: rand(k.spin[0], k.spin[1]) * (Math.random() < 0.5 ? -1 : 1),
+      size: rand(k.size[0], k.size[1]),
+      img: k.sprites[Math.floor(Math.random() * k.sprites.length)],
+      phase: rand(0, Math.PI * 2), age: 0, life: k.life, sx: x, k,
     });
   };
 
@@ -182,7 +193,8 @@ export function createFall(o: FallOptions): Fall {
       const left = canvas ? (innerWidth - w) / 2 : 0;
       const sx = opts.spreadX ?? 80;
       const sy = opts.spreadY ?? 60;
-      for (let i = 0; i < n; i++) add(x - left, y, (opts.vx ?? 0) + rand(-sx, sx), (opts.vy ?? 0) + rand(-sy, sy));
+      const k = opts.kind ? { ...base, ...opts.kind } : base;
+      for (let i = 0; i < n; i++) add(x - left, y, (opts.vx ?? 0) + rand(-sx, sx), (opts.vy ?? 0) + rand(-sy, sy), k);
       kick();
     },
     destroy() {

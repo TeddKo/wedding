@@ -183,7 +183,7 @@
   @keyframes relight { 0% { opacity: 0; transform: scale(0.1); } 45% { opacity: 1; transform: scale(1.35, 1.5); } 100% { opacity: 1; transform: scale(1); } }
   :global([data-theme="halloween"] .cover:has(.flame.out)) .frame { filter: brightness(0.72) saturate(0.8); }
   :global([data-theme="halloween"] .cover:has(.flame.out) .hero)::before { opacity: 0.15; }
-  .frame { transition: filter 700ms ease; }
+  .frame { transition: filter 700ms cubic-bezier(.4,0,.2,1) 60ms; }
   @keyframes flick { 0% { opacity: 0.95; transform: scaleY(1) } 11% { opacity: 0.85; transform: scaleY(0.94) } 23% { opacity: 1; transform: scaleY(1.04) } 37% { opacity: 0.88; transform: scaleY(0.96) rotate(-2deg) } 52% { opacity: 1; transform: scaleY(1.02) } 64% { opacity: 0.86; transform: scaleY(0.93) rotate(2deg) } 81% { opacity: 0.98; transform: scaleY(1.03) } 100% { opacity: 0.95; transform: scaleY(1) } }
 
   .mark { font: 300 28px/40px var(--f-latin); letter-spacing: 0.32em; margin-right: -0.32em; color: var(--ink); }

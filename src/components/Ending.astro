@@ -1,4 +1,5 @@
 ---
+import HDeco from "./art/halloween/Deco.svelte";
 import ActionButtons from "./ActionButtons.svelte";
 import PuppyEndArt from "./art/puppy/EndArt.svelte";
 import HalloweenEndArt from "./art/halloween/EndArt.svelte";
@@ -20,6 +21,7 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
 ---
 
 <footer class="footer ending" data-reveal>
+  <HDeco kind="web" />
   <div class="end-art-h" data-th="halloween" data-rv="rise" style="--d:0ms"><HalloweenEndArt /></div>
   <p class="script" data-th="halloween" data-rv="mask" data-dir="x" style="--d:300ms">till death do us part</p>
   <p class="script" data-th="dev" data-rv="mask" data-dir="x" style="--d:300ms">Save the Date</p>

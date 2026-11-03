@@ -58,15 +58,22 @@
     if (reduced()) return { duration: 120, css: (t: number) => `opacity:${t}` };
     return { duration: 280, css: (t: number) => `opacity:${t};filter:blur(${(1 - t) * 8}px);transform:scale(${1 + (1 - t) * 0.12}) translateY(${(1 - t) * -14}px)` };
   }
+  const BAT = "M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z";
+  /** s 폭px, x/y 이동px, a 물결 진폭px, t 비행ms, dl 지연ms, f 반날갯짓ms, r 기울기deg */
+  const BATS = [
+    { s: 30, x: -168, y: -150, a: 18, t: 2200, dl: 480, f: 130, r: -14 },
+    { s: 24, x: 156, y: -190, a: 14, t: 2500, dl: 560, f: 115, r: 12 },
+    { s: 18, x: 132, y: -40, a: 10, t: 1900, dl: 640, f: 100, r: 8 },
+    { s: 22, x: -140, y: -10, a: 12, t: 2100, dl: 720, f: 110, r: -8 },
+    { s: 14, x: -70, y: -230, a: 8, t: 2800, dl: 820, f: 90, r: -4 },
+    { s: 26, x: 84, y: -250, a: 16, t: 2400, dl: 920, f: 125, r: 10 },
+  ];
 </script>
 
 {#if open}
   <div class="dc" use:portal>
     <div class="dc-bd" role="presentation" onclick={close} transition:fade={{ duration: reduced() ? 0 : 220 }}></div>
     <div class="dc-card" role="dialog" aria-modal="true" aria-labelledby="dc-t" aria-describedby="dc-b" in:boo out:poof>
-      <svg class="dc-bat b1" viewBox="0 0 40 16" aria-hidden="true" focusable="false"><path d="M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z" /></svg>
-      <svg class="dc-bat b2" viewBox="0 0 40 16" aria-hidden="true" focusable="false"><path d="M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z" /></svg>
-      <svg class="dc-bat b3" viewBox="0 0 40 16" aria-hidden="true" focusable="false"><path d="M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z" /></svg>
 
       <button type="button" class="dc-x" bind:this={closeBtn} onclick={close} aria-label="닫기">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -83,12 +90,17 @@
       </p>
       <p class="dc-s">망토 하나, 머리띠 하나로도 충분히 무섭답니다.</p>
     </div>
+    <div class="dc-bats" aria-hidden="true">
+      {#each BATS as b}
+        <span class="dc-bat" style="--s:{b.s}px;--x:{b.x}px;--y:{b.y}px;--a:{b.a}px;--t:{b.t}ms;--dl:{b.dl}ms;--f:{b.f}ms;--r:{b.r}deg"><span class="dc-bat-y"><svg class="dc-bat-w" viewBox="0 0 40 16" focusable="false"><path d={BAT} /></svg></span></span>
+      {/each}
+    </div>
   </div>
 {/if}
 
 <style>
-  .dc { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 24px; }
-  .dc-bd { position: absolute; inset: 0; background: rgb(12 9 7 / 0.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  .dc { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 24px; overflow: hidden; }
+  .dc-bd { position: absolute; inset: 0; background: rgb(12 9 7 / 0.72); }
   .dc-card {
     position: relative; width: min(320px, 100%); padding: 44px 24px 28px; text-align: center; color: var(--on-night);
     border-radius: 160px 160px 18px 18px; border: 1px solid rgb(var(--gold-rgb) / 0.55);
@@ -108,21 +120,23 @@
   .dc-b { margin: 0; font: 400 14.5px/1.8 var(--f-body); color: var(--on-night); }
   .dc-s { margin: 14px 0 0; font: 400 12.5px/1.6 var(--f-body); color: var(--on-night-2); }
 
-  .dc-bat { position: absolute; top: 34%; left: 50%; width: 30px; fill: rgb(var(--gold-rgb) / 0.75); pointer-events: none; opacity: 0; animation: dc-fly 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
-  .b1 { --tx: -150px; --ty: -150px; --r: -18deg; animation-delay: 380ms; }
-  .b2 { --tx: 140px; --ty: -170px; --r: 16deg; width: 24px; animation-delay: 460ms; }
-  .b3 { --tx: 120px; --ty: -60px; --r: 10deg; width: 18px; animation-delay: 540ms; }
-
-  @keyframes dc-fly {
-    0% { opacity: 0; transform: translate(-50%, 0) scale(0.4); }
-    15% { opacity: 1; }
-    40% { transform: translate(calc(-50% + var(--tx) * 0.4), calc(var(--ty) * 0.35)) scale(1, 0.6) rotate(var(--r)); }
-    55% { transform: translate(calc(-50% + var(--tx) * 0.55), calc(var(--ty) * 0.5)) scale(1) rotate(var(--r)); }
-    100% { opacity: 0; transform: translate(calc(-50% + var(--tx)), var(--ty)) scale(0.8) rotate(var(--r)); }
+  .dc-bats { position: absolute; left: 50%; top: calc(50% - 100px); width: 0; height: 0; pointer-events: none; }
+  .dc-bat { position: absolute; left: calc(var(--s) / -2); top: calc(var(--s) / -5); width: var(--s); animation: dc-bx var(--t) cubic-bezier(.33,0,.67,1) var(--dl) both; }
+  .dc-bat-y { display: block; animation: dc-by var(--t) linear var(--dl) both; }
+  .dc-bat-w { display: block; width: 100%; height: auto; fill: rgb(var(--gold-rgb) / .8); rotate: var(--r); transform-origin: 50% 40%; animation: dc-flap var(--f) ease-in-out var(--dl) infinite alternate; }
+  @keyframes dc-bx { from { transform: translateX(0); } to { transform: translateX(var(--x)); } }
+  @keyframes dc-by {
+    0%   { opacity: 0; transform: translateY(0) scale(.3); animation-timing-function: cubic-bezier(.3,0,.5,1); }
+    12%  { opacity: 1; }
+    40%  { transform: translateY(calc(var(--y) * .35 - var(--a))) scale(.85); animation-timing-function: ease-in-out; }
+    70%  { transform: translateY(calc(var(--y) * .7 + var(--a))) scale(1); animation-timing-function: ease-in-out; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(var(--y)) scale(1.05); }
   }
+  @keyframes dc-flap { from { transform: scaleY(1); } to { transform: scaleY(.3); } }
   @keyframes dc-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.55; } 49% { opacity: 1; } 51% { opacity: 0.7; } 53% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .dc-bat { display: none; }
+    .dc-bats { display: none; }
     .dc-boo { animation: none; }
   }
 </style>
