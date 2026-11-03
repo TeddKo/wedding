@@ -68,9 +68,10 @@
     <svg class="defs" data-th="halloween" width="0" height="0" aria-hidden="true" focusable="false">
       <clipPath id="lancet-{uid}" clipPathUnits="objectBoundingBox"><path d="M0 1V.432C0 .238 .25 .082 .5 0C.75 .082 1 .238 1 .432V1Z" /></clipPath>
     </svg>
-    <span class="flame" data-th="halloween" data-rv="fade" aria-hidden="true" style="--d:1300ms">
-      <svg viewBox="0 0 12 22" width="12" height="22" focusable="false"><path d="M6 1C9 6 11 10 11 14a5 5 0 0 1-10 0C1 10 4 8 6 1Z" fill="#e0904a" /><path d="M6 9c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 2-3 3-7Z" fill="#f6d79a" /></svg>
-    </span>
+    <button type="button" class="flame" data-th="halloween" data-rv="fade" data-candle aria-label="촛불 끄기" aria-pressed="false" style="--d:1300ms">
+      <svg viewBox="0 0 12 22" width="12" height="22" aria-hidden="true" focusable="false"><path d="M6 1C9 6 11 10 11 14a5 5 0 0 1-10 0C1 10 4 8 6 1Z" fill="#e0904a" /><path d="M6 9c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 2-3 3-7Z" fill="#f6d79a" /></svg>
+      <i class="smoke" aria-hidden="true"></i>
+    </button>
     <div class="frame" data-rv="curtain">
       {#if hasPhoto}
         {@render photo?.()}
@@ -170,8 +171,19 @@
   :global([data-theme="halloween"]) .hero { width: min(300px, calc(100% - 64px)); margin-top: 0; aspect-ratio: 336 / 440; }
   :global([data-theme="halloween"]) .frame { clip-path: var(--clip); }
   .rules { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .flame { position: absolute; left: 50%; top: -32px; width: 12px; height: 22px; margin-left: -6px; pointer-events: none; }
-  .flame svg { display: block; transform-origin: 50% 100%; animation: flick 3s linear infinite; }
+  /* 촛불: 탭으로 끄고 켠다(fx/halloween 이 .out 토글). 끄면 커버 빛이 함께 어두워진다 */
+  .flame { position: absolute; z-index: 3; left: 50%; top: -44px; width: 44px; height: 44px; margin-left: -22px; padding: 11px 16px; border: 0; background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .flame:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
+  .flame svg { display: block; transform-origin: 50% 100%; animation: flick 3s linear infinite; transition: transform 420ms cubic-bezier(0.5, 0, 0.75, 0), opacity 360ms ease-in; }
+  .flame:global(.out) svg { transform: scale(0.1, 0.05) skewX(-24deg); opacity: 0; animation: none; }
+  .flame:global(.lit) svg { animation: relight 620ms cubic-bezier(0.34, 1.56, 0.64, 1), flick 3s linear 620ms infinite; }
+  .smoke { position: absolute; left: 50%; bottom: 12px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: rgb(200 190 180 / 0.6); opacity: 0; filter: blur(2px); pointer-events: none; }
+  .flame:global(.out) .smoke { animation: smoke 1.6s ease-out forwards; }
+  @keyframes smoke { 0% { opacity: 0.8; transform: translate(0, 0) scale(1); } 40% { opacity: 0.5; transform: translate(-4px, -16px) scale(2.2); } 100% { opacity: 0; transform: translate(5px, -38px) scale(4); } }
+  @keyframes relight { 0% { opacity: 0; transform: scale(0.1); } 45% { opacity: 1; transform: scale(1.35, 1.5); } 100% { opacity: 1; transform: scale(1); } }
+  :global([data-theme="halloween"] .cover:has(.flame.out)) .frame { filter: brightness(0.72) saturate(0.8); }
+  :global([data-theme="halloween"] .cover:has(.flame.out) .hero)::before { opacity: 0.15; }
+  .frame { transition: filter 700ms ease; }
   @keyframes flick { 0% { opacity: 0.95; transform: scaleY(1) } 11% { opacity: 0.85; transform: scaleY(0.94) } 23% { opacity: 1; transform: scaleY(1.04) } 37% { opacity: 0.88; transform: scaleY(0.96) rotate(-2deg) } 52% { opacity: 1; transform: scaleY(1.02) } 64% { opacity: 0.86; transform: scaleY(0.93) rotate(2deg) } 81% { opacity: 0.98; transform: scaleY(1.03) } 100% { opacity: 0.95; transform: scaleY(1) } }
 
   .mark { font: 300 28px/40px var(--f-latin); letter-spacing: 0.32em; margin-right: -0.32em; color: var(--ink); }
@@ -213,5 +225,5 @@
   .gl-meta .venue { margin-top: 2px; }
   .trunk { position: absolute; left: calc(-1 * (var(--rail-x, 28px) + 32px) + var(--rail-x, 28px)); top: -16px; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); }
 
-  @media (prefers-reduced-motion: reduce) { .flame svg, .kicker::after { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .flame svg, .kicker::after { animation: none !important; } .smoke { display: none; } }
 </style>

@@ -31,7 +31,7 @@ html[data-theme="halloween"] .footer.ending::after { content: ""; position: abso
 html[data-theme="halloween"] .hero > .art { position: absolute; inset: 0; pointer-events: none; }
 html[data-theme="halloween"] .hero::before { content: ""; position: absolute; inset: -14% -26% -6%; background: radial-gradient(closest-side, rgb(224 144 74 / 0.15), transparent); pointer-events: none; }
 .hw-ghost, .hw-float, .hw-pumpkin { display: block; }
-.hw-ghost svg, .hw-pumpkin svg, .hw-end svg { display: block; width: 100%; height: auto; }
+.hw-ghost svg, .hw-pumpkin svg, .hw-basket svg, .hw-end svg { display: block; width: 100%; height: auto; }
 
 /* 커버 유령: 누르고 싶게 밝게 빛나는 버튼. 누르면 DressCode 카드가 열린다 */
 .hw-ghost {
@@ -51,6 +51,13 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
   position: absolute; z-index: 2; left: -26px; top: calc(100% - 40px); width: 72px; color: var(--gold);
   transform-origin: 50% 100%; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
+/* 사탕 바구니: 호박과 대칭(우하단). 탭하면 사탕이 튀어오른다(fx/halloween) */
+.hw-basket {
+  position: absolute; z-index: 2; right: -26px; top: calc(100% - 44px); width: 68px; padding: 0; margin: 0; border: 0; background: none; color: var(--gold);
+  transform-origin: 50% 100%; cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.hw-basket::before { content: ""; position: absolute; inset: -30%; z-index: -1; background: radial-gradient(closest-side, rgb(224 144 74 / 0.28), transparent); pointer-events: none; }
+.hw-basket:focus-visible, .hw-end:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 12px; }
 .hw-pumpkin::before { content: ""; position: absolute; inset: -30%; z-index: -1; background: radial-gradient(closest-side, rgb(224 144 74 / 0.28), transparent); pointer-events: none; }
 
 html.js:not(.opened) .fx-ghost { opacity: 0; transform: translateX(-14px); }
@@ -61,7 +68,16 @@ html.opened .fx-float { animation: hw-float 6s ease-in-out 1s infinite; }
 @keyframes hw-float { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
 
 /* 엔딩 유령: 라인 마크 소형 1개 */
-.end-art-h { width: 64px; margin: 0 auto 16px; color: var(--gold); }
+.end-art-h { position: relative; width: 64px; margin: 0 auto 16px; color: var(--gold); }
+/* 엔딩 유령: 탭하면 인사, 너무 자주 누르면 도망갔다가 돌아온다(fx/halloween) */
+.hw-end { display: block; width: 100%; padding: 0; margin: 0; border: 0; background: none; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.hw-end-body { display: block; }
+.hw-say {
+  position: absolute; left: 50%; bottom: 100%; padding: 4px 10px; border-radius: 12px 12px 12px 2px; white-space: nowrap; pointer-events: none;
+  background: rgb(var(--gold-rgb) / 0.16); border: 1px solid rgb(var(--gold-rgb) / 0.5); color: var(--on-night); font: 400 13px/1.4 var(--f-body);
+  animation: hw-say 1.6s var(--e-out) forwards;
+}
+@keyframes hw-say { 0% { opacity: 0; transform: translate(-10%, 8px) scale(0.6); } 15% { opacity: 1; transform: translate(-10%, -6px) scale(1.05); } 25% { transform: translate(-10%, -8px) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-10%, -20px); } }
 
 /* 구분 장식 */
 .hw-orn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 0; color: var(--accent); }
