@@ -97,7 +97,7 @@
       </div>
     {/each}
   {:else}
-    <div class="seg-track" role="tablist" aria-label="신랑측 신부측" style="--n:{groups.length};--i:{sel};--d:700ms" data-rv="rise">
+    <div class="seg-track" role="tablist" aria-label="신랑 측, 신부 측 계좌" style="--n:{groups.length};--i:{sel};--d:700ms" data-rv="rise">
       <i class="thumb" aria-hidden="true"></i>
       {#each groups as g, i}
         <button type="button" role="tab" id="acc-t{i}" class="seg-btn" class:on={sel === i} aria-selected={sel === i} tabindex={sel === i ? 0 : -1} aria-controls="acc-p" onkeydown={onKey} onclick={() => pick(i)}>{g.title}</button>

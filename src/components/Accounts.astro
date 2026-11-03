@@ -5,8 +5,8 @@ import { wedding } from "../data/wedding";
 import { accountRows } from "../lib/family";
 
 const groups = [
-  { title: "신랑측", rows: accountRows("groom", wedding.groom, wedding.accounts.groom) },
-  { title: "신부측", rows: accountRows("bride", wedding.bride, wedding.accounts.bride) },
+  { title: "신랑 측", rows: accountRows("groom", wedding.groom, wedding.accounts.groom) },
+  { title: "신부 측", rows: accountRows("bride", wedding.bride, wedding.accounts.bride) },
 ].filter((g) => g.rows.length > 0);
 ---
 
@@ -16,11 +16,11 @@ const groups = [
       <p class="eyebrow" data-rv="fade">ACCOUNT</p>
       <h2 class="sec-title" id="acc-h" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("accounts")}</span>마음 전하실 곳</h2>
       <p class="body-copy" data-rv="lines" style="--d:320ms">
-        참석이 어려우신 분들을 위해
+        직접 축하를 전하기 어려우신 분들을 위해
         <br />
-        계좌번호를 기재하였습니다.
+        계좌번호를 함께 안내드립니다.
         <br />
-        너그러운 마음으로 양해 부탁드립니다.
+        보내주시는 따뜻한 마음, 감사히 간직하겠습니다.
       </p>
       <AccountGroups client:load groups={groups} />
     </section>
