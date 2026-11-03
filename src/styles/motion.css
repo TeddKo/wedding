@@ -7,16 +7,16 @@
 :root {
   --e-out: cubic-bezier(.22, 1, .36, 1);
   --e-io: cubic-bezier(.65, 0, .35, 1);
-  --e-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --e-spring: cubic-bezier(.22, 1, .36, 1);
   --e-ink: cubic-bezier(.45, 0, .1, 1);
   --t1: 180ms; --t2: 420ms; --t3: 800ms; --t4: 1200ms;
   --st-ch: 38ms; --st-ln: 110ms; --st-el: 90ms; --st-ty: 28ms;
   --rv-dur: var(--t3); --rv-ease: var(--e-out); --rv-y: 16px; --rv-s: 1;
   --press-s: .97;
 }
-[data-theme="halloween"] { --rv-dur: 1100ms; --rv-ease: var(--e-ink); --rv-y: 10px; --st-ch: 46ms; }
-[data-theme="dev"] { --rv-dur: 520ms; --rv-ease: cubic-bezier(.2, .8, .2, 1); --rv-y: 0px; --st-ch: 28ms; }
-[data-theme="puppy"] { --rv-dur: 760ms; --rv-ease: var(--e-spring); --rv-y: 22px; --rv-s: .96; --st-ch: 34ms; --press-s: .96; }
+[data-theme="halloween"] { --rv-dur: 1100ms; --rv-ease: var(--e-ink); --rv-y: 10px; --st-ch: 56ms; }
+[data-theme="dev"] { --rv-dur: 320ms; --rv-ease: cubic-bezier(.16, 1, .3, 1); --rv-y: 0px; --st-ch: 24ms; --st-ln: 40ms; --st-ty: 16ms; --t2: 260ms; --t3: 320ms; }
+[data-theme="puppy"] { --rv-dur: 800ms; --rv-ease: var(--e-out); --rv-y: 14px; --rv-s: 1; --st-ch: 60ms; --press-s: .98; }
 
 /** 레거시 루트: data-rv 자식이 없는 섹션은 통째로 rise */
 html.js [data-reveal].rv:not(.rv-c) { transition: opacity var(--rv-dur) var(--rv-ease), transform var(--rv-dur) var(--rv-ease); }
@@ -56,13 +56,13 @@ html.js [data-reveal].rv [data-rv="mask"][data-dir="x"] .mi { transition: none; 
 html.js [data-reveal].rv:not(.in) :is([data-rv="letters"], [data-rv="type"]) .ch { opacity: 0; }
 html.js [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch var(--t3) var(--rv-ease) calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
 html.js[data-theme="halloween"] [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch-candle 900ms var(--rv-ease) calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
-html.js[data-theme="puppy"] [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch-bounce 700ms ease calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
+html.js[data-theme="puppy"] [data-reveal].rv.in [data-rv="letters"] .ch { animation: rv-ch-soft 800ms var(--e-out) calc(var(--d, 0ms) + var(--i) * var(--st-ch)) both; }
 html.js[data-theme="dev"] [data-reveal].rv.in [data-rv="letters"] .ch,
 html.js [data-reveal].rv.in [data-rv="type"] .ch { animation: rv-step 1ms steps(1, end) calc(var(--d, 0ms) + var(--i) * var(--st-ty)) both; }
 html.js[data-theme="dev"] [data-reveal].rv.in [data-rv="letters"] .ch { animation-delay: calc(var(--d, 0ms) + var(--i) * var(--st-ch)); }
 @keyframes rv-ch { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes rv-ch-candle { 0% { opacity: 0; transform: translateY(6px); } 30% { opacity: .7; } 55% { opacity: .35; } 100% { opacity: 1; transform: none; } }
-@keyframes rv-ch-bounce { 0% { opacity: 0; transform: translateY(10px); } 60% { opacity: 1; transform: translateY(-2px); } 100% { opacity: 1; transform: none; } }
+@keyframes rv-ch-soft { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
 @keyframes rv-step { from { opacity: 0; } to { opacity: 1; } }
 
 /** type 캐럿: 타이핑이 끝난 뒤 500ms 깜빡 3회, 엔진이 animationend 에 제거 */
@@ -89,19 +89,19 @@ html.js [data-reveal].rv:not(.in) [data-rv="curtain"] > * { transform: scale(1.0
 
 /** dev "터미널·커밋": lines 는 2px accent 바가 먼저 그려지고 줄은 opacity 만으로 등장 */
 html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .m { overflow: visible; position: relative; }
-html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .m::before { content: ""; position: absolute; left: -10px; top: .2em; bottom: .2em; width: 2px; background: var(--accent); transform-origin: 50% 0; transition: transform 180ms var(--e-out) calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln)); }
+html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .m::before { content: ""; position: absolute; left: -10px; top: .2em; bottom: .2em; width: 2px; background: var(--rail-c); transform-origin: 50% 0; transition: transform 180ms var(--e-out) calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln)); }
 html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .m::before { transform: scaleY(0); }
 html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .mi { transition: opacity var(--t2) linear calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln) + 120ms); }
 html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .mi { transform: none; opacity: 0; }
 
 /** dev 섹션 노드: 진입 시 stamp + (dev.css 의) neon-b 점등 */
-html.js[data-theme="dev"] [data-reveal].rv .sec-title::before { transition: border-color .6s ease, box-shadow .6s ease, opacity 360ms var(--e-spring), transform 360ms var(--e-spring); }
-html.js[data-theme="dev"] [data-reveal].rv:not(.in) .sec-title::before { opacity: 0; transform: scale(1.3); }
+html.js[data-theme="dev"] [data-reveal].rv .sec-title::before { transition: border-color 320ms ease, box-shadow 320ms ease, opacity 240ms var(--e-out), transform 240ms var(--e-out); }
+html.js[data-theme="dev"] [data-reveal].rv:not(.in) .sec-title::before { opacity: 0; transform: scale(1.15); }
 
 /** press: :active 눌림, 포인터 fine 에서 hover 살짝 뜸 */
 [data-press] { transition: transform var(--t1) var(--e-out), box-shadow var(--t1) var(--e-out); -webkit-tap-highlight-color: transparent; }
 @media (hover: hover) and (pointer: fine) {
-  [data-press]:hover { transform: translateY(-1px); box-shadow: 0 6px 18px -10px rgb(26 26 26 / .25); }
+  [data-press]:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -12px rgb(var(--sh) / .3); }
 }
 [data-press]:active { transform: scale(var(--press-s)); }
 

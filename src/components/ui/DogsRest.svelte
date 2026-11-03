@@ -1,6 +1,6 @@
 <!-- 푸터용: 말티즈와 네눈박이가 나란히 엎드려 턱을 앞발에 얹고 눈을 감았다 -->
 <svg class="orn-dogs-rest" viewBox="0 0 160 70" aria-hidden="true" focusable="false">
-  <ellipse cx="80" cy="66" rx="74" ry="3.500" fill="#4f8f5b" opacity="0.14" />
+  <ellipse cx="80" cy="66" rx="74" ry="3.500" fill="#5a4030" opacity="0.16" />
 
   <g class="b">
     <path d="M148 56c9 1 13-8 10-16-1-3-5-3-5 0 0 4 1 7-5 9z" fill="#26232b" />

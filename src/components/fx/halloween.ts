@@ -1,5 +1,5 @@
 import { createFall, svgToImage, type Fall } from "../../lib/fx/fall";
-import { CANDY } from "../../lib/fx/sprites-candy";
+import { FLECKS } from "../../lib/fx/sprites-candy";
 
 /**
  * halloween 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출한다.
@@ -40,21 +40,22 @@ export function start(ctx: { first: boolean }): () => void {
   };
 
   if (!reduced) {
-    Promise.all(CANDY.map(svgToImage))
+    Promise.all(FLECKS.map(svgToImage))
       .then((sprites) => {
         if (dead) return;
         const fall: Fall = createFall({
           sprites,
-          gravity: 900,
-          drag: 0.02,
-          sway: { amp: 6, hz: 0.8 },
-          spin: [0, 180],
-          size: [18, 30],
-          alphaTail: 0.3,
+          gravity: 110,
+          drag: 0.03,
+          sway: { amp: 14, hz: 0.35 },
+          spin: [10, 70],
+          size: [7, 13],
+          alphaTail: 0.45,
+          alpha: 0.85,
         });
         undo.push(() => fall.destroy());
 
-        if (ctx.first) fall.burst(18, { y: [-200, -40] });
+        if (ctx.first) fall.burst(7, { y: [-80, 160] });
 
         const pk = q(".hw-pumpkin");
         if (pk) {
@@ -64,7 +65,7 @@ export function start(ctx: { first: boolean }): () => void {
             if (now - last < 1200) return;
             last = now;
             const r = pk.getBoundingClientRect();
-            fall.spawnAt(r.left + r.width / 2, r.top + r.height * 0.75, 6, { vy: -380, spreadX: 70, spreadY: 60 });
+            fall.spawnAt(r.left + r.width / 2, r.top + r.height * 0.6, 5, { vy: -140, spreadX: 50, spreadY: 40 });
             pk.animate([{ transform: "scale(.94)" }, { transform: "scale(1)" }], { duration: 140, easing: "ease-out" });
           };
           pk.addEventListener("pointerdown", onTap);
@@ -77,7 +78,7 @@ export function start(ctx: { first: boolean }): () => void {
             ([e]) => {
               if (!e.isIntersecting) return;
               io.disconnect();
-              fall.burst(8);
+              fall.burst(3, { y: [-40, 120] });
               wave();
             },
             { threshold: 0.4 },

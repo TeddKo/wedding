@@ -2,13 +2,16 @@ import { createFall, svgToImage } from "../../lib/fx/fall";
 import { pawSvg } from "../../lib/fx/sprites-paw";
 
 const EASE_RUN = "cubic-bezier(.22,.8,.3,1)";
-const STEP_PX = 160;
-const MAX_STAMPS = 8;
-const STAMP_MS = 200;
+const STEP_PX = 420;
+const MAX_STAMPS = 4;
+const STAMP_MS = 480;
 const HOLD_MS = 3000;
 const FADE_MS = 1000;
 const SIT_AT = 1950;
 const SIT_FADE = 250;
+
+/** 눌러 찍은 듯한 톤온톤 발자국 색(배경 위 저채도) */
+const TONAL = "#8a6a5a";
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
@@ -74,7 +77,7 @@ function armOrns(anims: Animation[], cleanups: Array<() => void>): void {
       io.unobserve(el);
       if (e.isIntersecting) {
         el.querySelectorAll(".pp").forEach((p, i) => {
-          anims.push(p.animate([{ opacity: 0, transform: "scale(1.25)" }, { opacity: 0.5, transform: "scale(1)" }], { duration: 200, delay: i * 120, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" }));
+          anims.push(p.animate([{ opacity: 0, transform: "scale(1.1)" }, { opacity: 0.4, transform: "scale(1)" }], { duration: 420, delay: i * 120, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" }));
         });
       }
       el.querySelectorAll<SVGElement>(".pp").forEach((p) => p.style.removeProperty("visibility"));
@@ -105,8 +108,8 @@ function endingPaws(anims: Animation[], cleanups: Array<() => void>): void {
       io.disconnect();
       const fr = foot.getBoundingClientRect();
       const ar = art.getBoundingClientRect();
-      const size = 14;
-      const svg = pawSvg("#b27085").replace('width="48" height="48"', 'width="100%" height="100%"');
+      const size = 12;
+      const svg = pawSvg(TONAL).replace('width="48" height="48"', 'width="100%" height="100%"');
       const box = document.createElement("div");
       box.setAttribute("aria-hidden", "true");
       box.style.cssText = "position:absolute;inset:0;pointer-events:none;overflow:hidden";
@@ -118,16 +121,16 @@ function endingPaws(anims: Animation[], cleanups: Array<() => void>): void {
         const el = document.createElement("span");
         el.innerHTML = svg;
         const x = x0 + ((x1 - x0) * i) / 4;
-        const dy = i % 2 ? 6 : -6;
-        el.style.cssText = `position:absolute;left:${x}px;top:${y + dy - size / 2}px;width:${size}px;height:${size}px;opacity:.38;transform:rotate(90deg)`;
+        const dy = i % 2 ? 5 : -5;
+        el.style.cssText = `position:absolute;left:${x}px;top:${y + dy - size / 2}px;width:${size}px;height:${size}px;opacity:.16;transform:rotate(90deg)`;
         box.appendChild(el);
         anims.push(
           el.animate(
             [
-              { opacity: 0, transform: "rotate(90deg) scale(1.3)" },
-              { opacity: 0.38, transform: "rotate(90deg) scale(1)" },
+              { opacity: 0, transform: "rotate(90deg) scale(1.1)" },
+              { opacity: 0.16, transform: "rotate(90deg) scale(1)" },
             ],
-            { duration: 220, delay: i * 140, easing: "cubic-bezier(.34,1.56,.64,1)", fill: "backwards" },
+            { duration: 420, delay: i * 140, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" },
           ),
         );
       }
@@ -135,7 +138,7 @@ function endingPaws(anims: Animation[], cleanups: Array<() => void>): void {
       timers.push(
         window.setTimeout(() => {
           art.querySelectorAll<SVGElement>(".orn-dogs-rest .b, .orn-dogs-rest .m").forEach((g, i) => {
-            anims.push(g.animate([{ transform: "translateY(-5px)" }, { transform: "translateY(0)" }], { duration: 420, delay: i * 90, easing: "cubic-bezier(.34,1.56,.64,1)" }));
+            anims.push(g.animate([{ transform: "translateY(-3px)" }, { transform: "translateY(0)" }], { duration: 520, delay: i * 90, easing: "cubic-bezier(.22,1,.36,1)" }));
           });
         }, 5 * 140 + 120),
       );
@@ -159,7 +162,7 @@ function pawTrail(cleanups: Array<() => void>): void {
   layer.setAttribute("aria-hidden", "true");
   page.prepend(layer);
 
-  const svg = pawSvg("#b27085").replace('width="48" height="48"', 'width="100%" height="100%"');
+  const svg = pawSvg(TONAL).replace('width="48" height="48"', 'width="100%" height="100%"');
   const live: Array<{ el: HTMLElement; an: Animation }> = [];
   let lastY = scrollY;
   let acc = 0;
@@ -188,9 +191,9 @@ function pawTrail(cleanups: Array<() => void>): void {
     const r = `rotate(${rot}deg)`;
     const an = el.animate(
       [
-        { opacity: 0, transform: `${r} scale(1.25)` },
-        { opacity: 0.22, transform: `${r} scale(1)`, offset: STAMP_MS / total },
-        { opacity: 0.22, transform: `${r} scale(1)`, offset: (STAMP_MS + HOLD_MS) / total },
+        { opacity: 0, transform: `${r} scale(1.08)` },
+        { opacity: 0.2, transform: `${r} scale(1)`, offset: STAMP_MS / total },
+        { opacity: 0.2, transform: `${r} scale(1)`, offset: (STAMP_MS + HOLD_MS) / total },
         { opacity: 0, transform: `${r} scale(1)` },
       ],
       { duration: total, fill: "forwards" },
@@ -253,11 +256,11 @@ export function start(ctx: { first: boolean }): () => void {
   if (ctx.first) {
     const root = document.querySelector<HTMLElement>(".cover-dogs .pc");
     if (root) runIn(root, anims);
-    svgToImage(pawSvg())
+    svgToImage(pawSvg(TONAL))
       .then((img) => {
         if (dead) return;
-        fall = createFall({ sprites: [img], gravity: 260, drag: 0, sway: { amp: 18, hz: 1.2 }, spin: [20, 60], size: [12, 18], alphaTail: 0.3, alpha: 0.55 });
-        fall.burst(8);
+        fall = createFall({ sprites: [img], gravity: 90, drag: 0.02, sway: { amp: 10, hz: 0.4 }, spin: [8, 24], size: [10, 14], alphaTail: 0.5, alpha: 0.16 });
+        fall.burst(3, { y: [-60, 140] });
       })
       .catch(() => {});
   }

@@ -1,16 +1,10 @@
 <script lang="ts">
-  import { BONE_SHAPES, pawShapes } from "../../../lib/fx/sprites-paw";
-
-  const paws = [0, 1, 2, 3, 4].map((i) => ({ x: 22 + i * 32, y: 28 - i * 3.5 + (i % 2 ? -7 : 7) }));
+  import { BONE_SHAPES } from "../../../lib/fx/sprites-paw";
 </script>
 
-<svg class="pup-orn" viewBox="0 0 200 44" width="200" height="44" aria-hidden="true" focusable="false">
-  {#each paws as p}
-    <g transform="translate({p.x} {p.y}) rotate(84) translate(-7 -7) scale(0.583)">
-      <g class="pp" fill="#b27085" opacity="0.5">{@html pawShapes}</g>
-    </g>
-  {/each}
-  <g transform="translate(176 17) rotate(-14) scale(0.75) translate(-12 -6)">
-    <g class="pp" fill="#b27085" opacity="0.5">{@html BONE_SHAPES}</g>
+<svg class="pup-orn" viewBox="0 0 200 20" width="200" height="20" aria-hidden="true" focusable="false">
+  <path d="M34 10H84M116 10H166" fill="none" stroke="#9a6b6b" stroke-opacity="0.32" stroke-width="1" />
+  <g transform="translate(100 10) rotate(-12) scale(0.58) translate(-12 -6)">
+    <g class="pp" fill="#9a6b6b" opacity="0.4">{@html BONE_SHAPES}</g>
   </g>
 </svg>
