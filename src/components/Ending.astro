@@ -38,7 +38,7 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
       client:idle
       actions={[
         { kind: "kakao", label: "카카오톡 공유하기", rise: 2000 },
-        { kind: "copy", label: "링크 복사", text: pageUrl, ghost: true, rise: 2090 },
+        { kind: "copy", label: "링크 복사", text: wedding.share.copyUrl || pageUrl, ghost: true, rise: 2090 },
       ]}
       kakao={{ key: wedding.kakaoJsKey, title: wedding.share.title, description: wedding.share.description, imageUrl, pageUrl }}
     />
