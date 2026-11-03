@@ -10,8 +10,12 @@ const CMD = "git checkout -b wedding".length;
  */
 export default async function run({ gate }: EntryCtx): Promise<void> {
   const q = (s: string) => gate.querySelector<HTMLElement>(s);
-  const go = (el: Element | null, keyframes: Keyframe[], o: KeyframeAnimationOptions) =>
-    el ? el.animate(keyframes, { fill: "both", ...o }).finished : Promise.resolve();
+  const go = (el: Element | null, keyframes: Keyframe[], o: KeyframeAnimationOptions) => {
+    if (!el) return Promise.resolve();
+    const a = el.animate(keyframes, { fill: "both", ...o });
+    const ms = Number(o.delay ?? 0) + Number(o.duration ?? 0) + 50;
+    return Promise.race([a.finished, new Promise((r) => setTimeout(r, ms))]);
+  };
   const typing = `steps(${CMD}, end)`;
   const show = (el: Element | null, delay: number, duration = 1) => go(el, [{ opacity: 0 }, { opacity: 1 }], { delay, duration, easing: "linear" });
 

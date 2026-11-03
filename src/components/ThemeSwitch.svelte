@@ -10,7 +10,18 @@
   let turn = $state(0);
 
   let busy = false;
+  let btn = $state<HTMLButtonElement>();
   const frame = () => new Promise<unknown>((r) => requestAnimationFrame(r));
+
+  /** 맨 위로 이동하면 FAB 이 숨겨져 포커스가 body 로 빠진다. 버튼이 보이면 되돌리고, 숨겨져 있으면 main 으로 옮긴다 */
+  function keepFocus() {
+    if (!btn || document.activeElement === btn) return;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    if (btn.checkVisibility({ checkVisibilityCSS: true })) return btn.focus({ preventScroll: true });
+    const main = document.querySelector<HTMLElement>("main");
+    main?.setAttribute("tabindex", "-1");
+    main?.focus({ preventScroll: true });
+  }
 
   /**
    * 테마 전환: 중립색 베일이 250ms 로 화면을 덮은 동안 맨 위로 이동, wedding:theme-reset 으로 Reveal 초기화, 테마 적용(레일/시그니처는 Fx 가 재시작)한 뒤 걷는다.
@@ -34,6 +45,7 @@
       await frame();
       await frame();
       await new Promise((r) => setTimeout(r, 160));
+      keepFocus();
       await veil.animate({ opacity: [1, 0] }, { duration: 250, easing: "ease-in", fill: "forwards" }).finished;
     } finally {
       veil.remove();
@@ -48,6 +60,7 @@
   type="button"
   class="fab theme-toggle"
   hidden={!ready}
+  bind:this={btn}
   aria-label="테마 바꾸기: 현재 {THEMES[theme.name].label}, 다음 {THEMES[next].label}"
   title="테마: {THEMES[theme.name].label}"
   onclick={swap}
@@ -56,6 +69,6 @@
 </button>
 
 <style>
-  .theme-toggle svg { transition: transform 520ms var(--e-spring, cubic-bezier(.34, 1.56, .64, 1)); }
+  .theme-toggle svg { transition: transform 520ms var(--e-out); }
   @media (prefers-reduced-motion: reduce) { .theme-toggle svg { transition: none; } }
 </style>

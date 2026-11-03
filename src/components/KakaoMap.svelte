@@ -127,7 +127,7 @@
   .km-ring { position: absolute; left: 50%; bottom: -3px; width: 28px; height: 10px; margin-left: -14px; border-radius: 50%; border: 1.5px solid var(--accent); opacity: 0; }
   .km-link { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 12.5px; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); }
   .km-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  :global(html.js [data-reveal].rv) .km-fpin { transition: transform 600ms var(--e-spring) 800ms, opacity 240ms linear 800ms; }
+  :global(html.js [data-reveal].rv) .km-fpin { transition: transform 600ms var(--e-out) 800ms, opacity 240ms linear 800ms; }
   :global(html.js [data-reveal].rv:not(.in)) .km-fpin { transform: translateY(-16px); opacity: 0; }
   :global(html.js [data-reveal].rv) .km-shadow { transition: opacity 400ms linear 1000ms; }
   :global(html.js [data-reveal].rv:not(.in)) .km-shadow { opacity: 0; }

@@ -14,6 +14,7 @@ html[data-theme="dev"] .gate { --ig-mono: "Geist Mono", var(--f-mono); backgroun
 
 /* CTA: 커맨드 프롬프트 */
 .ig-face-d { display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 0 12px 0 18px; border-radius: 8px; background: var(--surface); color: var(--ink); font: 400 12px/20px var(--ig-mono, var(--f-mono)); box-shadow: 0 0 0 1px rgb(10 10 10 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04); transition: box-shadow 120ms var(--e-out), background-color 120ms var(--e-out); }
+.ig-face-d .ig-lbl { display: inline-block; min-width: 25ch; white-space: nowrap; }
 .ig-face-d .ig-lbl b { margin-right: 0.6ch; font-weight: 500; color: var(--accent-text); }
 .ig-face-d kbd { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 4px; font: 400 12px/1 var(--ig-mono, var(--f-mono)); box-shadow: 0 0 0 1px rgb(10 10 10 / 0.12); color: var(--ink-2); transition: background-color 120ms var(--e-out), transform 120ms var(--e-out); }
 .ig-cur { display: inline-block; width: 1ch; height: 14px; margin-left: 2px; background: var(--ink); }

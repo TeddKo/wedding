@@ -2,7 +2,7 @@
 
 html[data-theme="puppy"] .page { isolation: isolate; }
 
-/* 커버: 높이 160px 고정(CLS 0), 지면선 하단 12px. .pc 는 220px 슬롯보다 넓게 가운데 정렬 */
+/* 커버: 높이 128px 고정(CLS 0), 지면선 하단 12px. .pc 는 220px 슬롯보다 넓게 가운데 정렬 */
 html[data-theme="puppy"] .cover-dogs { position: relative; height: 128px; }
 html[data-theme="puppy"] .cover-dogs .pc { position: absolute; left: 50%; bottom: 0; width: 300px; height: 160px; margin-left: -150px; pointer-events: none; transform: scale(0.8); transform-origin: 50% 100%; }
 html[data-theme="puppy"] .cover-dogs .pc-sit { position: absolute; left: 30px; bottom: 12px; width: 190px; }
@@ -47,3 +47,6 @@ html.js.opened .fx-pc-sit, html.js.opened .fx-pc-ball { animation: pc-hold 1.6s 
   html.js.opened .fx-pc-sit, html.js.opened .fx-pc-ball { animation: none; }
   .intro-emblem[data-th="puppy"] .e1, .intro-emblem[data-th="puppy"] .e2 { animation: none; }
 }
+
+/* 로드된 Fraunces 웨이트(300)에 맞춤 */
+html[data-theme="puppy"] :is(.eyebrow, .mono-y, .en, .meta dt, .meta dd, .latin, .count) { font-weight: 300; }

@@ -115,12 +115,10 @@
       </g>
       <g class="nd nd-m">
         <circle class="halo" cx="28" cy="124" r="7.500" filter="url(#neon-{uid})" />
-        <circle class="pulse" cx="28" cy="124" r="7.500" filter="url(#neon-{uid})" />
         <circle class="tube" cx="28" cy="124" r="7.500" />
         <circle class="dot" cx="28" cy="124" r="3.500" />
       </g>
     </svg>
-    <div class="gl-sig" aria-hidden="true"><i class="sig sig-g"></i><i class="sig sig-b"></i></div>
     <span class="gl-row r1" aria-hidden="true">{groom}</span>
     <span class="gl-row r2" aria-hidden="true">{bride}</span>
     <span class="gl-row r3" aria-hidden="true">결혼합니다 <em>wedding</em></span>

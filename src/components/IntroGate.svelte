@@ -31,8 +31,8 @@
     html.dataset.gate = "ready";
     for (const el of document.querySelectorAll("main, footer")) el.setAttribute("inert", "");
     openBtn?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
-    /* dev 연출 모듈은 유휴 시간에 미리 받아 클릭 직후 지연이 없게 한다 */
-    timers.push(window.setTimeout(() => void loadDev(), 1200));
+    /* dev 연출 모듈은 마운트 즉시 미리 받아 클릭 직후 지연이 없게 한다 */
+    void loadDev();
     return () => timers.forEach(clearTimeout);
   });
 
@@ -63,9 +63,11 @@
     const { lift, total, run } = ENTRY[name];
     gate?.style.setProperty("--ig-lift", `${lift}ms`);
     gate?.style.setProperty("--ig-total", `${total}ms`);
-    if (gate) run?.({ gate }).catch(() => {});
+    /* run 이 있으면 끝나는 즉시 제거하고, total 은 멈춤 방지용 최대 대기 */
+    const finish = () => (done = true);
+    if (gate) run?.({ gate }).catch(() => {}).then(finish);
     timers.push(window.setTimeout(reveal, lift));
-    timers.push(window.setTimeout(() => (done = true), total));
+    timers.push(window.setTimeout(finish, total));
   }
 </script>
 
@@ -76,7 +78,7 @@
         <i class="ig-door ig-door-l"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 100V56C0 30 52 14 100 3" /><path pathLength="1" d="M16 100V62C16 42 58 28 100 15" /></svg></i>
         <i class="ig-door ig-door-r"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 100V56C0 30 52 14 100 3" /><path pathLength="1" d="M16 100V62C16 42 58 28 100 15" /></svg></i>
         <i class="ig-seam"></i>
-        <i class="ig-ember" style:--y="38%" style:--d="0ms"></i><i class="ig-ember" style:--y="46%" style:--d="90ms"></i><i class="ig-ember" style:--y="52%" style:--d="180ms"></i><i class="ig-ember" style:--y="58%" style:--d="270ms"></i><i class="ig-ember" style:--y="66%" style:--d="360ms"></i>
+        <i class="ig-ember" style:--y="38%" style:--d="0ms"></i><i class="ig-ember" style:--y="46%" style:--d="70ms"></i><i class="ig-ember" style:--y="52%" style:--d="140ms"></i><i class="ig-ember" style:--y="58%" style:--d="210ms"></i><i class="ig-ember" style:--y="66%" style:--d="280ms"></i>
       </div>
       <div class="ig-puppy" data-th="puppy">
         <i class="ig-body"></i>
@@ -139,11 +141,11 @@
 
   .bottom { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 14px; }
   @media (prefers-reduced-motion: no-preference) {
-    .intro-emblem { animation: g-stamp 360ms var(--e-spring) backwards; }
+    .intro-emblem { animation: g-stamp 360ms var(--e-out) backwards; }
     .eyebrow .mi { animation: g-mask var(--rv-dur) var(--rv-ease) 180ms backwards; }
     .ch { animation: rv-ch var(--t3) var(--rv-ease) calc(320ms + var(--i) * var(--st-ch)) backwards; }
     :global([data-theme="halloween"]) .ch { animation-name: rv-ch-candle; animation-duration: 900ms; }
-    :global([data-theme="puppy"]) .ch { animation-name: rv-ch-bounce; animation-duration: 700ms; animation-timing-function: ease; }
+    :global([data-theme="puppy"]) .ch { animation-name: rv-ch-soft; animation-duration: 800ms; animation-timing-function: var(--e-out); }
     :global([data-theme="dev"]) .ch { animation: rv-step 1ms steps(1, end) calc(320ms + var(--i) * var(--st-ch)) backwards; }
     .hair { animation: g-draw 700ms var(--e-io) 700ms backwards; }
     .date { animation: g-rise var(--rv-dur) var(--rv-ease) 900ms backwards; }

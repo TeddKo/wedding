@@ -7,7 +7,6 @@
 :root {
   --e-out: cubic-bezier(.22, 1, .36, 1);
   --e-io: cubic-bezier(.65, 0, .35, 1);
-  --e-spring: cubic-bezier(.22, 1, .36, 1);
   --e-ink: cubic-bezier(.45, 0, .1, 1);
   --t1: 180ms; --t2: 420ms; --t3: 800ms; --t4: 1200ms;
   --st-ch: 38ms; --st-ln: 110ms; --st-el: 90ms; --st-ty: 28ms;
@@ -31,7 +30,7 @@ html.js [data-reveal].rv [data-rv="rise"] { transition: opacity var(--rv-dur) va
 html.js [data-reveal].rv:not(.in) [data-rv="rise"] { opacity: 0; transform: translateY(var(--rv-y)) scale(var(--rv-s)); }
 
 /** stamp: 도장 */
-html.js [data-reveal].rv [data-rv="stamp"] { transition: opacity var(--t2) var(--e-spring) var(--d, 0ms), transform 360ms var(--e-spring) var(--d, 0ms); }
+html.js [data-reveal].rv [data-rv="stamp"] { transition: opacity var(--t2) var(--e-out) var(--d, 0ms), transform 360ms var(--e-out) var(--d, 0ms); }
 html.js [data-reveal].rv:not(.in) [data-rv="stamp"] { opacity: 0; transform: scale(1.3); }
 
 /** count: 숫자 롤은 JS, 여기선 등장과 폭 고정만 */
@@ -94,7 +93,7 @@ html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .m::before
 html.js[data-theme="dev"] [data-reveal].rv [data-rv="lines"] .mi { transition: opacity var(--t2) linear calc(var(--d, 0ms) + var(--i, 0) * var(--st-ln) + 120ms); }
 html.js[data-theme="dev"] [data-reveal].rv:not(.in) [data-rv="lines"] .mi { transform: none; opacity: 0; }
 
-/** dev 섹션 노드: 진입 시 stamp + (dev.css 의) neon-b 점등 */
+/** dev 섹션 노드: 진입 시 stamp + (dev-rail.css 의) accent 점등 */
 html.js[data-theme="dev"] [data-reveal].rv .sec-title::before { transition: border-color 320ms ease, box-shadow 320ms ease, opacity 240ms var(--e-out), transform 240ms var(--e-out); }
 html.js[data-theme="dev"] [data-reveal].rv:not(.in) .sec-title::before { opacity: 0; transform: scale(1.15); }
 

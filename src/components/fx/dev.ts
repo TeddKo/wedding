@@ -1,5 +1,5 @@
 /**
- * dev 테마 연출: 드문 가지 깜빡임, .gl 화면 밖 일시정지, 브랜치 레일(읽기 기준선 0.6vh 에 팁 고정, 노드 .lit 점등을 레일이 구동, 푸터 노드 중심에서 clamp, 도달 시 v1.0.0 태그 stamp).
+ * dev 테마 연출: .gl 화면 밖 일시정지, 브랜치 레일(읽기 기준선 0.6vh 에 팁 고정, 노드 .lit 점등을 레일이 구동, 푸터 노드 중심에서 clamp, 도달 시 v1.0.0 태그 stamp).
  * 점화/신호/hum 은 CSS(html.opened)가 담당하고 여기서는 런타임 행동만 다룬다.
  * @param ctx first=true 면 시그니처 연출 1회 재생 시점
  * @returns 정리 함수(타이머/옵저버/리스너/DOM 해제)
@@ -10,6 +10,7 @@ export function start(ctx: { first: boolean }): () => void {
   const page = document.querySelector<HTMLElement>("main.page");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const undo: Array<() => void> = [];
+  let dead = false;
 
   if (gl) {
     let inView = true;
@@ -25,26 +26,6 @@ export function start(ctx: { first: boolean }): () => void {
       document.removeEventListener("visibilitychange", sync);
       gl.classList.remove("fx-paused");
     });
-
-    if (!reduced) {
-      let timer = 0;
-      let off = 0;
-      const arm = () => {
-        timer = window.setTimeout(() => {
-          const brs = gl.querySelectorAll<SVGGElement>(".br");
-          const el = brs[Math.floor(Math.random() * brs.length)];
-          el?.classList.add("blink");
-          off = window.setTimeout(() => el?.classList.remove("blink"), 160);
-          arm();
-        }, 9000 + Math.random() * 6000);
-      };
-      arm();
-      undo.push(() => {
-        clearTimeout(timer);
-        clearTimeout(off);
-        gl.querySelectorAll(".blink").forEach((e) => e.classList.remove("blink"));
-      });
-    }
   }
 
   const trunk = document.querySelector<HTMLElement>(".gl-meta .trunk");
@@ -91,7 +72,7 @@ export function start(ctx: { first: boolean }): () => void {
       const an = foot.animate(
         [
           { opacity: 0, transform: "scale(1.3)", textShadow: "none" },
-          { opacity: 1, transform: "scale(1)", textShadow: "0 0 8px rgb(46 107 255 / 0.7), 0 0 2px rgb(46 107 255 / 0.6)", offset: 0.5 },
+          { opacity: 1, transform: "scale(1)", textShadow: "0 0 8px rgb(var(--accent-rgb) / 0.7), 0 0 2px rgb(var(--accent-rgb) / 0.6)", offset: 0.5 },
           { opacity: 1, transform: "scale(1)", textShadow: "none" },
         ],
         { duration: 900, easing: "cubic-bezier(.34,1.56,.64,1)", pseudoElement: "::after" },
@@ -125,6 +106,7 @@ export function start(ctx: { first: boolean }): () => void {
     };
     const queue = (remeasure = false) => {
       stale ||= remeasure;
+      if (dead) return;
       raf ||= requestAnimationFrame(() => {
         raf = 0;
         if (stale) {
@@ -141,12 +123,15 @@ export function start(ctx: { first: boolean }): () => void {
     const ro = new ResizeObserver(onLayout);
     ro.observe(page);
     for (const s of page.querySelectorAll("[data-reveal]")) ro.observe(s);
-    document.fonts?.ready.then(onLayout);
+    document.fonts?.ready.then(() => {
+      if (!dead) onLayout();
+    });
     addEventListener("load", onLayout);
     addEventListener("resize", onLayout);
     visualViewport?.addEventListener("resize", onLayout);
     if (!reduced) addEventListener("scroll", onScroll, { passive: true });
     undo.push(() => {
+      dead = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
       removeEventListener("load", onLayout);
