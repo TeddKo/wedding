@@ -48,7 +48,7 @@
         const u = 1 - t;
         const e = 1 - u * u * u;
         const sway = Math.sin(t * Math.PI * 3) * u * 18;
-        return `opacity:${Math.min(1, t * 2.2)};filter:blur(${u * 6}px);transform:translate(${dx * u + sway}px,${dy * u}px) scale(${0.18 + 0.82 * e}) rotate(${-10 * u}deg)`;
+        return `opacity:${Math.min(1, t * 2.2)};transform:translate(${dx * u + sway}px,${dy * u}px) scale(${0.18 + 0.82 * e}) rotate(${-10 * u}deg)`;
       },
     };
   }
@@ -56,7 +56,7 @@
   /** 닫힐 때는 연기처럼 부풀며 흩어진다 */
   function poof() {
     if (reduced()) return { duration: 120, css: (t: number) => `opacity:${t}` };
-    return { duration: 280, css: (t: number) => `opacity:${t};filter:blur(${(1 - t) * 8}px);transform:scale(${1 + (1 - t) * 0.12}) translateY(${(1 - t) * -14}px)` };
+    return { duration: 280, css: (t: number) => `opacity:${t};transform:scale(${1 + (1 - t) * 0.12}) translateY(${(1 - t) * -14}px)` };
   }
   const BAT = "M20 4c1-2 2-3 3-3 0 2 1 3 2 3 3-1 6-2 9-1 2 1 4 3 5 6-2-2-4-2-6-1-1 0-2 2-3 3-1-1-3-2-4-1-1 1-2 3-3 4-1-1-2-3-3-4-1-1-3 0-4 1-1-1-2-3-3-3-2-1-4-1-6 1 1-3 3-5 5-6 3-1 6 0 9 1 1 0 2-1 2-3 1 0 2 1 3 3Z";
   /** s 폭px, x/y 이동px, a 물결 진폭px, t 비행ms, dl 지연ms, f 반날갯짓ms, r 기울기deg */
@@ -102,7 +102,7 @@
   .dc { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; padding: 24px; overflow: hidden; }
   .dc-bd { position: absolute; inset: 0; background: rgb(12 9 7 / 0.72); }
   .dc-card {
-    position: relative; width: min(320px, 100%); padding: 44px 24px 28px; text-align: center; color: var(--on-night);
+    position: relative; will-change: transform, opacity; width: min(320px, 100%); padding: 44px 24px 28px; text-align: center; color: var(--on-night);
     border-radius: 160px 160px 18px 18px; border: 1px solid rgb(var(--gold-rgb) / 0.55);
     background: radial-gradient(80% 50% at 50% 0%, rgb(224 144 74 / 0.22), transparent 70%), linear-gradient(var(--night-2), var(--night));
     box-shadow: inset 0 0 0 5px var(--night), inset 0 0 0 6px rgb(var(--gold-rgb) / 0.28), 0 24px 60px -18px rgb(0 0 0 / 0.7), 0 0 40px -6px rgb(224 144 74 / 0.35);
