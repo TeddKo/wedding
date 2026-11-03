@@ -4,6 +4,7 @@ import "../styles/motion.css";
 import "../styles/th/halloween.css";
 import "../styles/th/puppy.css";
 import "../styles/th/dev.css";
+import "../styles/th/dev-rail.css";
 import { hasMusic } from "../lib/music";
 import { wedding } from "../data/wedding";
 import { dateKo } from "../lib/format";
@@ -73,8 +74,18 @@ const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.c
     </div>
     <script>
       const root = document.documentElement;
-      const sync = () => root.classList.toggle("dock-on", scrollY > innerHeight * 0.8);
-      addEventListener("scroll", sync, { passive: true });
+      let last = scrollY;
+      let q = 0;
+      const sync = () => {
+        q = 0;
+        const y = scrollY;
+        const edge = y < 80 || y + innerHeight >= document.documentElement.scrollHeight - 80;
+        root.classList.toggle("dock-on", y > innerHeight * 0.8);
+        if (edge) root.classList.remove("fab-away");
+        else if (Math.abs(y - last) >= 6) root.classList.toggle("fab-away", y > last);
+        if (Math.abs(y - last) >= 6) last = y;
+      };
+      addEventListener("scroll", () => (q ||= requestAnimationFrame(sync)), { passive: true });
       sync();
     </script>
     <script>

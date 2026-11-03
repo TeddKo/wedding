@@ -115,12 +115,11 @@ a { color: inherit; }
 html[data-theme="dev"] { --bride: #c2255c; }
 .sec-title .hash { display: none; }
 html[data-theme="dev"] .section { text-align: left; padding-inline: calc(var(--rail-x) + 32px) 24px; }
-[data-theme="dev"] .section::before { content: ""; position: absolute; left: var(--rail-x); top: 0; bottom: 0; width: 2px; margin-left: -1px; z-index: 1; background: var(--rail-c); }
 [data-theme="dev"] .sec-title { position: relative; font-weight: 600; }
 [data-theme="dev"] .sec-title .hash { display: block; font: 400 12px/20px var(--f-mono); color: var(--ink-2); letter-spacing: 0; }
 [data-theme="dev"] .sec-title::before { content: ""; position: absolute; left: -38.5px; top: 27px; width: 13px; height: 13px; border-radius: 50%; background: var(--bg); border: 2px solid var(--ink); }
 html[data-theme="dev"] .footer.ending { text-align: left; padding: 112px 24px 112px calc(var(--rail-x) + 32px); }
-html[data-theme="dev"] .footer.ending::before { content: ""; position: absolute; left: calc(var(--rail-x) - 6.5px); top: 0; width: 13px; height: 74px; background: linear-gradient(var(--rail-c), var(--rail-c)) 50% 0 / 2px 67px no-repeat, radial-gradient(circle at 50% 67.5px, var(--ink) 6.5px, transparent 7px); }
+html[data-theme="dev"] .footer.ending::before { content: ""; position: absolute; left: calc(var(--rail-x) - 6.5px); top: 61px; z-index: 3; width: 13px; height: 13px; border-radius: 50%; background: var(--bg); border: 2px solid var(--ink); }
 html[data-theme="dev"] .footer.ending::after { content: "v1.0.0"; position: absolute; left: calc(var(--rail-x) + 20px); top: 59px; font: 500 12px/1 var(--f-mono); color: var(--accent-text); border: 1px solid var(--accent); border-radius: 999px; padding: 4px 9px; }
 [data-theme="puppy"] .eyebrow::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><g fill='%23b27085'><ellipse cx='12' cy='16' rx='5' ry='4'/><circle cx='5.5' cy='10' r='2'/><circle cx='10' cy='5.5' r='2'/><circle cx='14' cy='5.5' r='2'/><circle cx='18.5' cy='10' r='2'/></g></svg>") center / contain no-repeat; }
 .body-copy { font-size: 14.5px; line-height: 1.79; color: var(--ink-2); }
@@ -166,9 +165,10 @@ html.gated, html.gated body { overflow: hidden; }
 .fabs {
   position: fixed; right: max(16px, calc(50vw - 220px + 16px)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 50;
   display: flex; flex-direction: column; gap: 10px;
-  opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
+  opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s, transform 0.25s ease;
 }
 html.dock-on .fabs { opacity: 1; visibility: visible; }
+html.dock-on.fab-away .fabs:not(:focus-within) { opacity: 0; transform: translateY(12px); pointer-events: none; }
 html.gated .fabs, html:not(.has-js) .fabs, .fabs:not(:has(.fab:not([hidden]))) { display: none; }
 .fabs astro-island { display: contents; }
 .fab {
@@ -187,5 +187,6 @@ html.gated .fabs, html:not(.has-js) .fabs, .fabs:not(:has(.fab:not([hidden]))) {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .fabs { transition: none; }
+  html.dock-on.fab-away .fabs:not(:focus-within) { transform: none; }
   [class*="fx-"], [class*="fx-"] * { animation: none !important; transition: none !important; }
 }

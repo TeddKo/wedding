@@ -212,6 +212,17 @@
       prepare(el);
       io.observe(el);
     }
+    /** wedding:theme-reset: 재생 중 롤러를 최종 값으로 마감하고 .in 을 걷어 IO 로 다시 등장시킨다 */
+    const reset = () => {
+      for (const r of rolls) r.el.textContent = r.text;
+      rolls.clear();
+      queue.clear();
+      for (const el of document.querySelectorAll("[data-reveal]")) {
+        el.classList.remove("in");
+        io.observe(el);
+      }
+    };
+    addEventListener("wedding:theme-reset", reset);
     const stopPar = initPar();
     const watch = $effect.root(() => {
       $effect(() => {
@@ -223,6 +234,7 @@
     });
     return () => {
       io.disconnect();
+      removeEventListener("wedding:theme-reset", reset);
       stopPar();
       watch();
       cancelAnimationFrame(raf);

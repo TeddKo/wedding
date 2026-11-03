@@ -54,10 +54,6 @@ html[data-theme="dev"] .gl .br.blink { animation: dev-blink 160ms linear; }
 @keyframes dev-sig { 0% { offset-distance: 0%; opacity: 0; } 3% { opacity: 1; } 29% { opacity: 1; } 32% { offset-distance: 100%; opacity: 0; } 100% { offset-distance: 100%; opacity: 0; } }
 @keyframes dev-blink { 0%, 100% { opacity: 1; } 35% { opacity: 0.25; } 60% { opacity: 0.85; } }
 
-html[data-theme="dev"] .rail-glow { position: absolute; z-index: 0; left: var(--rail-x, 28px); top: 0; width: 2px; height: 0; margin-left: -1px; transform-origin: 50% 0; background: linear-gradient(var(--neon-g), var(--neon-b)); box-shadow: 0 0 6px rgb(255 45 122 / 0.45); pointer-events: none; will-change: transform; }
-
-html[data-theme="dev"] .sec-title::before { z-index: 1; transition: border-color 0.6s ease, box-shadow 0.6s ease; }
-html[data-theme="dev"] [data-reveal].in .sec-title::before { border-color: var(--neon-b); box-shadow: 0 0 10px rgb(255 45 122 / 0.45); }
 
 html[data-theme="dev"] .footer.ending.in::after { animation: dev-ver 900ms ease-out 1; }
 @keyframes dev-ver { 0%, 100% { text-shadow: none; } 30% { text-shadow: 0 0 8px rgb(46 107 255 / 0.7), 0 0 2px rgb(46 107 255 / 0.6); } }

@@ -9,13 +9,36 @@
   const next = $derived(nextTheme(theme.name));
   let turn = $state(0);
 
-  /** 지원 브라우저는 View Transition 으로 크로스페이드(모션 감소 시 즉시 전환), 아이콘은 반 바퀴 회전 */
-  function swap() {
+  let busy = false;
+  const frame = () => new Promise<unknown>((r) => requestAnimationFrame(r));
+
+  /**
+   * 테마 전환: 중립색 베일이 250ms 로 화면을 덮은 동안 맨 위로 이동, wedding:theme-reset 으로 Reveal 초기화, 테마 적용(레일/시그니처는 Fx 가 재시작)한 뒤 걷는다.
+   * 모션 감소 시 베일 없이 즉시 전환. 아이콘은 반 바퀴 회전
+   */
+  async function swap() {
+    if (busy) return;
     const to = next;
     turn += 1;
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
-    if (doc.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) doc.startViewTransition(() => setTheme(to));
-    else setTheme(to);
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return setTheme(to);
+    busy = true;
+    const veil = document.createElement("div");
+    veil.setAttribute("aria-hidden", "true");
+    veil.style.cssText = "position:fixed;inset:0;z-index:1000;background:#f3f0eb;opacity:0;pointer-events:auto";
+    document.body.append(veil);
+    try {
+      await veil.animate({ opacity: [0, 1] }, { duration: 250, easing: "ease-out", fill: "forwards" }).finished;
+      scrollTo({ top: 0, behavior: "instant" });
+      dispatchEvent(new CustomEvent("wedding:theme-reset"));
+      setTheme(to);
+      await frame();
+      await frame();
+      await new Promise((r) => setTimeout(r, 160));
+      await veil.animate({ opacity: [1, 0] }, { duration: 250, easing: "ease-in", fill: "forwards" }).finished;
+    } finally {
+      veil.remove();
+      busy = false;
+    }
   }
 
 </script>
@@ -34,6 +57,5 @@
 
 <style>
   .theme-toggle svg { transition: transform 520ms var(--e-spring, cubic-bezier(.34, 1.56, .64, 1)); }
-  :global(::view-transition-old(root)), :global(::view-transition-new(root)) { animation-duration: 380ms; animation-timing-function: var(--e-io, ease-in-out); }
   @media (prefers-reduced-motion: reduce) { .theme-toggle svg { transition: none; } }
 </style>

@@ -1,0 +1,9 @@
+/* th/dev-rail: dev 브랜치 레일과 노드. 기저 레일은 main.page::before 1개(reveal 과 무관), 진행 레일은 fx/dev.ts 가 만든 .rail-clip > .rail-glow(translateY)와 .rail-head. z-order: 레일 1, 노드 3. */
+html[data-theme="dev"] main.page::before { content: ""; position: absolute; z-index: 1; left: var(--rail-x, 28px); top: var(--rail-top, 100svh); bottom: var(--rail-bot, 0); width: 2px; margin-left: -1px; background: var(--rail-c); pointer-events: none; }
+
+html[data-theme="dev"] .rail-clip { position: absolute; z-index: 1; left: var(--rail-x, 28px); width: 2px; margin-left: -1px; overflow: hidden; overflow: clip; pointer-events: none; }
+html[data-theme="dev"] .rail-glow { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(var(--neon-g), var(--neon-b)); will-change: transform; }
+html[data-theme="dev"] .rail-head { position: absolute; z-index: 2; left: var(--rail-x, 28px); top: 0; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px var(--neon-g), 0 0 6px 1px rgb(46 107 255 / 0.5); pointer-events: none; will-change: transform; }
+
+html[data-theme="dev"] .sec-title::before, html[data-theme="dev"] .footer.ending::before { z-index: 3; box-sizing: border-box; box-shadow: 0 0 0 5px var(--bg); transition: border-color 0.6s ease, box-shadow 0.6s ease; }
+html[data-theme="dev"] .section.lit .sec-title::before, html[data-theme="dev"] .footer.ending.lit::before, html:not(.js)[data-theme="dev"] .sec-title::before, html:not(.js)[data-theme="dev"] .footer.ending::before {border-color: var(--neon-b); box-shadow: 0 0 0 5px var(--bg), 0 0 0 6px rgb(255 45 122 / 0.25); }

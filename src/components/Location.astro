@@ -73,7 +73,10 @@ const rows = all.filter((r) => r.lines.length > 0);
   .copy-fb.done .chk { opacity: 1; transform: none; }
   .bleed { position: relative; margin: 0 -40px 16px; }
   @media (max-width: 360px) { .bleed { margin: 0 -28px 16px; } }
-  :global(html[data-theme="dev"]) .bleed { margin-left: 0; margin-right: -24px; }
+  :global(html[data-theme="dev"]) .bleed { margin: 0 0 16px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; overflow: clip; }
+  :global(html[data-theme="dev"]) .bleed :global(.km-card), :global(html[data-theme="dev"]) .bleed :global(.km) { height: 258px; border-block: 0; }
+  :global(html[data-theme="dev"]) .address { display: block; }
+  :global(html[data-theme="dev"]) .copy-fb { vertical-align: middle; margin: -10px -8px -10px -6px; }
   .apps-wrap { margin-bottom: 12px; }
   .cap { margin: 0 0 32px; font-size: 12.5px; color: var(--ink-3); }
   .cap.last { margin-bottom: 0; }

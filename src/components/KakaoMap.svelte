@@ -114,7 +114,7 @@
   .km-tg[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
   .km :global(.km-pin) { display: grid; justify-items: center; transform: translateY(2px); pointer-events: none; }
   .km :global(.km-pin b) { margin-bottom: 2px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgb(26 26 26 / 0.06); }
-  .km-card { position: relative; height: 220px; overflow: hidden; background: var(--track); border-block: 1px solid var(--line); }
+  .km-card { position: relative; height: 260px; overflow: hidden; background: var(--track); border-block: 1px solid var(--line); }
   .km-roads {
     position: absolute; inset: 0;
     background:
