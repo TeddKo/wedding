@@ -11,7 +11,7 @@ interface Props {
 const { hasMusic } = Astro.props;
 
 const pageUrl = new URL(url(""), Astro.site).href;
-const imageUrl = new URL(url("og.png"), Astro.site).href;
+const imageUrl = new URL(url("og.jpg"), Astro.site).href;
 const [Y, M, D] = wedding.date.split("-").map(Number);
 const [H, MIN] = wedding.time.split(":").map(Number);
 const wd = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][new Date(Date.UTC(Y, M - 1, D)).getUTCDay()];

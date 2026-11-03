@@ -41,7 +41,17 @@
             map.setZoomable(false);
             const label = document.createElement("div");
             label.innerHTML = pin(name);
-            new k.maps.CustomOverlay({ map, position: c, content: label.firstElementChild as HTMLElement, yAnchor: 1 });
+            const tag = label.firstElementChild as HTMLElement;
+            new k.maps.CustomOverlay({ map, position: c, content: tag, yAnchor: 1 });
+            /* 핀 끝이 좌표라 라벨+핀 묶음이 위로 치우친다. 묶음 높이 절반만큼 좌표를 아래로 내려 묶음을 중앙에 둔다 */
+            const recenter = () => {
+              map.relayout();
+              map.setCenter(c);
+              const proj = map.getProjection();
+              const p = proj.containerPointFromCoords(c);
+              map.setCenter(proj.coordsFromContainerPoint(new k.maps.Point(p.x, p.y - tag.offsetHeight / 2)));
+            };
+            new ResizeObserver(() => !free && recenter()).observe(el);
             k.maps.event.addListener(map, "tilesloaded", () => {
               if (done) return;
               done = true;

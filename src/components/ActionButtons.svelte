@@ -5,7 +5,7 @@
   import { reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
   import { ICONS } from "../lib/icons";
-  import { BRAND } from "../lib/brand";
+  import { brandIcon } from "../lib/brand";
 
   type Action = { kind: "copy"; label: string; text: string; icon?: boolean; ghost?: boolean; small?: boolean; rise?: number } | { kind: "kakao"; label: string; rise?: number };
   type Kakao = { key: string; title: string; description: string; imageUrl: string; pageUrl: string };
@@ -90,7 +90,7 @@
     onclick={() => (a.kind === "copy" ? onCopy(a, i) : share())}
   >
     {#if a.kind === "kakao"}
-      <svg class="kico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND.kakaotalk}</svg>
+      <img class="kico" src={brandIcon("kakaotalk")} alt="" width="22" height="22" />
     {:else}
       <span class="ic" class:done={copied === i} aria-hidden="true">
         <svg class="ico a" viewBox="0 0 24 24" focusable="false"><path d={variant(a) === "box-btn" ? ICONS.link : ICONS.copy} /></svg>
@@ -139,7 +139,7 @@
     background: var(--surface); color: var(--ink); font-size: 14.5px; cursor: pointer;
   }
   .kakao-btn { background: #fee500; border-color: #fee500; color: #191919; }
-  .kico { width: 22px; height: 22px; }
+  .kico { flex: none; width: 22px; height: 22px; }
   .btn-text { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--ink); font-size: 14.5px; cursor: pointer; }
   .box-btn svg, .btn-text svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }

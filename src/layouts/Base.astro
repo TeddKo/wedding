@@ -14,7 +14,7 @@ import { THEMES } from "../lib/themes";
 import { ICONS } from "../lib/icons";
 
 const pageUrl = new URL(url(""), Astro.site).href;
-const ogImage = new URL(url("og.png"), Astro.site).href;
+const ogImage = new URL(url("og.jpg"), Astro.site).href;
 const title = wedding.share.title;
 const desc = `${dateKo} ${wedding.venue.name}`;
 const colors = Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.color]));

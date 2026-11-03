@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { detect } from "../lib/platform";
-  import { BRAND, type BrandId } from "../lib/brand";
+  import { brandIcon, type BrandId } from "../lib/brand";
   import { mapApps, type MapApp, type Venue } from "../lib/maps";
 
   let { venue }: { venue: Venue } = $props();
@@ -38,7 +38,7 @@
   {#each apps as a, i (a.id)}
     <div class="slot" data-rv="rise" style="--d:{700 + i * 90}ms">
       <a class="app" data-press href={a.href} target={a.blank ? "_blank" : undefined} rel={a.blank ? "noopener noreferrer" : undefined} onclick={(e) => launch(e, a)}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{@html BRAND[a.id as BrandId]}</svg>{a.name}
+        <img class="b-{a.id}" src={brandIcon(a.id as BrandId)} alt="" width="22" height="22" />{a.name}
       </a>
     </div>
   {/each}
@@ -53,5 +53,8 @@
     font: 400 14px/1 var(--f-ui, inherit); white-space: nowrap; -webkit-tap-highlight-color: transparent;
   }
   .app:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  svg { flex: none; width: 20px; height: 20px; }
+  img { flex: none; width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  /* 네이버(흰 바탕 핀)·티맵(투명 심볼)은 앱 아이콘처럼 흰 타일 위에 */
+  .b-naver, .b-tmap { background: #fff; }
+  .b-tmap { padding: 4px; box-sizing: border-box; object-fit: contain; }
 </style>
