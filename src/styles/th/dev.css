@@ -1,5 +1,5 @@
 /* th/dev: dev 테마 전용 스타일. global.css 뒤에 로드되어 override 한다. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
-html[data-theme="dev"] { --neon-g: #2e6bff; --neon-b: #ff2d7a; }
+html[data-theme="dev"] { --neon-g: #0070f3; --neon-b: #0070f3; }
 
 html[data-theme="dev"] .gl { z-index: 1; }
 html[data-theme="dev"] .gl::before { content: ""; position: absolute; top: -12px; bottom: -12px; left: calc(var(--rail-x, 28px) - 48px); width: 140px; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgb(26 26 26 / 0.028), transparent 100%); pointer-events: none; }
@@ -65,3 +65,23 @@ html[data-theme="dev"] .footer.ending.in::after { animation: dev-ver 900ms ease-
 html[data-theme="dev"] .intro-emblem[data-th~="dev"] { display: flex; align-items: center; gap: 10px; font: 500 13px/1 var(--f-mono); }
 html[data-theme="dev"] .ie-node { width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; background: var(--bg); border: 2px solid var(--neon-g); box-shadow: 0 0 8px rgb(46 107 255 / 0.45); }
 html[data-theme="dev"] .ie-label { color: var(--accent-text); letter-spacing: 0.02em; }
+
+/* 폴리시: 단일 악센트 + 부드러운 블룸. 네온 3중 글로우, 랜덤 신호/깜빡임 제거. 표면은 단일 반투명 보더. */
+html[data-theme="dev"] .gl .br .halo, html[data-theme="dev"] .gl .nd-g .halo, html[data-theme="dev"] .gl .nd-b .halo, html[data-theme="dev"] .gl .sig { display: none; }
+html.opened[data-theme="dev"] .gl .nd-m .halo { animation: none; opacity: 0.32; stroke-width: 5; }
+html.opened[data-theme="dev"] .gl .nd-m .pulse { animation: none; opacity: 0; }
+html[data-theme="dev"] .gl .core { opacity: 0.5; }
+html[data-theme="dev"] .gl .br.blink { animation: none; }
+html[data-theme="dev"] .rail-glow { background: var(--accent); box-shadow: 0 0 8px rgb(0 112 243 / 0.28); }
+html[data-theme="dev"] [data-reveal].in .sec-title::before { border-color: var(--accent); box-shadow: 0 0 0 4px rgb(0 112 243 / 0.12); }
+@keyframes dev-ver { 0%, 100% { text-shadow: none; } 40% { text-shadow: 0 0 8px rgb(0 112 243 / 0.3); } }
+html[data-theme="dev"] .footer.ending::after { background: rgb(0 112 243 / 0.08); border: 0; font-size: 11px; line-height: 18px; padding: 1px 8px; }
+
+html[data-theme="dev"] .eyebrow { font: 500 12px/16px var(--f-mono); letter-spacing: 0; text-transform: lowercase; color: var(--ink-3); }
+html[data-theme="dev"] .eyebrow::before { content: "~/"; color: var(--accent-text); }
+html[data-theme="dev"] .sec-title .hash { display: table; margin-bottom: 8px; padding: 0 6px; border-radius: 4px; background: var(--gs-3); box-shadow: inset 0 0 0 1px var(--line); font: 500 11px/18px var(--f-mono); color: var(--ink-3); }
+html[data-theme="dev"] .btn-outline { border: 0; border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 2px 4px rgb(0 0 0 / 0.04); }
+html[data-theme="dev"] .btn { border: 0; box-shadow: 0 0 0 1px var(--line), 0 2px 4px rgb(0 0 0 / 0.04); }
+html[data-theme="dev"] .seg { background: var(--gs-3); box-shadow: inset 0 0 0 1px var(--line); }
+html[data-theme="dev"] { --f-body: var(--f-ui); }
+html[data-theme="dev"] .sec-title { font-family: var(--f-ui); }

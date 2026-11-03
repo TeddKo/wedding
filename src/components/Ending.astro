@@ -51,14 +51,16 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
 
 <style>
   .footer.ending { max-width: 440px; margin: 0 auto; padding: 60px 40px 112px; text-align: center; display: block; }
-  .script { font: 400 54px/1.15 var(--f-script, var(--f-latin)); color: var(--accent); transform: rotate(-6deg); margin-bottom: 8px; }
+  .script { font: italic 300 26px/36px var(--f-script, var(--f-latin)); letter-spacing: 0.04em; color: var(--accent-text); margin-bottom: 8px; }
+  :global([data-theme="puppy"]) .script { font-style: normal; font-size: 22px; letter-spacing: 0.06em; color: var(--accent-text); }
+  :global([data-theme="dev"]) .script { font: 600 22px/32px var(--f-ui); letter-spacing: -0.02em; color: var(--ink); }
   .rule { display: block; height: 1px; margin: 32px 0 0; background: var(--line); }
-  .rule.ink { background: var(--ink); margin-top: 36px; }
+  .rule.ink { background: color-mix(in srgb, var(--ink-3) 55%, transparent); margin-top: 32px; }
   .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0 0; padding: 0; }
-  .meta dt { font: 400 10.5px/1.4 var(--f-latin); letter-spacing: 0.24em; color: var(--ink-3); }
-  .meta dd { margin: 4px 0 0; font: 400 15px/1.5 var(--f-latin); letter-spacing: 0.04em; font-variant-numeric: lining-nums tabular-nums; color: var(--ink); }
-  .addr { margin-top: 24px; font: 400 13px/1.6 var(--f-body); color: var(--ink-2); }
-  .thanks { margin-top: 32px; font: 400 14.5px/1.79 var(--f-body); color: var(--ink-2); }
+  .meta dt { font: 400 11px/16px var(--f-latin); letter-spacing: 0.28em; color: var(--ink-3); }
+  .meta dd { margin: 4px 0 0; font: 400 16px/24px var(--f-latin); letter-spacing: 0.04em; font-variant-numeric: lining-nums tabular-nums; color: var(--ink); }
+  .addr { margin-top: 24px; font: 400 13px/20px var(--f-body); color: var(--ink-2); }
+  .thanks { margin-top: 32px; font: 400 var(--t-body)/26px var(--f-body); color: var(--ink-2); }
   .share { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .share:has(button[hidden]) { grid-template-columns: 1fr; }
   .end-art { width: 140px; margin: 32px auto 0; }
