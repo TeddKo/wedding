@@ -1,4 +1,4 @@
-import { and, eq, gt, lt, notInArray } from "drizzle-orm";
+import { and, eq, gt, lt, notInArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { photos, uploads } from "../db/schema";
 
@@ -23,4 +23,5 @@ export const orphanUploads = (d: Db, cutoff: number) =>
     .where(and(lt(uploads.createdAt, cutoff), notInArray(uploads.uuid, d.select({ uuid: photos.uuid }).from(photos))))
     .limit(500);
 
-export const countPendingUploads = (d: Db) => d.$count(uploads, notInArray(uploads.uuid, d.select({ uuid: photos.uuid }).from(photos)));
+/** rowid 최댓값 단일 행 읽기. 삭제로 줄지 않는 누적 삽입 수 근사치(보수적 총량 상한) */
+export const maxUploadRowid = async (d: Db) => (await d.select({ n: sql<number | null>`max(rowid)` }).from(uploads).get())?.n ?? 0;
