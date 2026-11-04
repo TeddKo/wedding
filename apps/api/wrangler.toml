@@ -17,6 +17,9 @@ bucket_name = "wedding-snapshots"
 [triggers]
 crons = ["17 * * * *"]
 
+[observability]
+enabled = true
+
 # 로컬 전용(wrangler dev --local). 운영 D1/R2 와 이름이 달라 원격 배포에 사용 금지.
 [env.dev]
 name = "wedding-guestbook-dev"
