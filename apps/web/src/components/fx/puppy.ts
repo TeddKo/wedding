@@ -44,45 +44,77 @@ function runIn(root: HTMLElement, anims: Animation[]): void {
     add(el, [{ transform: `translateX(${from}px)` }, { transform: "translateX(0)" }], { duration: dur, delay, easing: EASE_RUN, fill: "both" });
     const inner = el.firstElementChild;
     if (inner) add(inner, bobFrames(dur), { duration: dur, delay, easing: "linear", fill: "both" });
-    add(el, [{ opacity: 1 }, { opacity: 1, offset: (SIT_AT - delay) / (SIT_AT + SIT_FADE - delay) }, { opacity: 0 }], { duration: SIT_AT + SIT_FADE - delay, delay, fill: "both", composite: "replace" });
+    add(el, [{ opacity: 1 }, { opacity: 1, offset: (SIT_AT - delay) / (SIT_AT + SIT_FADE - delay) }, { opacity: 0 }], {
+      duration: SIT_AT + SIT_FADE - delay,
+      delay,
+      fill: "both",
+      composite: "replace",
+    });
   };
   place(k, 200, 1500);
   place(m, 450, 1500);
 
   const bx = -(ball.offsetLeft + ball.offsetWidth + 10);
-  add(ball, [{ opacity: 1, transform: `translateX(${bx}px)`, easing: "cubic-bezier(.2,.7,.3,1)" }, { opacity: 1, transform: "translateX(0)", offset: 1600 / 2000, easing: "ease-out" }, { opacity: 1, transform: "translateX(0)" }], { duration: 2000, fill: "both" });
+  add(
+    ball,
+    [
+      { opacity: 1, transform: `translateX(${bx}px)`, easing: "cubic-bezier(.2,.7,.3,1)" },
+      { opacity: 1, transform: "translateX(0)", offset: 1600 / 2000, easing: "ease-out" },
+      { opacity: 1, transform: "translateX(0)" },
+    ],
+    { duration: 2000, fill: "both" },
+  );
   const bi = ball.firstElementChild;
   if (bi) {
-    add(bi, [
-      { transform: "translateY(0) rotate(0deg)", easing: "cubic-bezier(.2,.7,.3,1)", offset: 0 },
-      { transform: "translateY(0) rotate(720deg)", offset: 1600 / 2000, easing: "ease-out" },
-      { transform: "translateY(-8px) rotate(720deg)", offset: 1720 / 2000, easing: "ease-in" },
-      { transform: "translateY(0) rotate(720deg)", offset: 1840 / 2000 },
-      { transform: "translateY(-4px) rotate(720deg)", offset: 1920 / 2000, easing: "ease-in" },
-      { transform: "translateY(0) rotate(720deg)", offset: 1 },
-    ], { duration: 2000, fill: "both" });
+    add(
+      bi,
+      [
+        { transform: "translateY(0) rotate(0deg)", easing: "cubic-bezier(.2,.7,.3,1)", offset: 0 },
+        { transform: "translateY(0) rotate(720deg)", offset: 1600 / 2000, easing: "ease-out" },
+        { transform: "translateY(-8px) rotate(720deg)", offset: 1720 / 2000, easing: "ease-in" },
+        { transform: "translateY(0) rotate(720deg)", offset: 1840 / 2000 },
+        { transform: "translateY(-4px) rotate(720deg)", offset: 1920 / 2000, easing: "ease-in" },
+        { transform: "translateY(0) rotate(720deg)", offset: 1 },
+      ],
+      { duration: 2000, fill: "both" },
+    );
   }
 
-  add(sit, [{ opacity: 0 }, { opacity: 0, offset: SIT_AT / (SIT_AT + SIT_FADE) }, { opacity: 1 }], { duration: SIT_AT + SIT_FADE, easing: "linear", fill: "both" });
+  add(sit, [{ opacity: 0 }, { opacity: 0, offset: SIT_AT / (SIT_AT + SIT_FADE) }, { opacity: 1 }], {
+    duration: SIT_AT + SIT_FADE,
+    easing: "linear",
+    fill: "both",
+  });
 }
 
 /** Orn: 5개 발자국 + 뼈다귀를 보이면 120ms 간격으로 순차 스탬프 */
 function armOrns(anims: Animation[], cleanups: Array<() => void>): void {
   const orns = [...document.querySelectorAll<SVGElement>(".pup-orn")];
   if (!orns.length || typeof IntersectionObserver === "undefined") return;
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      const el = e.target as SVGElement;
-      if (!e.isIntersecting && e.boundingClientRect.bottom > 0) continue;
-      io.unobserve(el);
-      if (e.isIntersecting) {
-        el.querySelectorAll(".pp").forEach((p, i) => {
-          anims.push(p.animate([{ opacity: 0, transform: "scale(1.1)" }, { opacity: 0.4, transform: "scale(1)" }], { duration: 420, delay: i * 120, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" }));
-        });
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        const el = e.target as SVGElement;
+        if (!e.isIntersecting && e.boundingClientRect.bottom > 0) continue;
+        io.unobserve(el);
+        if (e.isIntersecting) {
+          el.querySelectorAll(".pp").forEach((p, i) => {
+            anims.push(
+              p.animate(
+                [
+                  { opacity: 0, transform: "scale(1.1)" },
+                  { opacity: 0.4, transform: "scale(1)" },
+                ],
+                { duration: 420, delay: i * 120, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" },
+              ),
+            );
+          });
+        }
+        el.querySelectorAll<SVGElement>(".pp").forEach((p) => p.style.removeProperty("visibility"));
       }
-      el.querySelectorAll<SVGElement>(".pp").forEach((p) => p.style.removeProperty("visibility"));
-    }
-  }, { threshold: 0.6 });
+    },
+    { threshold: 0.6 },
+  );
   for (const el of orns) {
     el.querySelectorAll<SVGElement>(".pp").forEach((p) => p.style.setProperty("visibility", "hidden"));
     io.observe(el);
@@ -136,11 +168,20 @@ function endingPaws(anims: Animation[], cleanups: Array<() => void>): void {
       }
       foot.appendChild(box);
       timers.push(
-        window.setTimeout(() => {
-          art.querySelectorAll<SVGElement>(".orn-dogs-rest .b, .orn-dogs-rest .m").forEach((g, i) => {
-            anims.push(g.animate([{ transform: "translateY(-3px)" }, { transform: "translateY(0)" }], { duration: 520, delay: i * 90, easing: "cubic-bezier(.22,1,.36,1)" }));
-          });
-        }, 5 * 140 + 120),
+        window.setTimeout(
+          () => {
+            art.querySelectorAll<SVGElement>(".orn-dogs-rest .b, .orn-dogs-rest .m").forEach((g, i) => {
+              anims.push(
+                g.animate([{ transform: "translateY(-3px)" }, { transform: "translateY(0)" }], {
+                  duration: 520,
+                  delay: i * 90,
+                  easing: "cubic-bezier(.22,1,.36,1)",
+                }),
+              );
+            });
+          },
+          5 * 140 + 120,
+        ),
       );
     },
     { threshold: 0.4 },

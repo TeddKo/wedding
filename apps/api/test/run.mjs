@@ -15,10 +15,20 @@ const persist = mkdtempSync(join(tmpdir(), "gb-"));
 const varsFile = join(persist, ".dev.vars");
 const KMOCK = 8798;
 const SECRET = "test-session-secret";
-writeFileSync(varsFile, `IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\nVOTE_MODE=device\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\nORPHAN_MS=2000\nKAKAO_REST_KEY=rk\nKAKAO_CLIENT_SECRET=cs\nKAKAO_MOCK=http://127.0.0.1:${KMOCK}\n`);
+writeFileSync(
+  varsFile,
+  `IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\nVOTE_MODE=device\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\nORPHAN_MS=2000\nKAKAO_REST_KEY=rk\nKAKAO_CLIENT_SECRET=cs\nKAKAO_MOCK=http://127.0.0.1:${KMOCK}\n`,
+);
 const kseen = [];
 const kmock = createServer(async (rq, rs) => {
-  const raw = rq.method === "POST" ? await new Promise((r) => { let b = ""; rq.on("data", (c) => (b += c)); rq.on("end", () => r(b)); }) : "";
+  const raw =
+    rq.method === "POST"
+      ? await new Promise((r) => {
+          let b = "";
+          rq.on("data", (c) => (b += c));
+          rq.on("end", () => r(b));
+        })
+      : "";
   const q = new URLSearchParams(raw);
   rs.setHeader("content-type", "application/json");
   if (rq.url === "/oauth/token") {
@@ -29,7 +39,10 @@ const kmock = createServer(async (rq, rs) => {
   } else if (rq.url === "/v1/user/access_token_info") {
     const at = (rq.headers.authorization ?? "").replace("Bearer at-", "");
     rs.end(JSON.stringify({ id: Number(at) }));
-  } else { rs.statusCode = 404; rs.end("{}"); }
+  } else {
+    rs.statusCode = 404;
+    rs.end("{}");
+  }
 }).listen(KMOCK, "127.0.0.1");
 const w = (...a) => ["wrangler", ...a, "--env", "dev", "--persist-to", persist];
 
@@ -49,7 +62,12 @@ const good = { name: " 홍길동 ", message: " 축하해요 ", password: "pw1234
 
 try {
   for (let i = 0; i < 60; i++) {
-    try { await fetch(BASE + "/x"); break; } catch { await new Promise((r) => setTimeout(r, 500)); }
+    try {
+      await fetch(BASE + "/x");
+      break;
+    } catch {
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
 
   const ids = [];
@@ -64,18 +82,31 @@ try {
     ids.push(j.id);
   }
   let j = await (await call("/entries?limit=2")).json();
-  assert.deepEqual(j.items.map((x) => x.id), [ids[2], ids[1]]);
+  assert.deepEqual(
+    j.items.map((x) => x.id),
+    [ids[2], ids[1]],
+  );
   assert.equal(j.nextCursor, ids[1]);
   assert.ok(!JSON.stringify(j).match(/pw_hash|salt|ip_hash/));
   j = await (await call(`/entries?limit=2&cursor=${j.nextCursor}`)).json();
-  assert.deepEqual(j.items.map((x) => x.id), [ids[0]]);
+  assert.deepEqual(
+    j.items.map((x) => x.id),
+    [ids[0]],
+  );
   assert.equal(j.nextCursor, null);
 
   for (const b of [
-    { ...good, name: "" }, { ...good, name: "a".repeat(21) }, { ...good, message: "a".repeat(301) },
-    { ...good, message: "  " }, { ...good, password: "abc" }, { ...good, name: "a\u0000b" },
-    { ...good, message: "a\u0007b" }, { ...good, name: "a\nb" }, { name: "a" },
-  ]) assert.equal((await post(b, "8.8.8.8")).status, 400, JSON.stringify(b));
+    { ...good, name: "" },
+    { ...good, name: "a".repeat(21) },
+    { ...good, message: "a".repeat(301) },
+    { ...good, message: "  " },
+    { ...good, password: "abc" },
+    { ...good, name: "a\u0000b" },
+    { ...good, message: "a\u0007b" },
+    { ...good, name: "a\nb" },
+    { name: "a" },
+  ])
+    assert.equal((await post(b, "8.8.8.8")).status, 400, JSON.stringify(b));
   const ml = await (await post({ ...good, message: "첫 줄\r\n\r\n\r\n\r\n둘째 줄" }, "6.6.6.6")).json();
   assert.equal(ml.message, "첫 줄\n\n둘째 줄");
   assert.equal((await post({ ...good, message: "x".repeat(5000) }, "8.8.8.8")).status, 400);
@@ -99,14 +130,37 @@ try {
   assert.equal((await call("/entries", { origin: "http://localhost:4321" })).headers.get("access-control-allow-origin"), "http://localhost:4321");
 
   /* ---------- 스냅샷 ---------- */
-  const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16BE(v); return b; };
-  const le16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
+  const u16 = (v) => {
+    const b = Buffer.alloc(2);
+    b.writeUInt16BE(v);
+    return b;
+  };
+  const le16 = (v) => {
+    const b = Buffer.alloc(2);
+    b.writeUInt16LE(v);
+    return b;
+  };
   const le24 = (v) => Buffer.from([v & 255, (v >> 8) & 255, (v >> 16) & 255]);
   const pad = (head, n) => Buffer.concat([head, Buffer.alloc(Math.max(0, n - head.length), 7)]);
-  const jpg = (n, w = 1000, h = 800) => pad(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 17, 8]), u16(h), u16(w), Buffer.from([3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1])]), n);
+  const jpg = (n, w = 1000, h = 800) =>
+    pad(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 17, 8]), u16(h), u16(w), Buffer.from([3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1])]), n);
   const riff = (chunk, n) => pad(Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBP"), chunk]), n);
-  const webp = (n, w = 1000, h = 800) => riff(Buffer.concat([Buffer.from("VP8 "), Buffer.alloc(4), Buffer.from([0, 0, 0, 0x9d, 0x01, 0x2a]), le16(w), le16(h)]), n);
-  const webpL = (n, w, h) => riff(Buffer.concat([Buffer.from("VP8L"), Buffer.alloc(4), Buffer.from([0x2f]), (() => { const b = Buffer.alloc(4); b.writeUInt32LE((w - 1) | ((h - 1) << 14)); return b; })()]), n);
+  const webp = (n, w = 1000, h = 800) =>
+    riff(Buffer.concat([Buffer.from("VP8 "), Buffer.alloc(4), Buffer.from([0, 0, 0, 0x9d, 0x01, 0x2a]), le16(w), le16(h)]), n);
+  const webpL = (n, w, h) =>
+    riff(
+      Buffer.concat([
+        Buffer.from("VP8L"),
+        Buffer.alloc(4),
+        Buffer.from([0x2f]),
+        (() => {
+          const b = Buffer.alloc(4);
+          b.writeUInt32LE((w - 1) | ((h - 1) << 14));
+          return b;
+        })(),
+      ]),
+      n,
+    );
   const webpX = (n, w, h) => riff(Buffer.concat([Buffer.from("VP8X"), Buffer.alloc(4), Buffer.alloc(4), le24(w - 1), le24(h - 1)]), n);
   const dev = (d) => ({ "X-Device": d });
   const put = (u, kind, body, { d = "device-aaaaaaaa", ip = "2.2.2.2", origin = OK, len } = {}) =>
@@ -124,7 +178,13 @@ try {
   const del = (u, { pw, token, q = "", ip = "5.5.5.5", d } = {}) =>
     fetch(`${BASE}/photos/${u}${q}`, {
       method: "DELETE",
-      headers: { "content-type": "application/json", Origin: OK, "CF-Connecting-IP": ip, ...(d ? dev(d) : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: {
+        "content-type": "application/json",
+        Origin: OK,
+        "CF-Connecting-IP": ip,
+        ...(d ? dev(d) : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: pw === undefined ? undefined : JSON.stringify({ pw }),
     });
   const upload = async (b = {}, o = {}) => {
@@ -136,10 +196,19 @@ try {
 
   const r2keys = () => {
     const dir = join(persist, "v3/r2/miniflare-R2BucketObject");
-    return readdirSync(dir).filter((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite").flatMap((f) => {
-      const db = new DatabaseSync(join(dir, f), { readOnly: true });
-      try { return db.prepare("SELECT key FROM _mf_objects").all().map((r) => r.key); } finally { db.close(); }
-    });
+    return readdirSync(dir)
+      .filter((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite")
+      .flatMap((f) => {
+        const db = new DatabaseSync(join(dir, f), { readOnly: true });
+        try {
+          return db
+            .prepare("SELECT key FROM _mf_objects")
+            .all()
+            .map((r) => r.key);
+        } finally {
+          db.close();
+        }
+      });
   };
 
   const u1 = crypto.randomUUID();
@@ -179,8 +248,12 @@ try {
   assert.equal(r2.status, 201);
   const list = async () => (await (await call("/photos?limit=30")).json()).items.map((x) => x.uuid);
   assert.deepEqual((await list()).slice(0, 2), [u2, u1]);
-  assert.deepEqual((await (await call("/photos?limit=2")).json()).items.map((x) => x.locked), [false, true], "GET /photos locked flag");
-  assert.equal((await (await r2.clone().json()).locked), false);
+  assert.deepEqual(
+    (await (await call("/photos?limit=2")).json()).items.map((x) => x.locked),
+    [false, true],
+    "GET /photos locked flag",
+  );
+  assert.equal(await (await r2.clone().json()).locked, false);
   assert.ok(!JSON.stringify(await (await call("/photos")).json()).match(/pw_hash|salt|ip_hash|device/));
   assert.equal((await call("/photos?limit=1")).status, 200);
   assert.equal((await (await call("/photos?limit=1")).json()).nextCursor, (await r2.json()).id);
@@ -269,19 +342,33 @@ try {
   /* 픽셀 치수 검증 */
   const uDim = crypto.randomUUID();
   const dimCases = [
-    ["full", jpg(600, 2562, 100), 204], ["full", jpg(600, 2563, 100), 422], ["full", jpg(600, 100, 3000), 422],
-    ["full", webp(600, 4000, 3000), 422], ["full", webpL(600, 3000, 100), 422], ["full", webpX(600, 100, 5000), 422],
-    ["full", webpL(600, 2560, 1920), 204], ["full", webpX(600, 2560, 1707), 204],
-    ["thumb", webp(600, 483, 100), 422], ["thumb", webp(600, 482, 100), 204], ["thumb", webpL(600, 480, 480), 204],
-    ["thumb", webpX(600, 100, 481), 204], ["thumb", webpX(600, 100, 600), 422],
+    ["full", jpg(600, 2562, 100), 204],
+    ["full", jpg(600, 2563, 100), 422],
+    ["full", jpg(600, 100, 3000), 422],
+    ["full", webp(600, 4000, 3000), 422],
+    ["full", webpL(600, 3000, 100), 422],
+    ["full", webpX(600, 100, 5000), 422],
+    ["full", webpL(600, 2560, 1920), 204],
+    ["full", webpX(600, 2560, 1707), 204],
+    ["thumb", webp(600, 483, 100), 422],
+    ["thumb", webp(600, 482, 100), 204],
+    ["thumb", webpL(600, 480, 480), 204],
+    ["thumb", webpX(600, 100, 481), 204],
+    ["thumb", webpX(600, 100, 600), 422],
   ];
   for (const [kind, body, want] of dimCases) {
     const x = jpgOrWebp(body) === "jpg" ? "jpg" : "webp";
     const uu = x === "jpg" ? crypto.randomUUID() : uDim;
     assert.equal((await put(uu, kind, body)).status, want, `${kind} ${x} ${body.length} want ${want}`);
   }
-  function jpgOrWebp(b) { return b[0] === 0xff ? "jpg" : "webp"; }
-  assert.equal((await put(crypto.randomUUID(), "full", Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0]), Buffer.alloc(300, 7)]))).status, 422, "no SOF");
+  function jpgOrWebp(b) {
+    return b[0] === 0xff ? "jpg" : "webp";
+  }
+  assert.equal(
+    (await put(crypto.randomUUID(), "full", Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0]), Buffer.alloc(300, 7)]))).status,
+    422,
+    "no SOF",
+  );
   assert.equal((await put(crypto.randomUUID(), "full", riff(Buffer.from("VP8 "), 100))).status, 422, "bad vp8");
   const uStore = crypto.randomUUID();
   assert.equal((await put(uStore, "full", jpg(4000, 2000, 1500))).status, 204);
@@ -290,7 +377,10 @@ try {
   assert.equal(cs.status, 201);
   const csj = await cs.json();
   assert.deepEqual([csj.w, csj.h], [2000, 1500]);
-  assert.deepEqual((await (await call("/photos?limit=1")).json()).items.map((x) => [x.w, x.h]), [[2000, 1500]]);
+  assert.deepEqual(
+    (await (await call("/photos?limit=1")).json()).items.map((x) => [x.w, x.h]),
+    [[2000, 1500]],
+  );
 
   /* 커밋 레이스 */
   const uRace = crypto.randomUUID();
@@ -333,7 +423,15 @@ try {
 
   /* IPv6 /64 */
   const v6 = [];
-  for (const ip of ["2001:db8:1:2::1", "2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:0db8:0001:0002::9", "2001:db8:1:2::2", "2001:DB8:1:2:0:0:0:3", "2001:db8:1:2::4"]) v6.push((await post(good, ip)).status);
+  for (const ip of [
+    "2001:db8:1:2::1",
+    "2001:db8:1:2:aaaa:bbbb:cccc:dddd",
+    "2001:0db8:0001:0002::9",
+    "2001:db8:1:2::2",
+    "2001:DB8:1:2:0:0:0:3",
+    "2001:db8:1:2::4",
+  ])
+    v6.push((await post(good, ip)).status);
   assert.deepEqual(v6, [201, 201, 201, 201, 201, 429]);
   assert.equal((await post(good, "2001:db8:1:3::1")).status, 201);
 
@@ -359,9 +457,10 @@ try {
   assert.equal((await addOpt("x")).status, 401);
   assert.equal((await castVote(1)).status, 401);
 
-  const tA = await tok(), tB = await tok(), tC = await tok();
-  for (const t of ["", "   ", "a".repeat(31), "a\u0007b", "a\tb", "a\nb", 123, null])
-    assert.equal((await addOpt(t, tA)).status, 400, JSON.stringify(t));
+  const tA = await tok(),
+    tB = await tok(),
+    tC = await tok();
+  for (const t of ["", "   ", "a".repeat(31), "a\u0007b", "a\tb", "a\nb", 123, null]) assert.equal((await addOpt(t, tA)).status, 400, JSON.stringify(t));
   assert.equal((await pc("/poll/options", { method: "POST", body: {}, token: tA })).status, 400);
   r = await addOpt("  Vampire    Bat ", tA);
   assert.equal(r.status, 201);
@@ -397,8 +496,19 @@ try {
   const sTamper = tA.slice(0, -2) + (tA.endsWith("AA") ? "BB" : "AA");
   const [pA, sA] = tA.split(".");
   const forged = Buffer.from(JSON.stringify({ vk: "device:evil", exp: Date.now() + 1e9 })).toString("base64url") + "." + sA;
-  const mint = (obj, secret = SECRET) => { const p = Buffer.from(JSON.stringify(obj)).toString("base64url"); return `${p}.${createHmac("sha256", secret).update(p).digest("base64url")}`; };
-  for (const t of [sTamper, forged, "garbage", `${pA}.${sA}.x`, mint({ vk: "device:z", exp: Date.now() - 1000 }), mint({ vk: "device:z", exp: Date.now() + 1e9 }, "other-secret"), mint({ vk: 5, exp: Date.now() + 1e9 })])
+  const mint = (obj, secret = SECRET) => {
+    const p = Buffer.from(JSON.stringify(obj)).toString("base64url");
+    return `${p}.${createHmac("sha256", secret).update(p).digest("base64url")}`;
+  };
+  for (const t of [
+    sTamper,
+    forged,
+    "garbage",
+    `${pA}.${sA}.x`,
+    mint({ vk: "device:z", exp: Date.now() - 1000 }),
+    mint({ vk: "device:z", exp: Date.now() + 1e9 }, "other-secret"),
+    mint({ vk: 5, exp: Date.now() + 1e9 }),
+  ])
     assert.equal((await castVote(o1, t)).status, 401, t);
   assert.equal((await state(sTamper)).myVote, null);
   assert.equal((await castVote(o1, mint({ vk: "device:minted", exp: Date.now() + 1e9 }))).status, 200);
@@ -408,7 +518,8 @@ try {
   assert.match((await pc("/poll")).headers.get("cache-control"), /no-store/);
 
   /* 항목 텍스트: NFKC 정규화, 서식(보이지 않는) 문자 거부 */
-  const tN = await tok(), tN2 = await tok();
+  const tN = await tok(),
+    tN2 = await tok();
   for (const t of ["a\u200Bb", "a\u200Db", "\u202Eabc", "\uFEFFabc", "a\u2060b", "\u00ADabc"])
     assert.equal((await addOpt(t, tN, "10.7.7.7")).status, 400, JSON.stringify(t));
   r = await addOpt("ＮＦＫＣ　Ｔｅｓｔ", tN, "10.7.7.7");
@@ -474,10 +585,19 @@ try {
   dev2 = spawn("npx", ["--no-install", ...w2("dev", "--local", "--port", "8797", "--env-file", vars2)], { stdio: "ignore" });
   const B2 = "http://127.0.0.1:8797";
   for (let i = 0; i < 60; i++) {
-    try { await fetch(B2 + "/x"); break; } catch { await sleepMs(500); }
+    try {
+      await fetch(B2 + "/x");
+      break;
+    } catch {
+      await sleepMs(500);
+    }
   }
   const p2 = (path, token, method = "GET", body) =>
-    fetch(B2 + path, { method, headers: { "content-type": "application/json", Origin: OK, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body && JSON.stringify(body) });
+    fetch(B2 + path, {
+      method,
+      headers: { "content-type": "application/json", Origin: OK, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body && JSON.stringify(body),
+    });
   assert.equal((await (await p2("/poll")).json()).mode, "kakao");
   assert.equal((await p2("/auth/device", undefined, "POST")).status, 404);
   const devTok = mint({ vk: "device:minted", exp: Date.now() + 1e9 });

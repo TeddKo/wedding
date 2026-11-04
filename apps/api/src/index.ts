@@ -35,9 +35,7 @@ const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 async function pbkdf2(pw: string, salt: Uint8Array): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]);
-  return new Uint8Array(
-    await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256),
-  );
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256));
 }
 
 async function sha256(s: string) {
@@ -50,7 +48,10 @@ function ipKey(ip: string) {
   const [head, tail] = ip.split("::");
   const g = head ? head.split(":") : [];
   while (tail !== undefined && g.length < 4) g.push("0");
-  return g.slice(0, 4).map((x) => parseInt(x || "0", 16).toString(16)).join(":");
+  return g
+    .slice(0, 4)
+    .map((x) => parseInt(x || "0", 16).toString(16))
+    .join(":");
 }
 
 const ipHash = (req: Request, env: Env) => sha256(ipKey(req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
@@ -99,7 +100,6 @@ const field = (v: unknown, min: number, max: number, multiline = false) => {
   const checked = multiline ? t.replace(/\n/g, "") : t;
   return t.length >= min && t.length <= max && !hasCtrl(checked) ? t : null;
 };
-
 
 const POLL = { max: 20, perCreator: 2, ipN: 5, len: 30, session: 30 * 24 * 3600 * 1000 };
 const REDIRECT = "https://teddko.github.io/wedding/";
@@ -206,7 +206,11 @@ async function poll(req: Request, env: Env, url: URL, cors: string | null): Prom
     const body = await readJson(req);
     if (!body) return bad(cors, "invalid body");
     const now = Date.now();
-    const n = (sql: string, ...a: unknown[]) => env.DB.prepare(sql).bind(...a).first<{ n: number }>().then((r) => r?.n ?? 0);
+    const n = (sql: string, ...a: unknown[]) =>
+      env.DB.prepare(sql)
+        .bind(...a)
+        .first<{ n: number }>()
+        .then((r) => r?.n ?? 0);
 
     if (route === "poll/vote") {
       const optionId = body.optionId;
@@ -223,10 +227,13 @@ async function poll(req: Request, env: Env, url: URL, cors: string | null): Prom
     const text = raw && !hasCtrl(raw) && !/\p{Cf}/u.test(raw) ? field(raw.replace(/\s+/g, " "), 1, POLL.len) : null;
     if (!text) return bad(cors, "invalid text");
     const ip = await ipHash(req, env);
-    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE ip_hash = ? AND created_at > ?", ip, now - LIMIT_MS)) >= POLL.ipN) return bad(cors, "too many", 429);
+    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE ip_hash = ? AND created_at > ?", ip, now - LIMIT_MS)) >= POLL.ipN)
+      return bad(cors, "too many", 429);
     if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE hidden = 0")) >= POLL.max) return bad(cors, "full", 409);
     if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE creator_key = ?", vk)) >= POLL.perCreator) return bad(cors, "limit", 409);
-    const row = await env.DB.prepare("INSERT INTO poll_options (text,norm,creator_key,ip_hash,created_at) VALUES (?,?,?,?,?) ON CONFLICT(norm) DO NOTHING RETURNING id")
+    const row = await env.DB.prepare(
+      "INSERT INTO poll_options (text,norm,creator_key,ip_hash,created_at) VALUES (?,?,?,?,?) ON CONFLICT(norm) DO NOTHING RETURNING id",
+    )
       .bind(text, text.toLowerCase(), vk, ip, now)
       .first<{ id: number }>();
     if (!row) return bad(cors, "duplicate", 409);
@@ -264,9 +271,15 @@ function dims(b: Uint8Array, ext: keyof typeof EXT): [number, number] | null {
     for (let i = 2; i + 9 <= b.length; ) {
       if (b[i] !== 0xff) return null;
       const m = b[i + 1];
-      if (m === 0xff) { i++; continue; }
+      if (m === 0xff) {
+        i++;
+        continue;
+      }
       if (m === 0xc0 || m === 0xc1 || m === 0xc2) return ok(v.getUint16(i + 7), v.getUint16(i + 5));
-      if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) { i += 2; continue; }
+      if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) {
+        i += 2;
+        continue;
+      }
       i += 2 + v.getUint16(i + 2);
     }
     return null;
@@ -286,16 +299,16 @@ function dims(b: Uint8Array, ext: keyof typeof EXT): [number, number] | null {
 /** 24시간(ORPHAN_MS) 넘게 커밋되지 않은 업로드의 R2 객체와 행 삭제, 만료된 비밀번호 실패 기록 정리 */
 async function sweep(env: Env) {
   const cutoff = Date.now() - (Number(env.ORPHAN_MS) || ORPHAN_MS);
-  const { results } = await env.DB.prepare(
-    "SELECT uuid,ext FROM uploads WHERE created_at < ? AND uuid NOT IN (SELECT uuid FROM photos) LIMIT 500",
-  )
+  const { results } = await env.DB.prepare("SELECT uuid,ext FROM uploads WHERE created_at < ? AND uuid NOT IN (SELECT uuid FROM photos) LIMIT 500")
     .bind(cutoff)
     .all<{ uuid: string; ext: string }>();
   if (results.length) {
     await env.BUCKET.delete(results.flatMap((r) => [`full/${r.uuid}.${r.ext}`, `thumb/${r.uuid}.${r.ext}`]));
     await env.DB.batch(results.map((r) => env.DB.prepare("DELETE FROM uploads WHERE uuid = ?").bind(r.uuid)));
   }
-  await env.DB.prepare("DELETE FROM pw_fails WHERE created_at < ?").bind(Date.now() - 3600 * 1000).run();
+  await env.DB.prepare("DELETE FROM pw_fails WHERE created_at < ?")
+    .bind(Date.now() - 3600 * 1000)
+    .run();
 }
 
 async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, cors: string | null): Promise<Response | null> {
@@ -341,7 +354,10 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
       .all<Photo>();
     const more = results.length > limit;
     const items = more ? results.slice(0, limit) : results;
-    const total = before === Number.MAX_SAFE_INTEGER ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM photos WHERE hidden = 0").first<{ n: number }>())?.n ?? 0 : undefined;
+    const total =
+      before === Number.MAX_SAFE_INTEGER
+        ? ((await env.DB.prepare("SELECT COUNT(*) AS n FROM photos WHERE hidden = 0").first<{ n: number }>())?.n ?? 0)
+        : undefined;
     return json({ items: items.map((p) => view(p, url.origin)), nextCursor: more ? items[items.length - 1].id : null, total }, 200, cors);
   }
 
@@ -355,11 +371,16 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const ip = await ipHash(req, env);
     const known = await env.DB.prepare("SELECT ext FROM uploads WHERE uuid = ?").bind(uuid).first<{ ext: string }>();
     if (!known) {
-      const n = (sql: string, ...a: unknown[]) => env.DB.prepare(sql).bind(...a).first<{ n: number }>().then((r) => r?.n ?? 0);
+      const n = (sql: string, ...a: unknown[]) =>
+        env.DB.prepare(sql)
+          .bind(...a)
+          .first<{ n: number }>()
+          .then((r) => r?.n ?? 0);
       if (
         (await n("SELECT COUNT(*) AS n FROM uploads WHERE ip_hash = ? AND created_at > ?", ip, Date.now() - LIMIT_MS)) >= PHOTO_IP_N ||
         (await n("SELECT COUNT(*) AS n FROM uploads WHERE device_id = ?", device)) >= PHOTO_DEVICE_MAX
-      ) return bad(cors, "too many uploads", 429);
+      )
+        return bad(cors, "too many uploads", 429);
     }
     const buf = await req.arrayBuffer();
     if (buf.byteLength > CAP[sub]) return bad(cors, "too large", 413);
@@ -368,11 +389,15 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     if (!ext) return bad(cors, "unsupported type", 415);
     const d = dims(bytes, ext);
     if (!d || Math.max(...d) > DIM[sub] + DIM_TOLERANCE) return bad(cors, "invalid dimensions", 422);
-    await env.DB.prepare("INSERT OR IGNORE INTO uploads (uuid,ext,ip_hash,device_id,created_at) VALUES (?,?,?,?,?)").bind(uuid, ext, ip, device, Date.now()).run();
+    await env.DB.prepare("INSERT OR IGNORE INTO uploads (uuid,ext,ip_hash,device_id,created_at) VALUES (?,?,?,?,?)")
+      .bind(uuid, ext, ip, device, Date.now())
+      .run();
     const rec = await env.DB.prepare("SELECT ext FROM uploads WHERE uuid = ?").bind(uuid).first<{ ext: string }>();
     if (rec?.ext !== ext) return bad(cors, "type mismatch", 409);
     await env.BUCKET.put(`${sub}/${uuid}.${ext}`, buf, { httpMetadata: { contentType: EXT[ext], cacheControl: IMMUTABLE } });
-    await env.DB.prepare(`UPDATE uploads SET ${sub === "full" ? "fw=?,fh=?" : "tw=?,th=?"} WHERE uuid = ?`).bind(d[0], d[1], uuid).run();
+    await env.DB.prepare(`UPDATE uploads SET ${sub === "full" ? "fw=?,fh=?" : "tw=?,th=?"} WHERE uuid = ?`)
+      .bind(d[0], d[1], uuid)
+      .run();
     return json(null, 204, cors);
   }
 
@@ -423,7 +448,9 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
         const pw = body && typeof body.pw === "string" ? body.pw.trim() : "";
         if (!pw) return bad(cors, "invalid password");
         const ip = await ipHash(req, env);
-        const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?").bind(ip, Date.now() - LIMIT_MS).first<{ n: number }>();
+        const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?")
+          .bind(ip, Date.now() - LIMIT_MS)
+          .first<{ n: number }>();
         if ((fails?.n ?? 0) >= PW_FAIL_N) return bad(cors, "too many attempts", 429);
         if (!eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
           await env.DB.prepare("INSERT INTO pw_fails (ip_hash,created_at) VALUES (?,?)").bind(ip, Date.now()).run();
@@ -446,78 +473,72 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
 }
 
 async function handle(req: Request, env: Env, ctx: ExecutionContext, cors: string | null): Promise<Response> {
-    const url = new URL(req.url);
-    const m = url.pathname.match(/^\/entries(?:\/(\d+))?\/?$/);
+  const url = new URL(req.url);
+  const m = url.pathname.match(/^\/entries(?:\/(\d+))?\/?$/);
 
-    if (req.method === "OPTIONS") {
-      const h: Record<string, string> = { "Cache-Control": "no-store", Vary: "Origin" };
-      if (cors) {
-        h["Access-Control-Allow-Origin"] = cors;
-        h["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-        h["Access-Control-Allow-Headers"] = "Content-Type, X-Device, Authorization";
-        h["Access-Control-Max-Age"] = "86400";
-      }
-      return new Response(null, { status: 204, headers: h });
+  if (req.method === "OPTIONS") {
+    const h: Record<string, string> = { "Cache-Control": "no-store", Vary: "Origin" };
+    if (cors) {
+      h["Access-Control-Allow-Origin"] = cors;
+      h["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+      h["Access-Control-Allow-Headers"] = "Content-Type, X-Device, Authorization";
+      h["Access-Control-Max-Age"] = "86400";
     }
-    if (!m) return (await poll(req, env, url, cors)) ?? (await photos(req, env, ctx, url, cors)) ?? json({ error: "not found" }, 404, cors);
-    const id = m[1];
+    return new Response(null, { status: 204, headers: h });
+  }
+  if (!m) return (await poll(req, env, url, cors)) ?? (await photos(req, env, ctx, url, cors)) ?? json({ error: "not found" }, 404, cors);
+  const id = m[1];
 
-    if (!id && req.method === "GET") {
-      const cursor = Number(url.searchParams.get("cursor"));
-      const lim = Number(url.searchParams.get("limit"));
-      const limit = Math.min(Number.isInteger(lim) && lim > 0 ? lim : 10, 30);
-      const before = Number.isInteger(cursor) && cursor > 0 ? cursor : Number.MAX_SAFE_INTEGER;
-      const { results } = await env.DB.prepare(
-        "SELECT id,name,message,created_at FROM entries WHERE id < ? ORDER BY id DESC LIMIT ?",
-      )
-        .bind(before, limit + 1)
-        .all<{ id: number }>();
-      const more = results.length > limit;
-      const items = more ? results.slice(0, limit) : results;
-      return json({ items, nextCursor: more ? items[items.length - 1].id : null }, 200, cors);
-    }
+  if (!id && req.method === "GET") {
+    const cursor = Number(url.searchParams.get("cursor"));
+    const lim = Number(url.searchParams.get("limit"));
+    const limit = Math.min(Number.isInteger(lim) && lim > 0 ? lim : 10, 30);
+    const before = Number.isInteger(cursor) && cursor > 0 ? cursor : Number.MAX_SAFE_INTEGER;
+    const { results } = await env.DB.prepare("SELECT id,name,message,created_at FROM entries WHERE id < ? ORDER BY id DESC LIMIT ?")
+      .bind(before, limit + 1)
+      .all<{ id: number }>();
+    const more = results.length > limit;
+    const items = more ? results.slice(0, limit) : results;
+    return json({ items, nextCursor: more ? items[items.length - 1].id : null }, 200, cors);
+  }
 
-    if (!id && req.method === "POST") {
-      const body = await readJson(req);
-      if (!body) return bad(cors, "invalid body");
-      const name = field(body.name, 1, 20);
-      const message = field(body.message, 1, 300, true);
-      const password = field(body.password, 4, 64);
-      if (!name) return bad(cors, "invalid name");
-      if (!message) return bad(cors, "invalid message");
-      if (!password) return bad(cors, "invalid password");
+  if (!id && req.method === "POST") {
+    const body = await readJson(req);
+    if (!body) return bad(cors, "invalid body");
+    const name = field(body.name, 1, 20);
+    const message = field(body.message, 1, 300, true);
+    const password = field(body.password, 4, 64);
+    if (!name) return bad(cors, "invalid name");
+    if (!message) return bad(cors, "invalid message");
+    if (!password) return bad(cors, "invalid password");
 
-      const ip = await ipHash(req, env);
-      const now = Date.now();
-      const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM entries WHERE ip_hash = ? AND created_at > ?")
-        .bind(ip, now - LIMIT_MS)
-        .first<{ n: number }>();
-      if ((recent?.n ?? 0) >= LIMIT_N) return bad(cors, "too many posts", 429);
+    const ip = await ipHash(req, env);
+    const now = Date.now();
+    const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM entries WHERE ip_hash = ? AND created_at > ?")
+      .bind(ip, now - LIMIT_MS)
+      .first<{ n: number }>();
+    if ((recent?.n ?? 0) >= LIMIT_N) return bad(cors, "too many posts", 429);
 
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const hash = await pbkdf2(password, salt);
-      const row = await env.DB.prepare(
-        "INSERT INTO entries (name,message,pw_hash,salt,ip_hash,created_at) VALUES (?,?,?,?,?,?) RETURNING id",
-      )
-        .bind(name, message, b64(hash), b64(salt), ip, now)
-        .first<{ id: number }>();
-      return json({ id: row!.id, name, message, created_at: now }, 201, cors);
-    }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hash = await pbkdf2(password, salt);
+    const row = await env.DB.prepare("INSERT INTO entries (name,message,pw_hash,salt,ip_hash,created_at) VALUES (?,?,?,?,?,?) RETURNING id")
+      .bind(name, message, b64(hash), b64(salt), ip, now)
+      .first<{ id: number }>();
+    return json({ id: row!.id, name, message, created_at: now }, 201, cors);
+  }
 
-    if (id && req.method === "DELETE") {
-      const body = await readJson(req);
-      const password = body && typeof body.password === "string" ? body.password.trim() : "";
-      if (!password) return bad(cors, "invalid password");
-      const row = await env.DB.prepare("SELECT pw_hash, salt FROM entries WHERE id = ?")
-        .bind(Number(id))
-        .first<{ pw_hash: string; salt: string }>();
-      if (!row) return bad(cors, "not found", 404);
-      if (!eq(await pbkdf2(password, unb64(row.salt)), unb64(row.pw_hash))) return bad(cors, "wrong password", 403);
-      await env.DB.prepare("DELETE FROM entries WHERE id = ?").bind(Number(id)).run();
-      return json(null, 204, cors);
-    }
+  if (id && req.method === "DELETE") {
+    const body = await readJson(req);
+    const password = body && typeof body.password === "string" ? body.password.trim() : "";
+    if (!password) return bad(cors, "invalid password");
+    const row = await env.DB.prepare("SELECT pw_hash, salt FROM entries WHERE id = ?").bind(Number(id)).first<{ pw_hash: string; salt: string }>();
+    if (!row) return bad(cors, "not found", 404);
+    if (!eq(await pbkdf2(password, unb64(row.salt)), unb64(row.pw_hash))) return bad(cors, "wrong password", 403);
+    await env.DB.prepare("DELETE FROM entries WHERE id = ?").bind(Number(id)).run();
+    return json(null, 204, cors);
+  }
 
-    return bad(cors, "method not allowed", 405);
+  return bad(cors, "method not allowed", 405);
 }
 
 export default {

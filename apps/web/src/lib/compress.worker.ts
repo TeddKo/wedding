@@ -69,7 +69,9 @@ async function decode(f: File): Promise<ImageBitmap | null> {
   } catch {}
   if (await isHeicFile(f)) {
     try {
-      return (await (await loadHeic())({ blob: f, type: "bitmap" })) as ImageBitmap;
+      return (await (
+        await loadHeic()
+      )({ blob: f, type: "bitmap" })) as ImageBitmap;
     } catch {}
   }
   return null;

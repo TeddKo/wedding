@@ -113,10 +113,12 @@ const next = () => {
 const serial = <T>(fn: () => Promise<T>, hi = false): Promise<T> =>
   new Promise<T>((res, rej) => {
     const go = () =>
-      fn().then(res, rej).finally(() => {
-        running = false;
-        next();
-      });
+      fn()
+        .then(res, rej)
+        .finally(() => {
+          running = false;
+          next();
+        });
     const at = hi ? queue.findIndex((j) => !j.hi) : -1;
     queue.splice(at < 0 ? queue.length : at, 0, { hi, go });
     next();

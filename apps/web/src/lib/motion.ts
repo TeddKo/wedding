@@ -27,7 +27,7 @@ export function splitWords(text: string): string[][] {
 export function countText(text: string, p: number, from = 0): string {
   if (p >= 1) return text;
   const e = easeOutCubic(p);
-  return text.replace(/\d+/g, (m) => m.length >= 4 ? m : String(Math.round(lerp(from, Number(m), e))).padStart(m.length, "0"));
+  return text.replace(/\d+/g, (m) => (m.length >= 4 ? m : String(Math.round(lerp(from, Number(m), e))).padStart(m.length, "0")));
 }
 
 /** 텍스트에 롤 가능한 숫자가 있는지 여부 */

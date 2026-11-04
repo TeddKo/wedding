@@ -59,7 +59,14 @@ export function mapApps(os: Os, mac: boolean, v: Venue): MapApp[] {
   ];
   if (os === "ios") list.push({ id: "tmap", name: "티맵", hint: "앱 설치 필요", href: `tmap://${tmapQ}`, fallback: tmapStore });
   if (os === "android") list.push({ id: "tmap", name: "티맵", hint: "앱 설치 필요", href: intent(tmapQ, "tmap", "com.skt.tmap.ku", tmapPlay) });
-  list.push({ id: "google", name: "Google 지도", hint: WEB_HINT, href: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${L},${G}`)}`, blank });
-  if (os === "ios" || mac) list.push({ id: "apple", name: "Apple 지도", hint: WEB_HINT, href: `https://maps.apple.com/directions?destination=${L},${G}`, blank });
+  list.push({
+    id: "google",
+    name: "Google 지도",
+    hint: WEB_HINT,
+    href: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${L},${G}`)}`,
+    blank,
+  });
+  if (os === "ios" || mac)
+    list.push({ id: "apple", name: "Apple 지도", hint: WEB_HINT, href: `https://maps.apple.com/directions?destination=${L},${G}`, blank });
   return list;
 }

@@ -52,8 +52,17 @@ const MAX_W = 440;
 type K = Required<Omit<FallOptions, "alpha">> & { alpha: number; life: number };
 
 interface P {
-  x: number; y: number; vx: number; vy: number; rot: number; vr: number;
-  size: number; img: HTMLImageElement; phase: number; age: number; k: K;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  size: number;
+  img: HTMLImageElement;
+  phase: number;
+  age: number;
+  k: K;
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -164,11 +173,17 @@ export function createFall(o: FallOptions): Fall {
   const add = (x: number, y: number, vx: number, vy: number, k = base) => {
     if (parts.length >= MAX) return;
     parts.push({
-      x, y, vx, vy,
-      rot: rand(0, 360), vr: rand(k.spin[0], k.spin[1]) * (Math.random() < 0.5 ? -1 : 1),
+      x,
+      y,
+      vx,
+      vy,
+      rot: rand(0, 360),
+      vr: rand(k.spin[0], k.spin[1]) * (Math.random() < 0.5 ? -1 : 1),
       size: rand(k.size[0], k.size[1]),
       img: k.sprites[Math.floor(Math.random() * k.sprites.length)],
-      phase: rand(0, Math.PI * 2), age: 0, k,
+      phase: rand(0, Math.PI * 2),
+      age: 0,
+      k,
     });
   };
 
