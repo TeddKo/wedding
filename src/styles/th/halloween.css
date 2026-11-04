@@ -150,12 +150,12 @@ html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-
   bottom: calc(12px + env(safe-area-inset-bottom));
   translate: none !important;
 }
-.hw-ghost.is-follow .hw-float > svg { transform-origin: 50% 60%; animation: hw-near 10s 3s infinite; }
+.hw-ghost.is-follow .hw-float > svg { transform-origin: 50% 60%; animation: hw-near 12s 4s infinite; }
+/* 주기적으로 화면 쪽으로 크게 다가왔다가(0.7초) 천천히 물러난다(약 2초) */
 @keyframes hw-near {
-  0%, 80% { transform: none; animation-timing-function: cubic-bezier(.2,.7,.3,1); }
-  86% { transform: translate(-3px, -4px) scale(1.32); animation-timing-function: cubic-bezier(.5,0,.3,1); }
-  91% { transform: scale(.94); animation-timing-function: ease-out; }
-  95% { transform: scale(1.03); animation-timing-function: ease-in-out; }
+  0%, 72% { transform: none; animation-timing-function: cubic-bezier(.2,.7,.3,1); }
+  78% { transform: translate(-22px, -26px) scale(2.1) rotate(-6deg); animation-timing-function: cubic-bezier(.33,0,.2,1); }
+  94% { transform: scale(.95); animation-timing-function: ease-out; }
   100% { transform: none; }
 }
 html.dock-on:has(#dock .fab:not([hidden])) .hw-ghost.is-follow { bottom: calc(70px + env(safe-area-inset-bottom)); }

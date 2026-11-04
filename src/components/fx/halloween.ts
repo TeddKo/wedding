@@ -28,60 +28,78 @@ export function start(ctx: { first: boolean }): () => void {
   const ghost = q<HTMLButtonElement>(".hw-ghost");
   const hero = ghost?.closest<HTMLElement>(".hero");
   if (ghost && hero && "IntersectionObserver" in window) {
+    /* 화면 쪽으로 크게 다가왔다가(빠르게) 천천히 물러난다 */
     const SWOOP: Keyframe[] = [
       { opacity: 0, transform: "translate(8px, 28px) scale(.35)", easing: "cubic-bezier(.2,.7,.3,1)" },
-      { opacity: 1, transform: "translate(-26px, -34px) scale(1.75) rotate(-6deg)", offset: 0.45, easing: "cubic-bezier(.5,0,.3,1)" },
-      { transform: "scale(.94)", offset: 0.82, easing: "ease-out" },
+      { opacity: 1, transform: "translate(-48px, -60px) scale(2.3) rotate(-8deg)", offset: 0.3, easing: "cubic-bezier(.33,0,.2,1)" },
+      { transform: "scale(.94)", offset: 0.86, easing: "ease-out" },
       { transform: "none" },
     ];
-    const RECEDE: Keyframe[] = [
-      { opacity: 1, transform: "none", easing: "cubic-bezier(.3,0,.3,1)" },
+    /* 우하단 근처를 느리게 떠다니는 경로(px, 왼쪽·위로만 이동해 화면 밖으로 나가지 않음) */
+    const WANDER: Keyframe[] = [
+      [0, 0, 0], [-34, -58, -5], [-82, -26, 4], [-58, -104, -3], [-18, -72, 5], [-70, -8, -4], [0, 0, 0],
+    ].map(([x, y, r]) => ({ transform: `translate(${x}px, ${y}px) rotate(${r}deg)`, easing: "ease-in-out" }));
+    const RECEDE = (from: string): Keyframe[] => [
+      { opacity: 1, transform: from, easing: "cubic-bezier(.3,0,.3,1)" },
       { opacity: 1, transform: "translateY(-4px) scale(1.12)", offset: 0.3, easing: "cubic-bezier(.5,0,.75,0)" },
       { opacity: 0, transform: "translate(6px, -22px) scale(.3)" },
     ];
-    const HINTS = ["Boo! 눌러봐요", "드레스코드 알려줄게요"];
+    /* 말풍선: 상단·동행 상태 모두에서 텀을 두고 반복(첫 2.5초, 누르기 전 28초, 누른 뒤엔 60초 간격). 전환 순간엔 떠 있던 말풍선만 지운다 */
+    const HINTS = ["Boo! 눌러봐요", "드레스코드 알려줄게요", "나 한번 눌러볼래요?", "코스튬 준비됐나요?"];
     let on = false, tapped = false, hinted = 0, last = -1e9;
     let an: Animation | undefined;
+    let roam: Animation | undefined;
     const ht: number[] = [];
     const clearHints = () => { ht.splice(0).forEach(clearTimeout); ghost.querySelector(".hw-hint")?.remove(); };
     const hint = (delay: number) => {
-      if (tapped || hinted >= HINTS.length) return;
       ht.push(window.setTimeout(() => {
-        if (dead || !on || tapped) return;
+        if (dead) return;
         const b = document.createElement("span");
         b.className = "hw-hint";
         b.setAttribute("aria-hidden", "true");
-        b.textContent = HINTS[hinted++];
+        b.textContent = HINTS[hinted++ % HINTS.length];
         ghost.append(b);
-        ht.push(window.setTimeout(() => { b.remove(); hint(20000); }, 3200));
+        ht.push(window.setTimeout(() => { b.remove(); hint(tapped ? 60000 : 28000); }, 3200));
       }, delay));
+    };
+    const wander = () => {
+      if (reduced || !on) return;
+      roam = ghost.animate(WANDER, { duration: 18000, iterations: Infinity });
     };
     const set = (next: boolean) => {
       if (next === on) return;
       on = next;
+      const from = getComputedStyle(ghost).transform;
       an?.cancel();
-      clearHints();
+      roam?.cancel();
+      ghost.querySelector(".hw-hint")?.remove();
       if (on) {
         ghost.classList.add("is-follow");
         const now = performance.now();
         const swoop = !reduced && now - last > 3000;
         if (swoop) last = now;
-        an = ghost.animate(swoop ? SWOOP : [{ opacity: 0 }, { opacity: 1 }], swoop ? 900 : 200);
-        hint(swoop ? 1100 : 400);
+        an = ghost.animate(swoop ? SWOOP : [{ opacity: 0 }, { opacity: 1 }], swoop ? 1600 : 200);
+        an.onfinish = wander;
         return;
       }
-      const a = ghost.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : RECEDE, { duration: reduced ? 160 : 380, fill: "forwards" });
+      const a = ghost.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : RECEDE(from === "none" ? "none" : from), { duration: reduced ? 160 : 420, fill: "forwards" });
       a.onfinish = () => { ghost.classList.remove("is-follow"); a.cancel(); an = ghost.animate([{ opacity: 0 }, { opacity: 1 }], 240); dispatchEvent(new Event("scroll")); };
       an = a;
     };
-    const onTap = () => { tapped = true; clearHints(); };
+    const onTap = () => {
+      tapped = true;
+      clearHints();
+      hint(60000);
+    };
     ghost.addEventListener("click", onTap);
     const io = new IntersectionObserver(([e]) => set(!e.isIntersecting && e.boundingClientRect.bottom <= 0));
     io.observe(hero);
+    hint(2500);
     undo.push(() => {
       io.disconnect();
       clearHints();
       an?.cancel();
+      roam?.cancel();
       ghost.removeEventListener("click", onTap);
       ghost.classList.remove("is-follow");
     });
