@@ -10,6 +10,10 @@ database_name = "wedding-guestbook"
 database_id = "a8374d1d-888d-467a-8401-fd5ceef8b6c7"
 migrations_dir = "migrations"
 
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "wedding-snapshots"
+
 [env.dev]
 name = "wedding-guestbook-dev"
 vars = { ALLOW_LOCAL = "1" }
@@ -19,3 +23,7 @@ binding = "DB"
 database_name = "wedding-guestbook"
 database_id = "a8374d1d-888d-467a-8401-fd5ceef8b6c7"
 migrations_dir = "migrations"
+
+[[env.dev.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "wedding-snapshots"

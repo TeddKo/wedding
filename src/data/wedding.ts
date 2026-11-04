@@ -81,6 +81,8 @@ export const wedding = {
   rsvpUrl: "",
   // 방명록 Worker URL. 비어 있으면 축하 글 섹션이 숨겨진다.
   guestbookApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
+  // 하객 스냅샷 업로드 Worker URL(방명록과 같은 Worker). 비어 있으면 스냅샷 섹션이 숨겨진다.
+  snapshotsApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
     title: `${groom.name} & ${bride.name} 결혼합니다`,

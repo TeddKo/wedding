@@ -9,7 +9,7 @@
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
   let { items }: { items: Item[] } = $props();
 
-  const n = items.length;
+  const n = $derived(items.length);
 
   /* ---------- 라이트박스 ---------- */
   let open = $state(false);

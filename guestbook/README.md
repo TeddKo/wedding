@@ -11,6 +11,11 @@ CORS 는 `https://teddko.github.io` 만 허용. 응답은 항상 `application/js
 - `POST /entries` `{name,message,password}` : trim 후 name 1..20, message 1..300, password 4..64, 제어문자 불가.
   `201 {id,name,message,created_at}` / `400` 검증 실패 / `429` IP(해시)당 10분 5건 초과
 - `DELETE /entries/:id` `{password}` : `204` 성공 / `403` 비밀번호 불일치 / `404` 없음
+- 스냅샷(R2 `BUCKET` = `wedding-snapshots`, 헤더 `X-Device` 필수):
+  - `PUT /photos/:uuid/:kind` (`full` 3MB / `thumb` 200KB, JPEG·WebP 만) `204` / `400` / `409` 이미 등록 / `413` / `415`
+  - `POST /photos/:uuid/commit` `{w,h,size,pw?}` : `201 {id,uuid,w,h,created_at,thumb,full}` (재호출 `200`) / `409` 업로드 미완 / `429` IP 10분 40장·평생 60장·기기 30장
+  - `GET /photos?cursor=&limit=` : 숨김 제외 최신순. `GET /p/:uuid/:kind` : 이미지(immutable 캐시)
+  - `DELETE /photos/:uuid` `{pw}` 소유자 또는 `Authorization: Bearer <ADMIN_TOKEN>` (`?hide=1` 은 숨김만)
 - 그 외 경로 `404`, 메서드 불일치 `405`. 오류 본문은 `{error}`.
 
 ## Deploy
