@@ -100,7 +100,62 @@ async function decode(f: File): Promise<ImageBitmap> {
 }
 
 /** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거된다. 호출은 순차적으로 한다(호출자가 직렬화). */
-export async function compress(file: File): Promise<Compressed> {
+export function compress(file: File): Promise<Compressed> {
+  return workerOk() ? viaWorker(file) : compressMain(file);
+}
+
+const workerOk = () =>
+  typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof OffscreenCanvas.prototype.convertToBlob === "function" && !workerDead;
+
+let worker: Worker | undefined;
+let workerDead = false;
+let seq = 0;
+type Msg = { id: number; ok?: Compressed; err?: string; needMain?: true };
+let pending: { id: number; res: (m: Msg) => void; rej: (e: Error) => void } | null = null;
+
+function getWorker() {
+  if (worker) return worker;
+  const w = new Worker(new URL("./compress.worker.ts", import.meta.url), { type: "module" });
+  w.onmessage = (e: MessageEvent<Msg>) => pending?.id === e.data.id && pending.res(e.data);
+  w.onerror = () => {
+    workerDead = true;
+    worker = undefined;
+    pending?.rej(new Error("worker"));
+  };
+  return (worker = w);
+}
+
+const call = (msg: object, id: number, transfer: Transferable[] = []) =>
+  new Promise<Msg>((res, rej) => {
+    pending = { id, res, rej };
+    getWorker().postMessage({ id, ...msg }, transfer);
+  });
+
+async function viaWorker(file: File): Promise<Compressed> {
+  const id = ++seq;
+  let m: Msg;
+  try {
+    m = await call({ file }, id);
+    if (m.needMain) {
+      let bmp: ImageBitmap;
+      try {
+        bmp = await viaImg(file);
+      } catch {
+        throw new Error(UNSUPPORTED);
+      }
+      m = await call({ bitmap: bmp, size: file.size }, id, [bmp]);
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message === "worker") return compressMain(file);
+    throw e;
+  } finally {
+    pending = null;
+  }
+  if (m.err !== undefined) throw new Error(m.err);
+  return m.ok!;
+}
+
+async function compressMain(file: File): Promise<Compressed> {
   const bmp = await decode(file);
   try {
     const big = resize(bmp, MAX);

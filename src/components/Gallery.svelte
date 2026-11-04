@@ -163,18 +163,12 @@
       const err = await remove(idx, isMine ? undefined : pw);
       if (err) return void (delErr = err);
       delOpen = false;
-      if (n === 0) {
-        open = false;
-        setInert(false);
-        return;
-      }
-      idx = Math.min(idx, n - 1);
-      onindex?.(idx);
-      view.set({ x: 0, y: 0, s: 1 }, instant);
-      p.set(1, instant);
-      preload();
+      open = false;
+      closing = false;
+      setInert(false);
       await tick();
-      lb?.focus({ preventScroll: true });
+      const back = Math.min(idx, n - 1);
+      ((bare ? thumbAt?.(back) : btns[back]) ?? document.querySelector<HTMLElement>(".pick"))?.focus({ preventScroll: true });
     } finally {
       delBusy = false;
     }
