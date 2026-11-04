@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { b64 } from "../src/domain/crypto";
-import { ENTRY_IP_N } from "../src/limits";
+import { ENTRY_IP_N, PW_ITER } from "../src/limits";
 import { call, callWith, OK } from "./helpers";
 
 const post = (b: unknown, ip?: string) => call("/entries", { method: "POST", body: b, ip });
@@ -86,10 +86,10 @@ describe("entries", () => {
 });
 
 describe("entries 비밀번호 해시", () => {
-  it("신규 salt 는 p1$10000$ 접두", async () => {
+  it("신규 salt 는 p1$PW_ITER$ 접두", async () => {
     const id = ((await (await post(good, "10.0.0.1")).json()) as { id: number }).id;
     const row = await env.DB.prepare("SELECT salt FROM entries WHERE id = ?").bind(id).first<{ salt: string }>();
-    expect(row?.salt).toMatch(/^p1\$10000\$[A-Za-z0-9+/=]+$/);
+    expect(row?.salt).toMatch(new RegExp(`^p1\\$${PW_ITER}\\$[A-Za-z0-9+/=]+$`));
   });
 
   it("레거시 행(100k, pepper 없음) 삭제 호환", async () => {
