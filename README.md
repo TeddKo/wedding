@@ -4,21 +4,44 @@
 - 주소: https://teddko.github.io/wedding/
 - 현재 공개 테마: Halloween 1종 (`noindex,nofollow` 메타로 검색 노출 차단)
 
-## 스택
+## 저장소 구조 (pnpm workspaces 모노레포)
 
-- Astro 정적 사이트 + Svelte 5 아일랜드 (pnpm 11, Node 22.23.4 이상)
+```
+apps/web         @wedding/web     Astro 7 정적 사이트 + Svelte 5 아일랜드 (GitHub Pages)
+apps/api         @wedding/api     Cloudflare Worker: Hono + Drizzle(D1) + R2
+packages/shared  @wedding/shared  웹·API 공용 상수, 에러 코드, zod 스키마와 타입
+```
+
+- 패키지 매니저 pnpm 11 단일 lockfile, Node 24(`.nvmrc`, 최소 22.23.4)
+- 포맷·린트 Biome, 타입 검사 TypeScript strict(`tsconfig.base.json`)
+- 웹은 `@wedding/shared` 의 타입·상수만 사용(zod 미포함 번들), API 는 같은 스키마로 요청 검증
 - 이미지: sharp 로 빌드 시 webp 반응형 변환
-- 백엔드: Cloudflare Worker + D1 + R2 (`apps/api/`, 별도 패키지)
-- 배포: GitHub Pages (프런트), wrangler (Worker)
+- 배포: GitHub Pages(웹, `main` push 자동), wrangler(API, 수동)
+- 보안 정책과 위협 모델: [SECURITY.md](SECURITY.md)
 
 ## 개발
 
 ```sh
 corepack pnpm install
-corepack pnpm dev      # http://localhost:4321/wedding/
-corepack pnpm build    # astro check + astro build -> apps/web/dist/
-corepack pnpm preview  # 빌드 결과 확인
+cp apps/web/.env.example apps/web/.env   # 최초 1회, 값 입력
+corepack pnpm dev        # 웹 http://localhost:4321/wedding/
+corepack pnpm dev:api    # API http://localhost:8787 (wrangler dev --local --env dev)
+corepack pnpm test       # shared + API vitest(Workers 런타임, 로컬 D1/R2)
+corepack pnpm typecheck  # 전 패키지 타입 검사
+corepack pnpm build      # astro check + astro build -> apps/web/dist/
 ```
+
+### 빌드 변수
+
+| 이름 | 용도 | 누락 시 |
+|---|---|---|
+| `PUBLIC_API_URL` | Worker 주소(방명록, 스냅샷, 투표 공용) | 빌드 실패 |
+| `PUBLIC_KAKAO_JS_KEY` | 카카오 JavaScript 키(공개 키) | 빌드 실패 |
+| `PUBLIC_SNAPSHOTS_CDN` | 스냅샷 이미지 R2 공개 주소(끝 슬래시 없음) | Worker `/p/:uuid/:kind` 로 로드 |
+
+- 로컬: `apps/web/.env`(git 제외). 로컬 API 사용 시 `PUBLIC_API_URL=http://localhost:8787`
+- CI·배포: GitHub 저장소 Settings > Secrets and variables > Actions > Variables
+- 전부 브라우저 번들에 노출되는 공개값. 비밀값 등록 금지(비밀값은 Worker 시크릿 전용)
 
 ## 페이지 구성 (위에서 아래 순서)
 
@@ -41,13 +64,10 @@ corepack pnpm preview  # 빌드 결과 확인
 | `greeting` | 인사말 제목과 본문 배열 (TODO 문구 교체 필요) |
 | `accounts` | 신랑측/신부측 `{ role, bank, number, holder, payLink? }`. 번호가 비면 "준비 중", 부모 이름과 번호가 모두 비면 행 숨김, 항목 0개면 섹션 숨김 |
 | `rsvpUrl` | 구글폼 주소. 비면 섹션 숨김 |
-| `guestbookApi` | Worker 주소, 빌드 변수 `PUBLIC_API_URL` 주입(누락 시 빌드 실패) |
-| `snapshotsApi` | 스냅샷 업로드용 Worker 주소, `PUBLIC_API_URL` 공유 |
-| `snapshotsCdn` | R2 공개 주소(끝 슬래시 없음), 빌드 변수 `PUBLIC_SNAPSHOTS_CDN`. 미설정 시 Worker `/p/:uuid/:kind` 사용, 로드 실패 시 Worker 로 1회 재시도 |
+| `guestbookApi` / `snapshotsApi` | `PUBLIC_API_URL` 주입값 |
+| `snapshotsCdn` | `PUBLIC_SNAPSHOTS_CDN` 주입값. CDN 로드 실패 시 Worker 주소로 1회 재시도 |
 | `poll.question` | 투표 질문. 비면 섹션 숨김. 항목은 하객이 직접 추가 |
-| `kakaoJsKey` | 카카오 JavaScript 키(공개 키), 빌드 변수 `PUBLIC_KAKAO_JS_KEY`. REST 키와 네이티브 키는 프런트 사용 금지 |
-
-빌드 변수: 로컬은 `apps/web/.env`(`.env.example` 복사, git 제외), CI·배포는 GitHub 저장소 Actions Variables 3종(`PUBLIC_API_URL`, `PUBLIC_KAKAO_JS_KEY`, `PUBLIC_SNAPSHOTS_CDN`). 모두 번들에 노출되는 공개값이며 비밀값 등록 금지
+| `kakaoJsKey` | `PUBLIC_KAKAO_JS_KEY` 주입값. REST 키와 네이티브 키는 프런트 사용 금지 |
 | `share` | 카카오 공유 제목과 설명, `copyUrl`(링크 복사 버튼이 복사하는 단축 주소, 비면 페이지 주소) |
 | `musicCredit` | 배경음악 출처. 트랙이 있을 때만 푸터 표시 |
 
@@ -82,7 +102,9 @@ corepack pnpm preview  # 빌드 결과 확인
   - 업로드 전 확인 다이얼로그에서 삭제 비밀번호 입력(선택)
   - 캐러셀은 30장 단위 페이징
   - 라이트박스 삭제: 비밀번호를 정한 사진은 어느 기기든 비밀번호 필요, 비밀번호 없는 사진은 올린 기기에서만 가능
-- 투표: 결과는 누구나 열람, 투표와 항목 추가는 카카오 로그인 후 1인 1표(변경 불가). 항목 30자, 최대 20개, 1인 2개
+  - 삭제 비밀번호 입력값은 업로드·삭제 완료나 취소 시 즉시 비움
+  - 이미지는 R2 공개 주소에서 직접 로드(Worker 요청 절감), 실패 시 Worker 로 재시도
+- 투표: 결과는 누구나 열람(45초 주기 갱신), 투표와 항목 추가는 카카오 로그인 후 1인 1표(변경 불가). 항목 30자, 최대 20개, 1인 2개. 로그인 토큰은 sessionStorage 보관(탭 종료 시 소멸)
 - 축하 글(방명록): 최신 5개 + 무한 스크롤, 접기, 작성, 비밀번호 삭제
 - 오시는 길: 카카오맵 임베드(이동 잠금 토글, 8초 내 로드 실패 시 주소 카드로 대체) + 길찾기 앱 버튼(네이버지도, 티맵, 카카오맵, 공식 아이콘, 플랫폼별 딥링크)
 - 계좌: 신랑측/신부측 탭, 복사 버튼, 송금 링크
@@ -92,17 +114,26 @@ corepack pnpm preview  # 빌드 결과 확인
 
 ## 백엔드
 
-Cloudflare Worker `wedding-guestbook` 하나가 방명록, 스냅샷(R2 `wedding-snapshots`), 투표(카카오 로그인)를 처리함. 엔드포인트, 데이터 모델, 제한, 배포 명령은 [apps/api/README.md](apps/api/README.md) 참고.
+Cloudflare Worker `wedding-guestbook` 하나가 방명록, 스냅샷(R2 `wedding-snapshots`), 투표(카카오 로그인)를 처리함. 구조, 엔드포인트, 데이터 모델, 제한, 보안, 무료 플랜 예산, 배포 명령은 [apps/api/README.md](apps/api/README.md) 참고.
 
-## 배포 흐름
+## CI·배포 흐름
 
-1. API 변경이 있으면 Worker 먼저 배포 (`apps/api/` 에서 마이그레이션 적용 후 `wrangler deploy`)
-2. `main` push 시 `.github/workflows/deploy.yml` 이 GitHub Pages 에 자동 배포 (수동 실행은 `workflow_dispatch`)
+- `.github/workflows/ci.yml`: push·PR 시 Biome, 타입 검사, API 테스트, 웹 빌드, `pnpm audit --audit-level high`
+- `.github/workflows/deploy.yml`: `main` push(웹 관련 경로 변경) 시 GitHub Pages 배포, 수동 실행은 `workflow_dispatch`
+- 액션은 커밋 SHA 고정, Dependabot 주간 갱신(npm 14일 쿨다운)
+
+순서
+
+1. API 변경 시 Worker 먼저: `apps/api/` 에서 `wrangler d1 migrations apply wedding-guestbook --remote` 후 `wrangler deploy`
+2. 실서버 확인(조회 200, CORS·보안 헤더)
+3. `main` push 로 웹 배포
+4. 문제 시 `wrangler rollback <버전 ID>` (스키마 변경은 이전 버전과 호환 유지)
 
 ## 운영 메모
 
-- Workers 무료 플랜은 하루 100k 요청 제한. 결혼식 달(2027-10)에는 Workers Paid 전환 검토 필요
-- 스냅샷 이미지는 R2 공개 주소(`PUBLIC_SNAPSHOTS_CDN`)에서 직접 로드. 숨김과 삭제 후에도 CDN과 브라우저 캐시(immutable 1년)에 이미지가 남을 수 있어 급하면 Cloudflare 캐시 퍼지 필요
+- 무료 플랜 기준 설계: Workers 하루 100k 요청·요청당 CPU 10ms, D1 하루 읽기 5M 행·쓰기 100k 행, R2 10GB. 세부 예산과 실측은 [apps/api/README.md](apps/api/README.md#무료-플랜-예산)
+- 스냅샷 이미지는 R2 공개 주소(r2.dev)에서 직접 로드. Cloudflare 안내상 r2.dev 는 운영 비권장(초당 수백 건 초과 시 429), 실패 시 Worker 로 재시도
+- 숨김과 삭제 후에도 브라우저 캐시(immutable 1년)에 이미지가 남을 수 있음
 - 관리자 토큰(`ADMIN_TOKEN`)은 macOS 키체인 서비스 `wedding-admin-token` 에만 보관. 저장소 기록 금지
 
 ### 카카오 콘솔 체크리스트
