@@ -4,7 +4,7 @@ export const REDIRECT_URI = `${ORIGIN}/wedding/`;
 export const MAX_BODY = 4096;
 export const ENTRY = { name: { min: 1, max: 20 }, message: { min: 1, max: 300 }, password: { min: 4, max: 64 }, defaultLimit: 10, maxLimit: 30 } as const;
 export const PHOTO = { defaultLimit: 30, maxLimit: 30, cap: { full: 3 * 1024 * 1024, thumb: 200 * 1024 }, dim: { full: 2560, thumb: 480 } } as const;
-export const POLL = { max: 20, perCreator: 2, ipN: 5, len: 30 } as const;
+export const POLL = { max: 20, perCreator: 2, ipN: 10, len: 30 } as const;
 
 export const PHOTO_KINDS = ["full", "thumb"] as const;
 export type PhotoKind = (typeof PHOTO_KINDS)[number];

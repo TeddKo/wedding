@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { POLL } from "@wedding/shared";
+import { KAKAO_IP_N } from "../src/limits";
 import { call, callWith, mint, payloadOf, REDIR, SECRET } from "./helpers";
 
 type Opt = { id: number; text: string; votes: number; mine: boolean };
@@ -125,8 +127,8 @@ describe("poll", () => {
 
   it("IP 당 항목 추가 제한", async () => {
     const rl: number[] = [];
-    for (let i = 0; i < 6; i++) rl.push((await addOpt(`rate${i}`, await tok(), "10.9.9.9")).status);
-    expect(rl).toEqual([201, 201, 201, 201, 201, 429]);
+    for (let i = 0; i <= POLL.ipN; i++) rl.push((await addOpt(`rate${i}`, await tok(), "10.9.9.9")).status);
+    expect(rl).toEqual([...Array(POLL.ipN).fill(201), 429]);
   });
 
   it("관리자 삭제와 정원", async () => {
@@ -153,6 +155,13 @@ describe("poll", () => {
     expect((await pc("/poll", { origin: "https://evil.example" })).status).toBe(200);
     expect((await pc("/poll", { method: "OPTIONS" })).headers.get("access-control-allow-headers")).toMatch(/Authorization/);
     expect((await pc("/poll", { method: "POST", body: {} })).status).toBe(405);
+  });
+
+  it("카카오 성공 로그인은 시도 한도를 소모하지 않음", async () => {
+    const s: number[] = [];
+    for (let i = 0; i < KAKAO_IP_N + 3; i++)
+      s.push((await pc("/auth/kakao", { method: "POST", body: { code: "ok-5550001", redirectUri: REDIR }, ip: "10.8.8.8" })).status);
+    expect([...new Set(s)]).toEqual([200]);
   });
 
   it("카카오 교환(모의 서버)", async () => {

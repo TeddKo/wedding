@@ -1,5 +1,6 @@
 import { env, exports } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { KAKAO_IP_N } from "../src/limits";
 import { BASE, call, callWith, OK, REDIR, sleepMs } from "./helpers";
 import { concat, raw, webp } from "./images";
 
@@ -132,13 +133,14 @@ describe("인증 시도 제한 보강", () => {
     expect(s.filter((x) => x === 429).length).toBeGreaterThanOrEqual(2);
   });
 
-  it("/auth/kakao IP당 20회 초과는 429", async () => {
+  it("/auth/kakao 실패 KAKAO_IP_N회 초과는 429", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((async () => {
       throw new DOMException("timeout", "TimeoutError");
     }) as typeof fetch);
     const s: number[] = [];
-    for (let i = 0; i < 21; i++) s.push((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.1" })).status);
-    expect(s).toEqual([...Array(20).fill(502), 429]);
+    for (let i = 0; i <= KAKAO_IP_N; i++)
+      s.push((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.1" })).status);
+    expect(s).toEqual([...Array(KAKAO_IP_N).fill(502), 429]);
     expect((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.2" })).status).toBe(502);
   });
 

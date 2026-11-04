@@ -25,7 +25,7 @@ export const auth = new Hono<AppEnv>()
     if (!body) fail(400, "invalid body");
     const { code, redirectUri } = parseBody(kakaoAuth, body);
     if (!redirectAllowed(redirectUri, c.env)) fail(400, "invalid body");
-    await takeAttempt(db(c.env), `kakao:${await ipHash(c)}`, KAKAO_IP_N);
+    const release = await takeAttempt(db(c.env), `kakao:${await ipHash(c)}`, KAKAO_IP_N);
     let id: string | null;
     try {
       id = await kakaoId(code, redirectUri, c.env);
@@ -33,6 +33,7 @@ export const auth = new Hono<AppEnv>()
       return fail(502, "kakao unavailable");
     }
     if (!id) fail(401, "kakao");
+    await release();
     return json(c, { token: await sign(b64u(await hmacSign(c.env.VOTER_PEPPER, `kakao:${id}`)), c.env) });
   })
   .all("/auth/kakao", notAllowed);

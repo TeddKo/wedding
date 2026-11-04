@@ -2,6 +2,7 @@ import { createScheduledController } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import worker from "../src/index";
+import { PHOTO_DEVICE_MAX, PHOTO_IP_N } from "../src/limits";
 import { BASE, call, OK, r2keys, sleepMs } from "./helpers";
 import { ascii, concat, jpg, raw, riff, webp, webpL, webpX } from "./images";
 
@@ -179,15 +180,15 @@ describe("photos", () => {
     expect((await del(d5, { token: "test-admin" })).status, "admin deletes a password photo without pw").toBe(204);
   });
 
-  it("PUT 시점 한도: IP 10분 200건, 기기 30건", async () => {
+  it("PUT 시점 한도: IP 10분 PHOTO_IP_N건, 기기 PHOTO_DEVICE_MAX건", async () => {
     const s2: number[] = [];
-    for (let i = 0; i < 201; i++) s2.push((await put(crypto.randomUUID(), "full", webp(300), { d: `device-ip-${i}xxxx`, ip: "3.3.3.3" })).status);
-    expect([...new Set(s2.slice(0, 200))]).toEqual([204]);
-    expect(s2[200]).toBe(429);
+    for (let i = 0; i <= PHOTO_IP_N; i++) s2.push((await put(crypto.randomUUID(), "full", webp(300), { d: `device-ip-${i}xxxx`, ip: "3.3.3.3" })).status);
+    expect([...new Set(s2.slice(0, PHOTO_IP_N))]).toEqual([204]);
+    expect(s2[PHOTO_IP_N]).toBe(429);
     const s3: number[] = [];
-    for (let i = 0; i < 31; i++) s3.push((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-1", ip: `4.4.${i}.1` })).status);
-    expect([...new Set(s3.slice(0, 30))]).toEqual([204]);
-    expect(s3[30]).toBe(429);
+    for (let i = 0; i <= PHOTO_DEVICE_MAX; i++) s3.push((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-1", ip: `4.4.${i}.1` })).status);
+    expect([...new Set(s3.slice(0, PHOTO_DEVICE_MAX))]).toEqual([204]);
+    expect(s3[PHOTO_DEVICE_MAX]).toBe(429);
     const uSame = crypto.randomUUID();
     expect((await put(uSame, "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
     for (let i = 0; i < 29; i++) expect((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);

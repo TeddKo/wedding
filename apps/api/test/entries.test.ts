@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ENTRY_IP_N } from "../src/limits";
 import { call, OK } from "./helpers";
 
 const post = (b: unknown, ip?: string) => call("/entries", { method: "POST", body: b, ip });
@@ -56,10 +57,10 @@ describe("entries", () => {
     expect((await call("/nope")).status).toBe(404);
   });
 
-  it("IP 당 10분 5건 제한", async () => {
+  it("IP 당 10분 ENTRY_IP_N건 제한", async () => {
     const s: number[] = [];
-    for (let i = 0; i < 6; i++) s.push((await post(good, "7.7.7.7")).status);
-    expect(s).toEqual([201, 201, 201, 201, 201, 429]);
+    for (let i = 0; i <= ENTRY_IP_N; i++) s.push((await post(good, "7.7.7.7")).status);
+    expect(s).toEqual([...Array(ENTRY_IP_N).fill(201), 429]);
   });
 
   it("CORS", async () => {
@@ -75,16 +76,9 @@ describe("entries", () => {
 
   it("IPv6 는 /64 단위로 제한", async () => {
     const v6: number[] = [];
-    for (const ip of [
-      "2001:db8:1:2::1",
-      "2001:db8:1:2:aaaa:bbbb:cccc:dddd",
-      "2001:0db8:0001:0002::9",
-      "2001:db8:1:2::2",
-      "2001:DB8:1:2:0:0:0:3",
-      "2001:db8:1:2::4",
-    ])
-      v6.push((await post(good, ip)).status);
-    expect(v6).toEqual([201, 201, 201, 201, 201, 429]);
+    const forms = ["2001:db8:1:2::1", "2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:0db8:0001:0002::9", "2001:db8:1:2::2", "2001:DB8:1:2:0:0:0:3"];
+    for (let i = 0; i <= ENTRY_IP_N; i++) v6.push((await post(good, i < forms.length ? forms[i] : `2001:db8:1:2::${(i + 16).toString(16)}`)).status);
+    expect(v6).toEqual([...Array(ENTRY_IP_N).fill(201), 429]);
     expect((await post(good, "2001:db8:1:3::1")).status).toBe(201);
   });
 });
