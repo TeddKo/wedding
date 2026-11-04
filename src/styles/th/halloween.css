@@ -67,12 +67,12 @@ html[data-theme="halloween"] .hero::before { transition: opacity 520ms cubic-bez
 :is(.hw-pumpkin, .hw-basket) > svg, .hw-pumpkin::before, .hw-basket::before { transition: opacity 560ms cubic-bezier(.2,.7,.3,1) 320ms; }
 
 html[data-theme="halloween"] .cover:has(.flame.out) .hero::before { transition: opacity 700ms cubic-bezier(.4,0,.2,1) 60ms; }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost .hw-float {
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-float {
   opacity: .55; filter: drop-shadow(0 0 2px rgb(255 236 200 / .22)) drop-shadow(0 0 10px rgb(255 196 120 / 0));
   transition: opacity 700ms cubic-bezier(.4,0,.2,1) 120ms, filter 700ms cubic-bezier(.4,0,.2,1) 120ms;
 }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost::before { filter: opacity(.12); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms; }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost::after { filter: opacity(0); transition: filter 400ms ease-in 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow)::before { filter: opacity(.12); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow)::after { filter: opacity(0); transition: filter 400ms ease-in 120ms; }
 html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket) > svg { opacity: .42; transition: opacity 700ms cubic-bezier(.4,0,.2,1) 220ms; }
 html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket)::before { opacity: 0; transition: opacity 600ms cubic-bezier(.4,0,.2,1) 220ms; }
 
@@ -140,3 +140,29 @@ html[data-theme="halloween"] .gal-sets { position: relative; }
 
 html[data-theme="halloween"] .footer.ending > .hw-web { position: absolute; top: 4px; right: 0; z-index: 2; width: 72px; height: 72px; color: var(--gold); }
 .hw-web svg { position: absolute; top: 0; right: 0; width: 64px; opacity: .6; transform-origin: 100% 0; }
+
+/* 커버 유령 동행: 아치가 화면 위로 사라지면 우하단에 고정(fx/halloween 이 .is-follow 토글) */
+html[data-theme="halloween"] .hero:has(.hw-ghost.is-follow) { z-index: 60; }
+html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.hw-ghost.is-follow {
+  position: fixed; top: auto; left: auto;
+  right: max(calc(12px + env(safe-area-inset-right)), calc(50vw - 208px));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  translate: none !important;
+}
+.hw-ghost.is-follow .hw-float > svg { transform-origin: 50% 60%; animation: hw-near 10s 3s infinite; }
+@keyframes hw-near {
+  0%, 80% { transform: none; animation-timing-function: cubic-bezier(.2,.7,.3,1); }
+  86% { transform: translate(-3px, -4px) scale(1.32); animation-timing-function: cubic-bezier(.5,0,.3,1); }
+  91% { transform: scale(.94); animation-timing-function: ease-out; }
+  95% { transform: scale(1.03); animation-timing-function: ease-in-out; }
+  100% { transform: none; }
+}
+html.dock-on:has(#dock .fab:not([hidden])) .hw-ghost.is-follow { bottom: calc(70px + env(safe-area-inset-bottom)); }
+html:has(:is(input, textarea, select):focus) .hw-ghost.is-follow { opacity: 0; pointer-events: none; }
+.hw-hint {
+  position: absolute; right: 70%; bottom: 88%; padding: 4px 10px; border-radius: 12px 12px 2px 12px; white-space: nowrap; pointer-events: none;
+  background: rgb(28 23 20 / .92); border: 1px solid rgb(var(--gold-rgb) / .55); color: var(--on-night); font: 400 13px/1.4 var(--f-body);
+  transform-origin: 100% 100%; animation: hw-hint 3.2s var(--e-out) forwards;
+}
+@keyframes hw-hint { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 10% { opacity: 1; transform: translateY(-2px) scale(1.04); } 16% { transform: none; } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }

@@ -24,6 +24,69 @@ export function start(ctx: { first: boolean }): () => void {
     });
   }
 
+  /* 커버 유령 동행: 아치(.hero)가 화면 위로 지나가면 같은 버튼을 우하단 fixed 로 전환(포커스·aria·팝업 원점 유지). 들어올 땐 다가왔다 물러나고, 돌아갈 땐 작아지며 사라진다 */
+  const ghost = q<HTMLButtonElement>(".hw-ghost");
+  const hero = ghost?.closest<HTMLElement>(".hero");
+  if (ghost && hero && "IntersectionObserver" in window) {
+    const SWOOP: Keyframe[] = [
+      { opacity: 0, transform: "translate(8px, 28px) scale(.35)", easing: "cubic-bezier(.2,.7,.3,1)" },
+      { opacity: 1, transform: "translate(-26px, -34px) scale(1.75) rotate(-6deg)", offset: 0.45, easing: "cubic-bezier(.5,0,.3,1)" },
+      { transform: "scale(.94)", offset: 0.82, easing: "ease-out" },
+      { transform: "none" },
+    ];
+    const RECEDE: Keyframe[] = [
+      { opacity: 1, transform: "none", easing: "cubic-bezier(.3,0,.3,1)" },
+      { opacity: 1, transform: "translateY(-4px) scale(1.12)", offset: 0.3, easing: "cubic-bezier(.5,0,.75,0)" },
+      { opacity: 0, transform: "translate(6px, -22px) scale(.3)" },
+    ];
+    const HINTS = ["Boo! 눌러봐요", "드레스코드 알려줄게요"];
+    let on = false, tapped = false, hinted = 0, last = -1e9;
+    let an: Animation | undefined;
+    const ht: number[] = [];
+    const clearHints = () => { ht.splice(0).forEach(clearTimeout); ghost.querySelector(".hw-hint")?.remove(); };
+    const hint = (delay: number) => {
+      if (tapped || hinted >= HINTS.length) return;
+      ht.push(window.setTimeout(() => {
+        if (dead || !on || tapped) return;
+        const b = document.createElement("span");
+        b.className = "hw-hint";
+        b.setAttribute("aria-hidden", "true");
+        b.textContent = HINTS[hinted++];
+        ghost.append(b);
+        ht.push(window.setTimeout(() => { b.remove(); hint(20000); }, 3200));
+      }, delay));
+    };
+    const set = (next: boolean) => {
+      if (next === on) return;
+      on = next;
+      an?.cancel();
+      clearHints();
+      if (on) {
+        ghost.classList.add("is-follow");
+        const now = performance.now();
+        const swoop = !reduced && now - last > 3000;
+        if (swoop) last = now;
+        an = ghost.animate(swoop ? SWOOP : [{ opacity: 0 }, { opacity: 1 }], swoop ? 900 : 200);
+        hint(swoop ? 1100 : 400);
+        return;
+      }
+      const a = ghost.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : RECEDE, { duration: reduced ? 160 : 380, fill: "forwards" });
+      a.onfinish = () => { ghost.classList.remove("is-follow"); a.cancel(); an = ghost.animate([{ opacity: 0 }, { opacity: 1 }], 240); dispatchEvent(new Event("scroll")); };
+      an = a;
+    };
+    const onTap = () => { tapped = true; clearHints(); };
+    ghost.addEventListener("click", onTap);
+    const io = new IntersectionObserver(([e]) => set(!e.isIntersecting && e.boundingClientRect.bottom <= 0));
+    io.observe(hero);
+    undo.push(() => {
+      io.disconnect();
+      clearHints();
+      an?.cancel();
+      ghost.removeEventListener("click", onTap);
+      ghost.classList.remove("is-follow");
+    });
+  }
+
   const wave = () => {
     const arm = q<SVGElement>(".hw-end [id=arm]");
     const target = arm ?? q(".hw-end svg");
