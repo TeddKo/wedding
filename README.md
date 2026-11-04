@@ -1,45 +1,15 @@
-# 모바일 청첩장 (테마: Halloween / Programmer / Puppy)
+# 모바일 청첩장
 
-Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://teddko.github.io/wedding/`
+- 고민혁 & 김은정 결혼식 모바일 청첩장 (2027-10-31 10:30, MJ컨벤션 부천)
+- 주소: https://teddko.github.io/wedding/
+- 현재 공개 테마: Halloween 1종 (`noindex,nofollow` 메타로 검색 노출 차단)
 
-## 구조 (인터랙션 = Svelte 아일랜드)
+## 스택
 
-콘텐츠는 모두 서버 HTML 에 들어 있고 아일랜드는 그 위에 연출만 얹는다. JS 가 꺼져도 이름, 날짜, 장소, 인사말, 링크가 그대로 보인다.
-
-| 컴포넌트 | 하이드레이션 | 역할 |
-|---|---|---|
-| `IntroGate.svelte` | load | 타이포 인트로(이름 + 날짜) + "초대장 열기" + 테마 세그먼트. 탭 시 0.6s 페이드아웃, 오디오 모듈 호출. 키보드 가능 |
-| `CoverHero.svelte` | 없음(서버 렌더) | 테마별 커버를 CSS 만으로 그린다: 할로윈 첨두 아치 + 촛불(CSS 불꽃) + 랜싯 창, dev `git log --graph` 커밋 그래프, puppy 강아지(`ui/DogsCover.svelte`). 사진이 없으면 테마별 플레이스홀더 |
-| `Reveal.svelte` | idle | `data-reveal` 섹션에 fadeInUp 1s(CSS) 1회. 모션 감소/JS 없음이면 즉시 표시 |
-| `Gallery.svelte` | idle | 플레이스홀더 틸트/쉬머, 사진이 있으면 FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc) |
-| `MapApps.svelte` | visible | 길찾기 앱 버튼(네이버지도/티맵/카카오맵) 3개. 브랜드 아이콘은 `src/lib/brand.ts`, 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 |
-| `KakaoMap.svelte` | visible | 카카오맵 임베드(JS SDK 지연 로드, `autoload=false` + `kakao.maps.load`). 기본은 이동/줌 잠금, `지도 이동` 토글로 해제(페이지 스크롤 가로채기 방지). 8초 안에 타일이 안 뜨거나 SDK 오류면 주소 카드 + `카카오맵에서 보기` 링크로 대체. JS 가 꺼지면 서버 HTML 의 주소 카드 |
-| `Guestbook.svelte` | visible | 축하 글: 최신 5개 + 더보기(IntersectionObserver 무한 스크롤, 커서 페이지), 접기(로드된 앞 5개, 재요청 없음), 작성/비밀번호 삭제, 스켈레톤/빈 상태/오류 재시도. API 는 `guestbook/`(Cloudflare Worker + D1, 별도 패키지)이고 주소는 `wedding.guestbookApi`(비면 섹션 숨김). 메시지는 줄바꿈을 허용한다(서버가 `\r\n`→`\n`, 빈 줄은 최대 1줄로 정리). 그 밖의 제어문자는 거부. 모든 글은 텍스트로만 렌더링 |
-| `Poll.svelte` | idle | 하객 투표: 결과(막대/%/표)는 누구나 보고, 투표·항목 추가는 카카오 로그인(JS SDK `Kakao.Auth.authorize` 리다이렉트, 필요할 때 SDK 로드) 후 1인 1표(변경 불가). 항목은 하객이 추가(30자, 최대 20개, 1인 2개). 로그인 복귀(`?code=&state=poll`)를 처리하고 URL 을 정리한 뒤 투표 섹션으로 돌아온다. 질문은 `wedding.poll.question`(비면 섹션 숨김), API 는 방명록과 같은 Worker. 20초마다 새로고침(화면에 보일 때만) |
-| `AccountGroups.svelte` | load | 계좌 신랑측/신부측 탭(`role="tablist"`, 방향키/Home/End 이동). JS 가 없으면 두 그룹이 모두 보인다 |
-| `ActionButtons.svelte` | idle | 복사/카카오 공유 버튼: 리플, 스프링 토스트 "복사됨", 공유 시 불씨 폭죽 |
-| `ThemeSwitch.svelte` | idle | 우하단 원형 테마 순환 버튼 |
-| `Ending.astro` + `ui/DogsRest.svelte` | 없음 | 푸터. 테마별 엔딩(dev 커밋 레일 + `v1.0.0` 태그, puppy 쉬는 강아지) |
-
-## 테마
-
-| 키 | 이름 | 스킨 |
-|---|---|---|
-| `halloween` | 할로윈 | 라이트 페이퍼 + 번트 시에나, 랜싯 아치 + 촛불 시그니처, 워드마크 "ALL HALLOWS' EVE" |
-| `dev` | 프로그래머 | 화이트 페이퍼 + 스틸 블루, git log --graph 커버(신랑/신부 브랜치가 merge commit 으로 합류) + 전 섹션을 잇는 커밋 레일/해시/`v1.0.0` 태그, IBM Plex Mono 보조 |
-| `puppy` | 강아지 | 웜 크림 + 더스티 로즈, 커버 강아지(`DogsCover`) + 엔딩 `DogsRest`, 문구 "TWO OF US" |
-
-- 기본값은 `src/data/wedding.ts` 의 `theme`. 방문자는 우하단 원형 버튼으로 순환하고 선택은 localStorage 에 남는다. `?theme=dev` 같은 쿼리로 바로 열 수 있다.
-- 테마는 스킨일 뿐이다: 배경/잉크 3단/악센트/워드마크 톤 토큰(`src/styles/global.css` 의 `[data-theme]`)과 문구만 다르고 레이아웃은 동일. 스킨별 마크업은 `data-th="dev"` 로 표시하고 CSS 로만 숨긴다.
-- 테마 추가: `src/lib/themes.ts` 에 키를 넣고 `global.css` 에 토큰 블록을 더한다.
-
-## 확대 잠금
-
-모바일/태블릿(UA 판별)은 페이지 핀치 줌과 더블탭 확대를 막는다(`src/scripts/zoom.ts`: viewport `user-scalable=no` + iOS `gesture*` / 두 손가락 `touchmove` 차단 + `touch-action: pan-x pan-y`). PC 는 그대로 확대된다. 갤러리 라이트박스 핀치와 카카오맵 줌은 자체 처리라 그대로 동작한다.
-
-- 모션 감소(`prefers-reduced-motion`): 모든 연출이 즉시 정적 상태로 바뀌고 rAF 루프는 돌지 않는다.
-- 인트로는 JS 가 있을 때만 보인다(`<html class="js gated">` 를 head 인라인 스크립트가 붙이고, 4.5초 안에 섬이 못 뜨면 스스로 걷어낸다).
-- 공유 상태(`src/lib/stage.svelte.ts`)로 인트로가 끝난 뒤에야 본문 연출이 시작된다.
+- Astro 정적 사이트 + Svelte 5 아일랜드 (pnpm 11, Node 22.23.4 이상)
+- 이미지: sharp 로 빌드 시 webp 반응형 변환
+- 백엔드: Cloudflare Worker + D1 + R2 (`guestbook/`, 별도 패키지)
+- 배포: GitHub Pages (프런트), wrangler (Worker)
 
 ## 개발
 
@@ -47,60 +17,115 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 corepack pnpm install
 corepack pnpm dev      # http://localhost:4321/wedding/
 corepack pnpm build    # astro check + astro build -> dist/
+corepack pnpm preview  # 빌드 결과 확인
 ```
+
+## 페이지 구성 (위에서 아래 순서)
+
+인트로 게이트 > 커버 > 인사말 > 갤러리 > 스냅샷 > 오시는 길 > 계좌 > 참석 여부 > 투표 > 축하 글 > 엔딩
+
+- 콘텐츠는 서버 HTML 에 모두 포함, 아일랜드는 연출과 인터랙션만 담당. JS 없이도 이름, 날짜, 장소, 인사말, 링크 확인 가능
+- 값이 비어 있는 섹션(계좌, 참석, 투표, 축하 글, 스냅샷)은 통째로 숨김
 
 ## 내용 수정
 
-모든 문구와 값은 `src/data/wedding.ts` 한 곳에서 읽는다.
+모든 문구와 값은 `src/data/wedding.ts` 한 곳에서 관리함.
 
-- 홀 이름: `venue.hall` (비어 있으면 표시 안 함)
-- 대표 사진 크롭 위치: `cover.focus` (CSS `object-position`, 기본 `50% 35%`)
-- 인사말: `greeting` (TODO 표시된 문구 교체)
-- 이름/혼주: `groom` / `bride` 는 `{ name, relation, givenName?, father, mother }`. `father`/`mother` 는 `{ name, deceased }`.
-  - `relation`: 아들/장남/차남/딸/장녀/차녀 등 자유 문구
-  - `givenName`: 생략하면 성(첫 글자)을 뺀 나머지. 두 글자 성이면 직접 지정
-  - `deceased: true` 면 이름 앞에 "故" 가 붙고 흐리게 표시. 한 분만 적으면 점 없이 한 분만, 둘 다 비면 그쪽 혼주 줄은 숨김
-  - 커버/인트로(인장 이니셜=성)/공유 문구/푸터는 모두 이 값에서 파생
-- 계좌: `accounts.groom` / `accounts.bride` 에 `{ role, bank, number, holder, payLink? }` 추가
-  - `role`: `groom`|`bride`(본인), `father`, `mother`. 라벨(신랑/신랑 아버지/신부 어머니 등)은 role 과 측으로 자동 생성
-  - `holder` 가 비면 해당 인물 이름. `number` 가 비면 "준비 중"(복사 버튼 없음)
-  - 부모 이름과 `number` 가 모두 비면 그 행은 숨김. 항목이 0개면 섹션 전체 숨김
-  - `payLink`: 있으면 "송금" 버튼(토스/카카오페이 등 링크). 복사 버튼은 `은행 번호` 를 복사
-- 축하 글 API: `guestbookApi` (Worker URL). 비면 섹션 숨김. 서버는 `guestbook/` 참고(루트 빌드/CI 와 무관, `tsconfig` 에서 제외)
-- 하객 투표: `poll.question`. 비면(또는 `guestbookApi` 가 비면) 섹션 숨김. 항목은 DB 에 시드하지 않고 하객이 추가한다.
-- 참석 여부: `rsvpUrl` 에 구글폼 URL. 비면 섹션 숨김.
-- 날짜/시간: `date`, `time` (공유 문구 제외 전부 자동 반영)
-- 공유 문구: `share` (카카오 공유 제목/설명)
+| 필드 | 설명 |
+|---|---|
+| `groom` / `bride` | `{ name, relation, givenName?, father, mother }`. 부모는 `{ name, deceased }`, `deceased: true` 는 故 표기. 부모 이름이 모두 비면 혼주 줄 숨김. 이름 분리가 어긋나는 두 글자 성은 `givenName` 직접 지정 |
+| `theme` | 기본 테마 키 |
+| `cover.focus` | 커버 사진 `object-position` (기본 `50% 35%`) |
+| `date` / `time` / `timezone` | 날짜와 시간. 공유 문구를 뺀 전부 자동 반영 |
+| `venue` | 장소명, 홀, 주소, 좌표, `mapQuery`, 교통 안내(`transit`, 비면 생략) |
+| `greeting` | 인사말 제목과 본문 배열 (TODO 문구 교체 필요) |
+| `accounts` | 신랑측/신부측 `{ role, bank, number, holder, payLink? }`. 번호가 비면 "준비 중", 부모 이름과 번호가 모두 비면 행 숨김, 항목 0개면 섹션 숨김 |
+| `rsvpUrl` | 구글폼 주소. 비면 섹션 숨김 |
+| `guestbookApi` | Worker 주소. 비면 축하 글과 투표 섹션 숨김 |
+| `snapshotsApi` | 스냅샷 업로드용 Worker 주소. 비면 스냅샷 섹션 숨김 |
+| `snapshotsCdn` | R2 공개 커스텀 도메인(끝 슬래시 없음). 비면 Worker `/p/:uuid/:kind` 사용 |
+| `poll.question` | 투표 질문. 비면 섹션 숨김. 항목은 하객이 직접 추가 |
+| `kakaoJsKey` | 카카오 JavaScript 키(공개 키). REST 키와 네이티브 키는 프런트 사용 금지 |
+| `share` | 카카오 공유 제목과 설명, `copyUrl`(링크 복사 버튼이 복사하는 단축 주소, 비면 페이지 주소) |
+| `musicCredit` | 배경음악 출처. 트랙이 있을 때만 푸터 표시 |
 
-## 사진
+### 사진
 
-`src/assets/photos/` 에 `jpg/png/webp` 를 넣으면 파일명 순으로 자동 사용된다.
-첫 장은 커버(4:5, `cover.focus` 로 크롭 위치 조정), 전체는 3열 갤러리와 라이트박스(FLIP 확대, 스와이프, 핀치, 방향키, Esc)에 쓰인다.
-사진이 없으면 9칸 플레이스홀더가 표시되고 라이트박스는 꺼진다. 빌드 시 webp 반응형으로 변환된다.
+- `src/assets/photos/` 에 jpg/png/webp 를 넣으면 파일명 순으로 자동 사용
+- 첫 장은 커버(4:5), 전체는 갤러리와 라이트박스에 사용
+- 폴더가 비어 있으면 `src/assets/mock/<테마>/` 의 목업 사진 세트로 대체(템플릿 미리보기용). 실제 사진을 넣는 순간 목업은 사라짐
 
-## 배경음악
+### 배경음악
 
-1. `public/audio/bgm.mp3` 로 파일을 둔다. (없으면 음소거 버튼도 숨겨지고 재생은 no-op)
-2. 같은 폴더에 `LICENSE.txt` 로 출처를 적는다. 예: `Music: generated with Suno (plan/track id)`
-3. `src/data/wedding.ts` 의 `musicCredit` 을 맞춘다. 트랙이 있을 때만 푸터에 표시된다.
+1. `public/audio/bgm.mp3` 배치 (없으면 음소거 버튼도 숨김)
+2. 같은 폴더 `LICENSE.txt` 에 출처 기록
+3. `musicCredit` 값 맞춤
 
-동작: 인트로 탭 시 2초 페이드인, 플로팅 토글(aria-label), 상태는 sessionStorage, 탭이 숨겨지면 일시정지 후 복귀 시 재개.
+## 테마 정책
 
-## 카카오톡 공유
+- 방문자에게 열린 테마는 `src/lib/themes.ts` 의 `THEME_NAMES` 에 있는 키만 해당. 현재 `["halloween"]` 하나라서 테마 전환 버튼과 인트로 선택지는 숨김
+- `dev` (프로그래머), `puppy` (강아지) 코드와 토큰은 유지 중
+- 다시 열기: `THEME_NAMES` 에 키 추가(예: `["halloween", "dev", "puppy"]`). 2개 이상이면 전환 버튼과 인트로 선택지 자동 표시, `?theme=dev` 쿼리와 localStorage 선택도 다시 동작
+- 새 테마 추가: `THEMES` 에 키 추가 + `src/styles/global.css` 의 `[data-theme]` 토큰 블록 추가
+- 모션 감소(`prefers-reduced-motion`) 환경에서는 모든 연출이 정적 상태로 표시
 
-- JavaScript 키는 `src/data/wedding.ts` 의 `kakaoJsKey` (공개 키, 커밋 가능). REST/네이티브 키는 절대 쓰지 않는다.
-- Kakao Developers 앱 설정 > 플랫폼 > Web 에 `https://teddko.github.io` 도메인 등록 필요.
-- SDK 버전과 SRI 해시는 `src/components/ActionButtons.svelte` 에 고정되어 있다. 버전을 올리면 해시도 다시 계산한다.
-  `curl -s https://t1.kakaocdn.net/kakao_js_sdk/<ver>/kakao.min.js | openssl dgst -sha384 -binary | openssl base64 -A`
+## 기능
 
-## 카카오맵 (오시는 길 지도)
+- 인트로 게이트: 이름과 날짜 타이포 + 초대장 열기. 탭 시 페이드아웃, 배경음악 시작. JS 가 꺼져 있거나 4.5초 안에 로드 실패 시 자동 해제
+- 커버(Halloween): 촛불, 바구니, 유령이 포인터를 따라다니는 연출 + 드레스코드 팝업
+- 섹션 장난감: 거미, 고양이, 부엉이, 박쥐, 랜턴, 모자, 물약, 거미줄(탭 연출)
+- 갤러리: FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc), 모바일 뒤로가기 버튼으로 라이트박스 닫기
+- 스냅샷(하객 사진 업로드)
+  - 클라이언트 압축은 Web Worker 에서 처리, HEIC 는 `heic-to` 지연 로드 청크로 대체 디코드
+  - 업로드 전 확인 다이얼로그에서 삭제 비밀번호 입력(선택)
+  - 캐러셀은 30장 단위 페이징
+  - 라이트박스 삭제: 비밀번호를 정한 사진은 어느 기기든 비밀번호 필요, 비밀번호 없는 사진은 올린 기기에서만 가능
+- 투표: 결과는 누구나 열람, 투표와 항목 추가는 카카오 로그인 후 1인 1표(변경 불가). 항목 30자, 최대 20개, 1인 2개
+- 축하 글(방명록): 최신 5개 + 무한 스크롤, 접기, 작성, 비밀번호 삭제
+- 오시는 길: 카카오맵 임베드(이동 잠금 토글, 8초 내 로드 실패 시 주소 카드로 대체) + 길찾기 앱 버튼(네이버지도, 티맵, 카카오맵, 공식 아이콘, 플랫폼별 딥링크)
+- 계좌: 신랑측/신부측 탭, 복사 버튼, 송금 링크
+- 공유: 링크 복사(`share.copyUrl`), 카카오톡 공유
+- 배경음악 토글, 맨 위로 버튼
+- 모바일과 태블릿 확대 잠금(`src/scripts/zoom.ts`). PC 는 제외, 라이트박스와 지도는 자체 줌 사용
 
-- 같은 JavaScript 키(`kakaoJsKey`)를 쓴다. 로더: `https://dapi.kakao.com/v2/maps/sdk.js?appkey=<JS 키>&autoload=false` 후 `kakao.maps.load(cb)`. 공식 가이드(apis.map.kakao.com/web/guide)는 `//dapi.kakao.com/v2/maps/sdk.js?appkey=...` 형식이고 `libraries` 는 선택(지도만 쓰므로 생략). `autoload=false` 는 SDK 자체 코드에 구현되어 있다.
-- Kakao Developers 콘솔 설정(둘 다 필요):
-  1. [앱] > [플랫폼 키] > [JavaScript 키] > [JavaScript SDK 도메인] 에 `https://teddko.github.io` 등록. 미등록 도메인에서는 지도가 뜨지 않고 앱은 대체 카드로 전환된다.
-  2. [제품 설정] > [카카오맵] > [사용 설정] 의 [상태] 를 ON. (2024-12 도입. 공식 문서 developers.kakao.com/docs/ko/kakaomap/common 의 사용 방법에 명시. 이후 별도 신청/심사 없이 첫 활성화 앱은 무료 쿼터 안에서 즉시 사용, 두 번째 앱부터 또는 쿼터 초과 시 비즈월렛 연결 필요.)
+## 백엔드
 
-## 배포
+Cloudflare Worker `wedding-guestbook` 하나가 방명록, 스냅샷(R2 `wedding-snapshots`), 투표(카카오 로그인)를 처리함. 엔드포인트, 데이터 모델, 제한, 배포 명령은 [guestbook/README.md](guestbook/README.md) 참고.
 
-`.github/workflows/deploy.yml` (main push 시 GitHub Pages). 아직 원격 저장소 없음.
-`noindex,nofollow` 메타가 들어 있어 검색엔진에 노출되지 않는다.
+## 배포 흐름
+
+1. API 변경이 있으면 Worker 먼저 배포 (`guestbook/` 에서 마이그레이션 적용 후 `wrangler deploy`)
+2. `main` push 시 `.github/workflows/deploy.yml` 이 GitHub Pages 에 자동 배포 (수동 실행은 `workflow_dispatch`)
+
+## 운영 메모
+
+- Workers 무료 플랜은 하루 100k 요청 제한. 결혼식 달(2027-10)에는 Workers Paid 전환 검토 필요
+- 스냅샷 이미지를 R2 커스텀 도메인으로 서빙하려면 도메인 연결 후 `snapshotsCdn` 에 입력. 숨김과 삭제 후에도 CDN과 브라우저 캐시(immutable 1년)에 이미지가 남을 수 있어 급하면 Cloudflare 캐시 퍼지 필요
+- 관리자 토큰(`ADMIN_TOKEN`)은 macOS 키체인 서비스 `wedding-admin-token` 에만 보관. 저장소 기록 금지
+
+### 카카오 콘솔 체크리스트
+
+1. [플랫폼 키] > [JavaScript 키] > [JavaScript SDK 도메인] 에 `https://teddko.github.io` 등록 (공유, 지도, 투표 로그인 공통)
+2. [제품 설정] > [카카오맵] > [사용 설정] 상태 ON
+3. [카카오 로그인] 활성화 + Redirect URI `https://teddko.github.io/wedding/` 등록
+4. 클라이언트 시크릿 활성화 (Worker 시크릿 `KAKAO_CLIENT_SECRET` 과 짝)
+5. 공유 SDK 버전과 SRI 해시는 `src/components/ActionButtons.svelte` 에 고정. 버전 변경 시 해시 재계산
+
+```sh
+curl -s https://t1.kakaocdn.net/kakao_js_sdk/<ver>/kakao.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+```
+
+### 테스트 데이터 정리
+
+`guestbook/` 에서 실행.
+
+```sh
+# 투표 초기화
+wrangler d1 execute wedding-guestbook --remote --command "DELETE FROM poll_votes; DELETE FROM poll_options"
+# 스냅샷 행 초기화 (R2 객체는 별도 삭제 필요)
+wrangler d1 execute wedding-guestbook --remote --command "DELETE FROM photos; DELETE FROM uploads"
+```
+
+- 스냅샷 개별 정리는 관리자 토큰으로 `DELETE /photos/:uuid` 호출 (R2 객체까지 삭제, `?hide=1` 은 숨김만)
+- 투표 항목 개별 숨김은 관리자 토큰으로 `DELETE /poll/options/:id` 호출
+- R2 객체 일괄 삭제는 Cloudflare 대시보드 또는 `wrangler r2 object delete wedding-snapshots/<key> --remote`
