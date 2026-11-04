@@ -237,7 +237,7 @@ async function poll(req: Request, env: Env, url: URL, cors: string | null): Prom
 }
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
-type Photo = { id: number; uuid: string; ext: keyof typeof EXT; w: number; h: number; created_at: number };
+type Photo = { id: number; uuid: string; ext: keyof typeof EXT; w: number; h: number; created_at: number; locked: number | boolean };
 const view = (p: Photo, origin: string) => ({
   id: p.id,
   uuid: p.uuid,
@@ -245,6 +245,7 @@ const view = (p: Photo, origin: string) => ({
   h: p.h,
   created_at: p.created_at,
   ext: p.ext,
+  locked: !!p.locked,
   thumb: `${origin}/p/${p.uuid}/thumb`,
   full: `${origin}/p/${p.uuid}/full`,
 });
@@ -334,7 +335,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const limit = Math.min(Number.isInteger(lim) && lim > 0 ? lim : 30, 30);
     const before = Number.isInteger(cursor) && cursor > 0 ? cursor : Number.MAX_SAFE_INTEGER;
     const { results } = await env.DB.prepare(
-      "SELECT id,uuid,ext,w,h,created_at FROM photos WHERE hidden = 0 AND id < ? ORDER BY id DESC LIMIT ?",
+      "SELECT id,uuid,ext,w,h,created_at,(pw_hash IS NOT NULL) AS locked FROM photos WHERE hidden = 0 AND id < ? ORDER BY id DESC LIMIT ?",
     )
       .bind(before, limit + 1)
       .all<Photo>();
@@ -382,7 +383,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const pw = body.pw === undefined || body.pw === "" ? null : field(body.pw, 4, 64);
     if (body.pw !== undefined && body.pw !== "" && !pw) return bad(cors, "invalid password");
 
-    const find = () => env.DB.prepare("SELECT id,uuid,ext,w,h,created_at FROM photos WHERE uuid = ?").bind(uuid).first<Photo>();
+    const find = () => env.DB.prepare("SELECT id,uuid,ext,w,h,created_at,(pw_hash IS NOT NULL) AS locked FROM photos WHERE uuid = ?").bind(uuid).first<Photo>();
     const prev = await find();
     if (prev) return json(view(prev, url.origin), 200, cors);
 
@@ -404,7 +405,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
       const again = await find();
       return again ? json(view(again, url.origin), 200, cors) : bad(cors, "upload incomplete", 409);
     }
-    return json(view({ id: row.id, uuid, ext: up.ext, w: up.fw!, h: up.fh!, created_at: now }, url.origin), 201, cors);
+    return json(view({ id: row.id, uuid, ext: up.ext, w: up.fw!, h: up.fh!, created_at: now, locked: !!hash }, url.origin), 201, cors);
   }
 
   if (req.method === "DELETE" && !sub) {
@@ -416,18 +417,19 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const admin = !!env.ADMIN_TOKEN && !!token && eq(enc.encode(token), enc.encode(env.ADMIN_TOKEN));
     const dev = req.headers.get("X-Device") ?? "";
     const owner = !!row.device_id && !!dev && eq(enc.encode(dev), enc.encode(row.device_id));
-    if (!admin && !owner) {
-      if (!row.pw_hash || !row.salt) return bad(cors, "no password", 403);
-      const body = await readJson(req);
-      const pw = body && typeof body.pw === "string" ? body.pw.trim() : "";
-      if (!pw) return bad(cors, "invalid password");
-      const ip = await ipHash(req, env);
-      const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?").bind(ip, Date.now() - LIMIT_MS).first<{ n: number }>();
-      if ((fails?.n ?? 0) >= PW_FAIL_N) return bad(cors, "too many attempts", 429);
-      if (!eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
-        await env.DB.prepare("INSERT INTO pw_fails (ip_hash,created_at) VALUES (?,?)").bind(ip, Date.now()).run();
-        return bad(cors, "wrong password", 403);
-      }
+    if (!admin) {
+      if (row.pw_hash && row.salt) {
+        const body = await readJson(req);
+        const pw = body && typeof body.pw === "string" ? body.pw.trim() : "";
+        if (!pw) return bad(cors, "invalid password");
+        const ip = await ipHash(req, env);
+        const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?").bind(ip, Date.now() - LIMIT_MS).first<{ n: number }>();
+        if ((fails?.n ?? 0) >= PW_FAIL_N) return bad(cors, "too many attempts", 429);
+        if (!eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
+          await env.DB.prepare("INSERT INTO pw_fails (ip_hash,created_at) VALUES (?,?)").bind(ip, Date.now()).run();
+          return bad(cors, "wrong password", 403);
+        }
+      } else if (!owner) return bad(cors, "no password", 403);
     }
     await env.DB.prepare("DELETE FROM uploads WHERE uuid = ?").bind(uuid).run();
     await Promise.all([`full/${uuid}.${row.ext}`, `thumb/${uuid}.${row.ext}`].map((k) => env.BUCKET.delete(k)));

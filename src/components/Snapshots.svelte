@@ -6,7 +6,7 @@
   import { compress, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
 
-  type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string };
+  type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string; locked?: boolean };
   type State = "wait" | "compress" | "upload" | "done" | "fail";
   type Job = { id: number; file: File; uuid: string; state: State; pct: number; err: string; url: string; pw: string };
   let { api, cdn = "" }: { api: string; cdn?: string } = $props();
@@ -35,8 +35,14 @@
   let raf = 0;
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
-  let pw = $state("");
-  let pwErr = $state("");
+  let pending = $state<File[]>([]);
+  let previews = $state<string[]>([]);
+  let overPick = $state(false);
+  let sheetPw = $state("");
+  let sheetErr = $state("");
+  let dlg = $state<HTMLDialogElement>();
+  let dlgTitle = $state<HTMLElement>();
+  let pickBtn = $state<HTMLButtonElement>();
   let announce = $state("");
   let toast = $state<{ id: number; msg: string; warn: boolean } | null>(null);
   let input = $state<HTMLInputElement>();
@@ -55,6 +61,7 @@
   const busy = $derived(jobs.some((j) => j.state === "wait" || j.state === "compress" || j.state === "upload"));
   let batchN = $state(0);
   let okN = $state(0);
+  let batchPw = $state(false);
   const failN = $derived(jobs.filter((j) => j.state === "fail").length);
   const LABEL: Record<State, string> = { wait: "대기", compress: "압축 중", upload: "업로드 중", done: "완료", fail: "실패" };
 
@@ -98,14 +105,17 @@
 
   const base = cdn.replace(/\/+$/, "");
   const toPhoto = (e: Photo): Photo => ({
-    id: e.id, uuid: e.uuid, w: e.w, h: e.h, ext: e.ext,
+    id: e.id, uuid: e.uuid, w: e.w, h: e.h, ext: e.ext, locked: !!e.locked,
     thumb: base ? `${base}/thumb/${e.uuid}.${e.ext}` : e.thumb,
     full: base ? `${base}/full/${e.uuid}.${e.ext}` : e.full,
   });
   const items = $derived(photos.map((p) => ({ thumb: p.thumb, srcset: `${p.thumb} 480w`, full: p.full, w: p.w, h: p.h })));
   const count = $derived(Math.max(overall, photos.length));
   let mineIds = $state<string[]>([]);
-  const isMine = (i: number) => !!photos[i] && mineIds.includes(photos[i].uuid);
+  const need = (i: number) => {
+    const p = photos[i];
+    return !p ? null : p.locked ? "pw" : mineIds.includes(p.uuid) ? "confirm" : null;
+  };
 
   async function load(first: boolean) {
     if (!first) {
@@ -203,33 +213,58 @@
 
   $effect(() => {
     if (!mounted || !batchN) return;
-    if (!busy) announce = `${okN}장 업로드 완료${failN ? `, ${failN}장 실패` : ""}`;
+    if (busy) return;
+    announce = `${okN}장 업로드 완료${failN ? `, ${failN}장 실패` : ""}`;
+    if (okN) notify(`${okN}장 올렸어요. ${batchPw ? "정한 비밀번호로" : "이 휴대폰에서"} 지울 수 있어요`);
   });
+
+  const PREVIEW_N = 6;
 
   function pick(e: Event) {
     const el = e.currentTarget as HTMLInputElement;
     const files = [...(el.files ?? [])];
     el.value = "";
     if (!files.length) return;
-    if (files.length > MAX_PICK) notify(`한 번에 ${MAX_PICK}장까지 올릴 수 있어요`, true);
-    const add = files.slice(0, MAX_PICK).map(
-      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, err: "", url: "", pw: pw.trim() }),
+    overPick = files.length > MAX_PICK;
+    pending = files.slice(0, MAX_PICK);
+    previews = pending.slice(0, PREVIEW_N).map((f) => URL.createObjectURL(f));
+    sheetPw = sheetErr = "";
+    pickBtn?.focus();
+    dlg?.showModal();
+    dlgTitle?.focus();
+  }
+
+  function submit() {
+    const v = sheetPw.trim();
+    if (v && (v.length < 4 || v.length > 64)) {
+      sheetErr = "비밀번호는 4~64자로 입력해 주세요";
+      return;
+    }
+    const add = pending.map(
+      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, err: "", url: "", pw: v }),
     );
-    if (!busy) batchN = okN = 0;
+    if (!busy) (batchN = okN = 0), (batchPw = false);
+    batchPw ||= !!v;
     batchN += add.length;
     jobs = [...jobs, ...add];
     pump();
+    dlg?.close();
   }
 
-  function openPicker() {
-    const v = pw.trim();
-    if (v && (v.length < 4 || v.length > 64)) {
-      pwErr = "비밀번호는 4~64자로 입력해 주세요";
-      document.getElementById("snap-pw")?.focus();
-      return;
-    }
-    pwErr = "";
-    input?.click();
+  function onclose() {
+    previews.forEach((u) => URL.revokeObjectURL(u));
+    previews = [];
+    pending = [];
+    sheetPw = sheetErr = "";
+  }
+
+  function trap(e: KeyboardEvent) {
+    if (e.key !== "Tab" || !dlg) return;
+    const f = [...dlg.querySelectorAll<HTMLElement>("input, button")];
+    const edge = e.shiftKey ? [dlgTitle, f[0]] : [f[f.length - 1]];
+    if (!edge.includes(document.activeElement as HTMLElement)) return;
+    e.preventDefault();
+    (e.shiftKey ? f[f.length - 1] : f[0]).focus();
   }
 
   function pump() {
@@ -340,7 +375,7 @@
       if (r.status === 429) return "시도 횟수가 많아요. 잠시 후 다시 시도해 주세요";
       if (r.status === 403) {
         const code = ((await r.json().catch(() => null)) as { error?: string } | null)?.error;
-        return code === "no password" ? "이 기기에서 올린 사진만 지울 수 있어요" : pw ? "비밀번호가 맞지 않아요" : "이 기기에서는 지울 수 없는 사진이에요";
+        return code === "no password" ? "이 휴대폰에서 올린 사진만 지울 수 있어요" : "비밀번호가 맞지 않아요";
       }
       if (r.status !== 204 && r.status !== 404) return "잠시 후 다시 시도해 주세요";
     } catch {
@@ -360,17 +395,28 @@
 
   {#if mounted}
     <div class="up">
-      <div class="field">
-        <label for="snap-pw">삭제 비밀번호 (선택)</label>
-        <input id="snap-pw" type="password" bind:value={pw} maxlength="64" autocomplete="new-password" aria-invalid={!!pwErr} aria-describedby={pwErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
-        <p class="hint" id="snap-pw-h">다른 기기에서도 지우고 싶다면 비밀번호를 정해 주세요 (선택, 4~64자). 이 기기에서는 비밀번호 없이 지울 수 있어요</p>
-        {#if pwErr}<p class="err" id="snap-pw-e" role="alert">{pwErr}</p>{/if}
-      </div>
       <input bind:this={input} class="file" type="file" accept="image/*,.heic,.heif" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
-      <button type="button" class="btn-outline pick" data-press onclick={openPicker}>사진 올리기</button>
+      <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => input?.click()}>사진 올리기</button>
       <p class="hint">한 번에 {MAX_PICK}장까지 올릴 수 있어요</p>
     </div>
   {/if}
+
+  <dialog bind:this={dlg} class="sheet" aria-labelledby="snap-t" {onclose} onkeydown={trap}>
+    <form method="dialog" onsubmit={(e) => (e.preventDefault(), submit())}>
+      <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>사진 {pending.length}장을 올릴까요?</h2>
+      <div class="pvs" aria-hidden="true">
+        {#each previews as u (u)}<img class="pvt" src={u} alt="" width="56" height="56" onerror={(e) => e.currentTarget.removeAttribute("src")} />{/each}
+        {#if pending.length > PREVIEW_N}<span class="more">외 {pending.length - PREVIEW_N}장</span>{/if}
+      </div>
+      {#if overPick}<p class="hint">한 번에 {MAX_PICK}장까지라 앞의 {MAX_PICK}장만 올라가요</p>{/if}
+      <label for="snap-pw">삭제 비밀번호 (선택)</label>
+      <input id="snap-pw" type="text" bind:value={sheetPw} maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!sheetErr} aria-describedby={sheetErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
+      <p class="hint" id="snap-pw-h">정해 두면 나중에 어느 휴대폰에서든 이 비밀번호로 지울 수 있어요. 비워 두면 지금 이 휴대폰에서만 지울 수 있어요.</p>
+      {#if sheetErr}<p class="err" id="snap-pw-e" role="alert">{sheetErr}</p>{/if}
+      <button type="submit" class="go">{pending.length}장 올리기</button>
+      <button type="button" class="no" onclick={() => dlg?.close()}>취소</button>
+    </form>
+  </dialog>
 
   {#if jobs.length}
     <div class="queue">
@@ -429,7 +475,7 @@
           <p class="cap err-line" role="alert">사진을 더 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((moreFailed = false), load(false))}>다시 시도</button></p>
         {/if}
       </div>
-      <Gallery bind:this={gal} bare {items} remove={removeAt} mine={isMine} more={cursor !== null} total={count} {thumbAt} onindex={follow} />
+      <Gallery bind:this={gal} bare {items} remove={removeAt} need={need} more={cursor !== null} total={count} {thumbAt} onindex={follow} />
     {/if}
   </div>
 </div>
@@ -446,14 +492,27 @@
   .snap { text-align: left; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .up { display: grid; gap: 12px; justify-items: center; margin-bottom: 24px; }
-  .field { display: grid; gap: 8px; width: 100%; }
   label { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
-  input[type="password"] {
-    width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink);
-    font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box;
+  .sheet {
+    width: min(calc(100% - 32px), 360px); max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 20px; box-sizing: border-box;
+    border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); animation: sheet-in 160ms ease;
   }
-  input[type="password"]:focus { outline: 2px solid var(--accent); outline-offset: 0; }
-  input[aria-invalid="true"] { border-color: #c0392b; }
+  .sheet::backdrop { background: rgb(0 0 0 / 0.5); animation: sheet-fade 160ms ease; }
+  .sheet form { display: grid; gap: 10px; }
+  .ttl { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; outline: none; }
+  .pvs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .pvt { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; background: var(--track); }
+  .more { font-size: 14px; color: var(--ink-2); padding-left: 4px; }
+  .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
+  .sheet input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .sheet input[aria-invalid="true"] { border-color: #c0392b; }
+  .go, .no { min-height: 48px; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; border: 1px solid var(--line); }
+  .go { background: var(--ink); color: var(--surface); border-color: var(--ink); margin-top: 6px; }
+  .no { background: transparent; color: var(--ink); }
+  .go:focus-visible, .no:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @keyframes sheet-in { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes sheet-fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .sheet, .sheet::backdrop { animation: none; } }
   .file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
   .err { margin: 0; font-size: 14px; line-height: 1.5; color: #c0392b; }

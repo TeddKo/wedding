@@ -159,8 +159,11 @@ try {
   assert.equal(r.status, 201);
   const e1 = await r.json();
   assert.deepEqual([e1.w, e1.h], [1000, 800], "w/h come from server-parsed header, not the request body");
-  assert.deepEqual(Object.keys(e1).sort(), ["created_at", "ext", "full", "h", "id", "thumb", "uuid", "w"]);
-  assert.equal((await commit(u1)).status, 200);
+  assert.deepEqual(Object.keys(e1).sort(), ["created_at", "ext", "full", "h", "id", "locked", "thumb", "uuid", "w"]);
+  assert.equal(e1.locked, true);
+  const again = await commit(u1);
+  assert.equal(again.status, 200);
+  assert.equal((await again.json()).locked, true);
   assert.equal((await put(u1, "full", jpg(5000))).status, 409);
 
   r = await fetch(e1.thumb);
@@ -176,6 +179,8 @@ try {
   assert.equal(r2.status, 201);
   const list = async () => (await (await call("/photos?limit=30")).json()).items.map((x) => x.uuid);
   assert.deepEqual((await list()).slice(0, 2), [u2, u1]);
+  assert.deepEqual((await (await call("/photos?limit=2")).json()).items.map((x) => x.locked), [false, true], "GET /photos locked flag");
+  assert.equal((await (await r2.clone().json()).locked), false);
   assert.ok(!JSON.stringify(await (await call("/photos")).json()).match(/pw_hash|salt|ip_hash|device/));
   assert.equal((await call("/photos?limit=1")).status, 200);
   assert.equal((await (await call("/photos?limit=1")).json()).nextCursor, (await r2.json()).id);
@@ -219,12 +224,16 @@ try {
   assert.equal((await del(d1, { d: "device-bbbbbbbb" })).status, 400, "other device without pw");
   assert.equal((await del(d1, { d: "device-bbbbbbbb", pw: "bad-pw" })).status, 403);
   assert.ok((await list()).includes(d1));
-  assert.equal((await del(d1, { d: "device-aaaaaaaa" })).status, 204, "owner device");
+  assert.equal((await del(d1, { d: "device-aaaaaaaa" })).status, 400, "owner device of a password photo still needs the pw");
+  assert.equal((await del(d1, { d: "device-aaaaaaaa", pw: "bad-pw" })).status, 403, "owner + wrong pw");
+  assert.ok((await list()).includes(d1));
+  assert.equal((await del(d1, { d: "device-aaaaaaaa", pw: "pw1234" })).status, 204, "owner + right pw");
   assert.ok(!(await list()).includes(d1));
   assert.ok(!r2keys().some((k) => k.includes(d1)));
   const [d2] = await upload({ pw: "pw1234" });
   assert.equal((await del(d2, { d: "device-bbbbbbbb", pw: "pw1234" })).status, 204, "password path from other device");
-  const [d3] = await upload();
+  const [d3, rd3] = await upload();
+  assert.equal((await rd3.json()).locked, false);
   const nopw = await del(d3, { d: "device-bbbbbbbb", pw: "whatever" });
   assert.equal(nopw.status, 403);
   assert.equal((await nopw.json()).error, "no password");
@@ -233,6 +242,8 @@ try {
   assert.equal((await del(d3, { d: "device-aaaaaaaa" })).status, 204, "owner can delete photo without pw");
   const [d4] = await upload();
   assert.equal((await del(d4, { token: "test-admin", d: "device-bbbbbbbb" })).status, 204, "admin still works");
+  const [d5] = await upload({ pw: "pw1234" });
+  assert.equal((await del(d5, { token: "test-admin" })).status, 204, "admin deletes a password photo without pw");
 
   /* PUT 시점 한도: IP 10분 200건, 기기 30건 */
   const s2 = [];
@@ -317,6 +328,7 @@ try {
   for (let i = 0; i < 11; i++) bf.push((await del(uBf, { pw: `guess${i}`, ip: "6.6.6.6" })).status);
   assert.deepEqual(bf, [...Array(10).fill(403), 429]);
   assert.equal((await del(uBf, { pw: "right-pw", ip: "6.6.6.6" })).status, 429, "locked even with right pw");
+  assert.equal((await del(uBf, { pw: "right-pw", ip: "6.6.6.6", d: "device-aaaaaaaa" })).status, 429, "owner device is rate-limited too");
   assert.equal((await del(uBf, { pw: "right-pw", ip: "6.6.7.7" })).status, 204, "other IP unaffected");
 
   /* IPv6 /64 */

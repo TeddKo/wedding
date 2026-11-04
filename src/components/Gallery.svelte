@@ -21,10 +21,10 @@
     total?: number;
     /** 있으면 라이트박스에 삭제 버튼을 보인다. 성공하면 null, 실패하면 보여 줄 메시지를 돌려준다 */
     remove?: (i: number, pw?: string) => Promise<string | null>;
-    /** i 번째 사진을 이 기기에서 올렸는지 (true 면 비밀번호 없이 확인만 받는다) */
-    mine?: (i: number) => boolean;
+    /** i 번째 사진 삭제에 필요한 확인: "pw" 비밀번호 입력, "confirm" 확인만, null 삭제 버튼 숨김 */
+    need?: (i: number) => "pw" | "confirm" | null;
   };
-  let { items, bare = false, thumbAt, more = false, onindex, total, remove, mine }: Props = $props();
+  let { items, bare = false, thumbAt, more = false, onindex, total, remove, need }: Props = $props();
 
   const n = $derived(items.length);
 
@@ -155,14 +155,14 @@
   let delBtn = $state<HTMLElement>();
   let delInput = $state<HTMLElement>();
   let delNo = $state<HTMLElement>();
-  const isMine = $derived(!!mine?.(idx));
+  const ask = $derived(need?.(idx) ?? null);
 
   async function askDel() {
     delPw = "";
     delErr = "";
     delOpen = true;
     await tick();
-    (isMine ? delNo : delInput)?.focus();
+    (ask === "confirm" ? delNo : delInput)?.focus();
   }
 
   async function closeDel() {
@@ -175,14 +175,14 @@
     e.preventDefault();
     if (delBusy || !remove) return;
     const pw = delPw.trim();
-    if (!isMine && !pw) {
+    if (ask === "pw" && !pw) {
       delErr = "비밀번호를 입력해 주세요";
       return;
     }
     delBusy = true;
     delErr = "";
     try {
-      const err = await remove(idx, isMine ? undefined : pw);
+      const err = await remove(idx, ask === "pw" ? pw : undefined);
       if (err) return void (delErr = err);
       delOpen = false;
       open = false;
@@ -200,6 +200,7 @@
   let waiting = $state(false);
   function go(d: number) {
     if (n < 2) return;
+    delOpen = false;
     if (more && idx + d >= n) {
       waiting = true;
       onindex?.(n - 1);
@@ -408,7 +409,7 @@
     <div class="ui" style:opacity={dim}>
       <span class="count latin" aria-live="polite">{idx + 1} / {Math.max(total ?? 0, n)}</span>
       <button type="button" class="b close" aria-label="닫기" onclick={close}>×</button>
-      {#if remove}
+      {#if remove && ask}
         <button type="button" class="del-btn" bind:this={delBtn} aria-haspopup="dialog" aria-expanded={delOpen} onclick={askDel}>삭제</button>
       {/if}
       {#if n > 1}
@@ -417,11 +418,12 @@
       {/if}
       {#if delOpen}
         <form class="del" role="group" aria-label="사진 삭제" onsubmit={doDel}>
-          {#if isMine}
+          {#if ask === "confirm"}
             <p class="del-q" id="gdel-q">이 사진을 삭제할까요?</p>
           {:else}
             <label class="del-q" for="gdel-pw">올릴 때 정한 비밀번호를 입력해 주세요</label>
-            <input id="gdel-pw" type="password" bind:this={delInput} bind:value={delPw} maxlength="64" autocomplete="current-password" aria-invalid={!!delErr} />
+            <input id="gdel-pw" type="text" bind:this={delInput} bind:value={delPw} maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!delErr} />
+            <p class="del-note">비밀번호를 잊으셨다면 신랑·신부에게 말씀해 주세요</p>
           {/if}
           <div class="del-row">
             <button type="submit" class="del-go" disabled={delBusy}>{delBusy ? "삭제 중…" : "삭제"}</button>
