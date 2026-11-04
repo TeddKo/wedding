@@ -204,6 +204,19 @@ html .fabs:has(:focus-visible) { opacity: 1; visibility: visible; }
 html.dock-on.fab-away .fabs:not(:has(:focus-visible)) { opacity: 0; transform: translateY(12px); pointer-events: none; }
 html.gated .fabs, html:not(.has-js) .fabs, .fabs:not(:has(.fab:not([hidden]))) { display: none; }
 .fabs astro-island { display: contents; }
+/* 맨 위로: 페이지 끝 근처에서만 좌하단에 표시(우하단은 유령 자리) */
+.to-top {
+  position: fixed; z-index: 55; left: max(calc(12px + env(safe-area-inset-left)), calc(50vw - 208px)); bottom: calc(12px + env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--f-ui); cursor: pointer;
+  box-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.35); -webkit-tap-highlight-color: transparent;
+  opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 240ms var(--e-out), transform 240ms var(--e-out);
+}
+.to-top svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html.at-end .to-top { opacity: 1; transform: none; pointer-events: auto; }
+html.gated .to-top, html:not(.has-js) .to-top { display: none; }
+.to-top:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .to-top { transition: none; transform: none; } }
 .fab {
   position: relative; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; margin: 0;
   border: 1px solid var(--line); border-radius: 50%; color: var(--ink); cursor: pointer;
