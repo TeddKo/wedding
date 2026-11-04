@@ -84,7 +84,7 @@ export const wedding = {
   // 하객 스냅샷 업로드 Worker URL(방명록과 같은 Worker). 비어 있으면 스냅샷 섹션 숨김.
   snapshotsApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
   // 스냅샷 이미지를 서빙할 R2 공개 커스텀 도메인(끝 슬래시 없이). 비우면 Worker 의 /p/:uuid/:kind 사용.
-  snapshotsCdn: "",
+  snapshotsCdn: "https://pub-b468d9d36c224565a5c0d567a016d737.r2.dev",
   // 하객 투표(방명록과 같은 Worker 사용). question 이 비면 섹션 숨김. 항목은 하객이 직접 추가.
   poll: { question: "하객 중 코스튬을 가장 잘한 사람은?" },
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
