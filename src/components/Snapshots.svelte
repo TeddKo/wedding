@@ -16,6 +16,7 @@
   const RETRIES = 3;
   const PAGE = 30;
   const PREFETCH = 6;
+  const DONE_MS = 1200;
   const GENERIC = "업로드에 실패했어요. 다시 시도해 주세요.";
   const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -52,7 +53,8 @@
   };
 
   const busy = $derived(jobs.some((j) => j.state === "wait" || j.state === "compress" || j.state === "upload"));
-  const doneN = $derived(jobs.filter((j) => j.state === "done").length);
+  let batchN = $state(0);
+  let okN = $state(0);
   const failN = $derived(jobs.filter((j) => j.state === "fail").length);
   const LABEL: Record<State, string> = { wait: "대기", compress: "압축 중", upload: "업로드 중", done: "완료", fail: "실패" };
 
@@ -200,8 +202,8 @@
   });
 
   $effect(() => {
-    if (!mounted || jobs.length === 0) return;
-    if (!busy) announce = `${doneN}장 업로드 완료${failN ? `, ${failN}장 실패` : ""}`;
+    if (!mounted || !batchN) return;
+    if (!busy) announce = `${okN}장 업로드 완료${failN ? `, ${failN}장 실패` : ""}`;
   });
 
   function pick(e: Event) {
@@ -213,6 +215,8 @@
     const add = files.slice(0, MAX_PICK).map(
       (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, err: "", url: "", pw: pw.trim() }),
     );
+    if (!busy) batchN = okN = 0;
+    batchN += add.length;
     jobs = [...jobs, ...add];
     pump();
   }
@@ -303,7 +307,9 @@
       photos = [p, ...photos.filter((x) => x.uuid !== p.uuid)];
       j.pct = 100;
       j.state = "done";
+      okN++;
       packed.delete(j.id);
+      setTimeout(() => drop(j), DONE_MS);
     } catch (e) {
       const s = e instanceof HttpErr ? e.status : -1;
       j.err =
@@ -316,9 +322,10 @@
     }
   }
 
-  function clearDone() {
-    jobs.filter((j) => j.state === "done").forEach((j) => URL.revokeObjectURL(j.url));
-    jobs = jobs.filter((j) => j.state !== "done");
+  /* 완료된 항목은 잠시 보여 준 뒤 스스로 사라진다 */
+  function drop(j: Job) {
+    URL.revokeObjectURL(j.url);
+    jobs = jobs.filter((x) => x.id !== j.id);
   }
 
   async function removeAt(i: number, pw?: string): Promise<string | null> {
@@ -367,7 +374,7 @@
 
   {#if jobs.length}
     <div class="queue">
-      <p class="sum">{doneN} / {jobs.length}장 완료{failN ? ` · 실패 ${failN}` : ""}</p>
+      <p class="sum">{okN} / {batchN}장 완료{failN ? ` · 실패 ${failN}` : ""}</p>
       {#if busy}<p class="keep">업로드가 끝날 때까지 화면을 켜 두세요</p>{/if}
       <ul class="jobs">
         {#each jobs as j (j.id)}
@@ -388,7 +395,6 @@
           </li>
         {/each}
       </ul>
-      {#if !busy && doneN}<button type="button" class="act clear" onclick={clearDone}>완료 항목 지우기</button>{/if}
     </div>
   {/if}
 
@@ -460,6 +466,8 @@
   .jobs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
   .job { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
   .job[data-state="fail"] { border-color: #c0392b; }
+  .job[data-state="done"] { animation: job-out 400ms ease 800ms forwards; }
+  @keyframes job-out { to { opacity: 0; } }
   .pv { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; display: block; background: var(--track); }
   .info { min-width: 0; display: grid; gap: 6px; }
   .line { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
@@ -472,7 +480,6 @@
   progress::-moz-progress-bar { background: var(--accent); }
   .act { all: unset; box-sizing: border-box; min-height: 44px; min-width: 44px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .act:disabled { opacity: 0.6; cursor: progress; }
-  .clear { display: flex; margin: 6px auto 0; }
 
   .car { min-width: 0; }
   .track {

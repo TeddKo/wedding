@@ -116,8 +116,10 @@
     closing = true;
     view.target = { x: 0, y: 0, s: 1 };
     const visible = !!thumbRect(idx) && !reduced();
-    if (visible) await p.set(0);
+    /* 닫는 도중 go/openAt 이 p 를 건드리면 Spring 이 "Aborted" 로 거부한다. 정리를 건너뛰면 inert·스크롤 잠금이 남아 화면이 멈춘다 */
+    if (visible) await p.set(0).catch(() => {});
     else await new Promise<void>((r) => setTimeout(r, reduced() ? 0 : 160));
+    if (!closing) return;
     const back = idx;
     open = false;
     setInert(false);
