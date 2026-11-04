@@ -6,7 +6,7 @@
   import { lerp, reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
 
-  type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
+  type Item = { thumb: string; srcset: string; full: string; thumb0?: string; full0?: string; w: number; h: number };
   type Props = {
     items: Item[];
     /** true 면 그리드를 그리지 않고 라이트박스만 사용 (호출 쪽이 openAt 호출) */
@@ -33,6 +33,7 @@
   let idx = $state(0);
   let dir = $state(1);
   let fullReady = $state(false);
+  let fullSrc = $state("");
   let closing = false;
   let lb = $state<HTMLElement>();
   let SW = $state(390);
@@ -89,7 +90,19 @@
     const f = cur?.full;
     if (!f) return;
     const im = new Image();
-    im.onload = () => cur?.full === f && (fullReady = true);
+    const done = (u: string) => {
+      if (cur?.full !== f) return;
+      fullSrc = u;
+      fullReady = true;
+    };
+    im.onload = () => done(im.src);
+    im.onerror = () => {
+      const w = cur?.full0;
+      if (!w || w === f) return;
+      const r = new Image();
+      r.onload = () => done(w);
+      r.src = w;
+    };
     im.src = f;
   }
 
@@ -401,7 +414,8 @@
       {#key idx}
         <img
           class="lbp"
-          src={fullReady ? cur.full : cur.thumb}
+          src={fullReady ? fullSrc : cur.thumb}
+          onerror={(e) => cur.thumb0 && e.currentTarget.getAttribute("src") !== cur.thumb0 && (e.currentTarget.src = cur.thumb0)}
           alt="갤러리 사진 {idx + 1}"
           draggable="false"
           style="width:{fit.w}px;height:{fit.h}px;left:{(SW - fit.w) / 2}px;top:{(SH - 88 - fit.h) / 2 + 20}px;{style}"

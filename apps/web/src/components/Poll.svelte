@@ -10,7 +10,7 @@
 
   const MAX_LEN = POLL.len;
   const MAX_OPTS = POLL.max;
-  const REFRESH_MS = 20000;
+  const REFRESH_MS = 45000;
   const SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
   const SDK_SRI = "sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w";
   const ADD_ERR: Record<string, string> = {

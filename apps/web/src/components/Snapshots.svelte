@@ -23,7 +23,8 @@
 
   let mounted = $state(false);
   let status = $state<"loading" | "ready" | "error">("loading");
-  let photos = $state<Photo[]>([]);
+  type Snap = Photo & { thumb0?: string; full0?: string };
+  let photos = $state<Snap[]>([]);
   let cursor = $state<number | null>(null);
   let moreBusy = $state(false);
   let moreFailed = $state(false);
@@ -108,12 +109,15 @@
   }
 
   const base = cdn.replace(/\/+$/, "");
-  const toPhoto = (e: Photo): Photo => ({
+  const toPhoto = (e: Photo): Snap => ({
     id: e.id, uuid: e.uuid, w: e.w, h: e.h, ext: e.ext, locked: !!e.locked,
     thumb: base ? `${base}/thumb/${e.uuid}.${e.ext}` : e.thumb,
     full: base ? `${base}/full/${e.uuid}.${e.ext}` : e.full,
+    ...(base ? { thumb0: e.thumb, full0: e.full } : {}),
   });
-  const items = $derived(photos.map((p) => ({ thumb: p.thumb, srcset: `${p.thumb} 480w`, full: p.full, w: p.w, h: p.h })));
+  const items = $derived(photos.map((p) => ({ thumb: p.thumb, srcset: `${p.thumb} 480w`, full: p.full, thumb0: p.thumb0, full0: p.full0, w: p.w, h: p.h })));
+  /** CDN 이미지 로드 실패(r2.dev 429 등) 시 Worker URL 로 1회 재시도 */
+  const fallback = (el: HTMLImageElement, url?: string) => url && el.getAttribute("src") !== url && (el.src = url);
   const count = $derived(Math.max(overall, photos.length));
   let mineIds = $state<string[]>([]);
   const need = (i: number) => {
@@ -491,7 +495,7 @@
           {#each photos as p, i (p.uuid)}
             <li class="it">
               <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
-                <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" />
+                <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" onerror={(e) => fallback(e.currentTarget, p.thumb0)} />
               </button>
             </li>
           {/each}
