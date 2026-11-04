@@ -82,12 +82,12 @@ Cloudflare Worker + D1 + R2 백엔드 (방명록, 하객 스냅샷, 투표). 주
 ```sh
 pnpm install
 pnpm dev            # wrangler dev --local --env dev
-node test/run.mjs   # pnpm test 와 동일
+pnpm test           # vitest run (Workers 런타임 + 로컬 D1/R2)
 ```
 
-- `test/run.mjs` 는 `wrangler dev --env dev --test-scheduled` 를 임시 D1 로 띄워 fetch 로 검증 (등록, 페이징, 검증, 삭제, 레이트 리밋, CORS, 사진, 투표)
+- `test/*.test.ts` 는 `@cloudflare/vitest-plugin` 으로 Workers 런타임에서 실행하며 로컬 D1/R2 사용(등록, 페이징, 검증, 삭제, 레이트 리밋, CORS, 사진, 투표, 카카오 교환)
 - 로컬 시크릿은 `.dev.vars` (gitignore) 에 `IP_PEPPER=...` 기록
-- 투표 테스트는 `VOTE_MODE=device` + 모의 카카오 서버(`KAKAO_MOCK`, `ALLOW_LOCAL` 일 때만 동작) 사용
+- 투표 테스트는 `VOTE_MODE=device` 바인딩과 `fetch` 스파이로 모의한 카카오 응답 사용
 - `[env.dev]` 는 로컬 전용(`wedding-guestbook-dev` D1, `wedding-snapshots-dev` R2, 자리표시 id). 운영 리소스 접근 불가, 원격 배포에 사용 금지
 - `ALLOW_LOCAL` 은 `[env.dev]` 에만 존재하고 운영에는 없음
 

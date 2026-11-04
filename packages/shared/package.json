@@ -7,9 +7,13 @@
     "./schemas": "./src/schemas.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "4.1.12"
   }
 }
