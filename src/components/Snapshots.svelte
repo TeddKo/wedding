@@ -41,6 +41,7 @@
   let previewGen = 0;
   let overPick = $state(false);
   let sheetPw = $state("");
+  let sheetShow = $state(false);
   let sheetErr = $state("");
   let dlg = $state<HTMLDialogElement>();
   let dlgTitle = $state<HTMLElement>();
@@ -281,6 +282,7 @@
     tiles = [];
     pending = [];
     sheetPw = sheetErr = "";
+    sheetShow = false;
   }
 
   function trap(e: KeyboardEvent) {
@@ -437,7 +439,10 @@
       </div>
       {#if overPick}<p class="hint">한 번에 {MAX_PICK}장까지라 앞의 {MAX_PICK}장만 올라가요</p>{/if}
       <label for="snap-pw">삭제 비밀번호 (선택)</label>
-      <input id="snap-pw" type="text" bind:value={sheetPw} maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!sheetErr} aria-describedby={sheetErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
+      <div class="pwbox">
+        <input id="snap-pw" type={sheetShow ? "text" : "password"} bind:value={sheetPw} maxlength="64" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!sheetErr} aria-describedby={sheetErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
+        <button type="button" class="pw-eye" aria-pressed={sheetShow} aria-label={sheetShow ? "비밀번호 숨기기" : "비밀번호 보기"} onclick={() => (sheetShow = !sheetShow)}>{sheetShow ? "숨기기" : "보기"}</button>
+      </div>
       <p class="hint" id="snap-pw-h">정해 두면 나중에 어느 휴대폰에서든 이 비밀번호로 지울 수 있어요. 비워 두면 지금 이 휴대폰에서만 지울 수 있어요.</p>
       {#if sheetErr}<p class="err" id="snap-pw-e" role="alert">{sheetErr}</p>{/if}
       <button type="submit" class="go">{pending.length}장 올리기</button>
@@ -600,4 +605,9 @@
   @media (prefers-reduced-motion: reduce) { .sk, .sent.busy { animation: none; } }
 
   .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 260; pointer-events: none; }
+  /* 비밀번호 마스킹 + 보기 토글 */
+  .pwbox { position: relative; }
+  .pwbox input { width: 100%; padding-right: 64px; box-sizing: border-box; }
+  .pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); min-width: 52px; min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--ink-3); font: 500 13px/1 var(--f-ui, inherit); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .pw-eye:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 </style>

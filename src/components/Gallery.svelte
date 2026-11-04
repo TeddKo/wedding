@@ -150,6 +150,7 @@
 
   let delOpen = $state(false);
   let delPw = $state("");
+  let delShow = $state(false);
   let delErr = $state("");
   let delBusy = $state(false);
   let delBtn = $state<HTMLElement>();
@@ -159,6 +160,7 @@
 
   async function askDel() {
     delPw = "";
+    delShow = false;
     delErr = "";
     delOpen = true;
     await tick();
@@ -422,7 +424,10 @@
             <p class="del-q" id="gdel-q">이 사진을 삭제할까요?</p>
           {:else}
             <label class="del-q" for="gdel-pw">올릴 때 정한 비밀번호를 입력해 주세요</label>
-            <input id="gdel-pw" type="text" bind:this={delInput} bind:value={delPw} maxlength="64" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!delErr} />
+            <div class="pwbox">
+              <input id="gdel-pw" type={delShow ? "text" : "password"} bind:this={delInput} bind:value={delPw} maxlength="64" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!delErr} />
+              <button type="button" class="pw-eye" aria-pressed={delShow} aria-label={delShow ? "비밀번호 숨기기" : "비밀번호 보기"} onclick={() => (delShow = !delShow)}>{delShow ? "숨기기" : "보기"}</button>
+            </div>
             <p class="del-note">비밀번호를 잊으셨다면 신랑·신부에게 말씀해 주세요</p>
           {/if}
           <div class="del-row">
@@ -481,4 +486,9 @@
   .next { right: 10px; top: 50%; margin-top: -24px; }
   .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: rgb(255 255 255 / 0.8); font: 400 14px/1.4 var(--f-latin); }
   @media (prefers-reduced-motion: reduce) { .thumb img { transition: none; } }
+  /* 비밀번호 마스킹 + 보기 토글 */
+  .pwbox { position: relative; }
+  .pwbox input { width: 100%; padding-right: 64px; box-sizing: border-box; }
+  .pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); min-width: 52px; min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--ink-3); font: 500 13px/1 var(--f-ui, inherit); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .pw-eye:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 </style>
