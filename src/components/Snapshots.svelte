@@ -8,7 +8,7 @@
 
   type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string };
   type State = "wait" | "compress" | "upload" | "done" | "fail";
-  type Job = { id: number; file: File; uuid: string; state: State; pct: number; orig: number; out: number; err: string; url: string; pw: string };
+  type Job = { id: number; file: File; uuid: string; state: State; pct: number; err: string; url: string; pw: string };
   let { api, cdn = "" }: { api: string; cdn?: string } = $props();
 
   const MAX_PICK = 20;
@@ -57,8 +57,6 @@
   const LABEL: Record<State, string> = { wait: "대기", compress: "압축 중", upload: "업로드 중", done: "완료", fail: "실패" };
 
   const notify = (msg: string, warn = false) => (toast = { id: ++seq, msg, warn });
-  const mb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
-  const saved = (j: Job) => `${mb(j.orig)} → ${mb(j.out)} (−${Math.min(99, Math.max(0, Math.round((1 - j.out / j.orig) * 100)))}%)`;
   const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
   function deviceId() {
@@ -213,7 +211,7 @@
     if (!files.length) return;
     if (files.length > MAX_PICK) notify(`한 번에 ${MAX_PICK}장까지 올릴 수 있어요`, true);
     const add = files.slice(0, MAX_PICK).map(
-      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, orig: file.size, out: 0, err: "", url: "", pw: pw.trim() }),
+      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, err: "", url: "", pw: pw.trim() }),
     );
     jobs = [...jobs, ...add];
     pump();
@@ -293,7 +291,6 @@
         packed.set(j.id, c);
       }
       if (!j.url) j.url = URL.createObjectURL(c.thumb.blob);
-      j.out = c.full.blob.size;
       j.state = "upload";
       const total = c.full.blob.size + c.thumb.blob.size;
       const fullN = c.full.blob.size;
@@ -379,7 +376,6 @@
             <div class="info">
               <div class="line">
                 <span class="st">{LABEL[j.state]}</span>
-                {#if j.out}<span class="sz">{saved(j)}</span>{/if}
               </div>
               {#if j.state === "upload" || j.state === "done"}
                 <progress max="100" value={j.pct} aria-label="{j.file.name} 업로드 진행률">{j.pct}%</progress>
@@ -470,7 +466,6 @@
   .st { font-size: 13px; font-weight: 700; color: var(--ink); }
   .job[data-state="fail"] .st::before { content: "! "; }
   .job[data-state="done"] .st::before { content: "✓ "; }
-  .sz { font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
   progress { width: 100%; height: 6px; border: 0; border-radius: 3px; overflow: hidden; background: var(--track); accent-color: var(--accent); }
   progress::-webkit-progress-bar { background: var(--track); }
   progress::-webkit-progress-value { background: var(--accent); }
