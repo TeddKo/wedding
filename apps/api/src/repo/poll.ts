@@ -4,12 +4,12 @@ import { pollOptions, pollVotes } from "../db/schema";
 
 export const pollRows = (d: Db) =>
   d
-    .select({ id: pollOptions.id, text: pollOptions.text, creatorKey: pollOptions.creatorKey, votes: count(pollVotes.voterKey) })
+    .select({ id: pollOptions.id, text: pollOptions.text, creatorKey: pollOptions.creatorKey, votes: count(pollVotes.optionId) })
     .from(pollOptions)
     .leftJoin(pollVotes, eq(pollVotes.optionId, pollOptions.id))
     .where(eq(pollOptions.hidden, 0))
     .groupBy(pollOptions.id)
-    .orderBy(desc(count(pollVotes.voterKey)), asc(pollOptions.id));
+    .orderBy(desc(count(pollVotes.optionId)), asc(pollOptions.id));
 
 export const myVote = async (d: Db, vk: string) =>
   (await d.select({ optionId: pollVotes.optionId }).from(pollVotes).where(eq(pollVotes.voterKey, vk)).get())?.optionId ?? null;

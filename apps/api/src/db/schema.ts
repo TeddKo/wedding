@@ -31,7 +31,7 @@ export const photos = sqliteTable(
     hidden: integer("hidden").notNull().default(0),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("photos_ip").on(t.ipHash, t.createdAt), index("photos_created").on(t.hidden, t.createdAt), index("photos_device").on(t.deviceId)],
+  (t) => [index("photos_ip").on(t.ipHash, t.createdAt), index("photos_visible").on(t.hidden, t.id), index("photos_device").on(t.deviceId)],
 );
 
 export const pollOptions = sqliteTable(
