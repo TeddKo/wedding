@@ -8,7 +8,7 @@ import { fail, notAllowed } from "../errors";
 import { ipHash, json, noContent, page, pageParams, parseBody, readJsonObject } from "../http";
 import { ENTRY_IP_N, LIMIT_MS, PW_FAIL_N } from "../limits";
 import { deleteEntry, entryCredentials, insertEntry, listEntries, countRecentEntries } from "../repo/entries";
-import { countFails, recordFail } from "../repo/fails";
+import { takeAttempt } from "../repo/fails";
 
 const ID = "/entries/:id{[0-9]+}";
 
@@ -41,11 +41,9 @@ export const entries = new Hono<AppEnv>()
     const row = await entryCredentials(d, id);
     if (!row) fail(404, "not found");
     const ip = await ipHash(c);
-    if ((await countFails(d, ip)) >= PW_FAIL_N) fail(429, "too many attempts");
-    if (!safeEqBytes(await pbkdf2(password, unb64(row.salt)), unb64(row.pwHash))) {
-      await recordFail(d, ip);
-      fail(403, "wrong password");
-    }
+    const release = await takeAttempt(d, ip, PW_FAIL_N);
+    if (!safeEqBytes(await pbkdf2(password, unb64(row.salt)), unb64(row.pwHash))) fail(403, "wrong password");
+    await release();
     await deleteEntry(d, id);
     return noContent(c);
   })

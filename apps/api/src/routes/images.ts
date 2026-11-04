@@ -11,10 +11,11 @@ export const images = new Hono<AppEnv>()
   .get(`/p/:uuid/:kind{${PHOTO_KINDS.join("|")}}`, async (c) => {
     const { uuid, kind } = c.req.param();
     const url = new URL(c.req.url);
-    const key = url.origin + url.pathname;
+    if (!UUID.test(uuid) || url.pathname !== `/p/${uuid}/${kind}`) return fail(404, "not found");
+    const key = `${url.origin}/p/${uuid}/${kind}`;
     const hit = await caches.default.match(key);
     if (hit) return new Response(hit.body, hit);
-    const row = UUID.test(uuid) ? await visibleExt(db(c.env), uuid) : null;
+    const row = await visibleExt(db(c.env), uuid);
     const obj = row && (await c.env.BUCKET.get(`${kind}/${uuid}.${row.ext}`));
     if (!obj) return fail(404, "not found");
     const res = new Response(obj.body, {

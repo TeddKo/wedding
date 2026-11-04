@@ -6,7 +6,10 @@ import { sign } from "../auth";
 import { b64u, hmacSign } from "../domain/crypto";
 import type { AppEnv, Env } from "../env";
 import { fail, notAllowed } from "../errors";
-import { json, parseBody, readJsonObject } from "../http";
+import { db } from "../db/client";
+import { ipHash, json, parseBody, readJsonObject } from "../http";
+import { KAKAO_IP_N } from "../limits";
+import { takeAttempt } from "../repo/fails";
 
 const LOCAL_REDIRECT = /^http:\/\/(localhost|127\.0\.0\.1):\d{1,5}\/wedding\/$/;
 const redirectAllowed = (u: string, env: Env) => u === REDIRECT_URI || (env.ALLOW_LOCAL === "1" && LOCAL_REDIRECT.test(u));
@@ -22,6 +25,7 @@ export const auth = new Hono<AppEnv>()
     if (!body) fail(400, "invalid body");
     const { code, redirectUri } = parseBody(kakaoAuth, body);
     if (!redirectAllowed(redirectUri, c.env)) fail(400, "invalid body");
+    await takeAttempt(db(c.env), `kakao:${await ipHash(c)}`, KAKAO_IP_N);
     let id: string | null;
     try {
       id = await kakaoId(code, redirectUri, c.env);

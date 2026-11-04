@@ -1,7 +1,7 @@
 import { PHOTO, PHOTO_EXTS, type PhotoKind } from "@wedding/shared";
 import { db } from "../db/client";
 import { dims, sniff } from "../domain/image";
-import { b64, pbkdf2 } from "../domain/crypto";
+import { b64, pbkdf2, safeEqStr } from "../domain/crypto";
 import type { Env } from "../env";
 import { fail } from "../errors";
 import { DIM_TOLERANCE, IMMUTABLE, LIMIT_MS, PHOTO_DEVICE_MAX, PHOTO_IP_N } from "../limits";
@@ -37,6 +37,7 @@ export async function commitPhoto(env: Env, a: { uuid: string; device: string; p
 
   const up = await findUpload(d, uuid);
   const full = up?.fw && up.tw ? await env.BUCKET.head(`full/${uuid}.${up.ext}`) : null;
+  if (up?.deviceId && !(await safeEqStr(a.device, up.deviceId))) fail(403, "forbidden");
   if (!up || !full || !(await env.BUCKET.head(`thumb/${uuid}.${up.ext}`))) fail(409, "upload incomplete");
 
   const now = Date.now();

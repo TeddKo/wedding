@@ -120,6 +120,61 @@ describe("비밀번호 무차별 대입", () => {
   });
 });
 
+describe("인증 시도 제한 보강", () => {
+  it("방명록 삭제 병렬 오답 12건 중 일부는 429", async () => {
+    const made = await rawReq("/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(good), ip: "20.3.0.1" });
+    const { id } = (await made.json()) as { id: number };
+    const rs = await Promise.all(
+      Array.from({ length: 12 }, (_, i) => call(`/entries/${id}`, { method: "DELETE", body: { password: `bad${i}` }, ip: "20.3.0.9" })),
+    );
+    const s = rs.map((r) => r.status);
+    expect(s.filter((x) => x === 403).length).toBeLessThanOrEqual(10);
+    expect(s.filter((x) => x === 429).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("/auth/kakao IP당 20회 초과는 429", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((async () => {
+      throw new DOMException("timeout", "TimeoutError");
+    }) as typeof fetch);
+    const s: number[] = [];
+    for (let i = 0; i < 21; i++) s.push((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.1" })).status);
+    expect(s).toEqual([...Array(20).fill(502), 429]);
+    expect((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.2" })).status).toBe(502);
+  });
+
+  it("커밋은 업로드한 기기만 가능", async () => {
+    const u = crypto.randomUUID();
+    const h = { "X-Device": "device-owner0001" };
+    expect((await rawReq(`/photos/${u}/full`, { method: "PUT", headers: h, body: webp(800) })).status).toBe(204);
+    expect((await rawReq(`/photos/${u}/thumb`, { method: "PUT", headers: h, body: webp(600, 400, 300) })).status).toBe(204);
+    const c = (d: string) => rawReq(`/photos/${u}/commit`, { method: "POST", headers: { "X-Device": d, "Content-Type": "application/json" }, body: "{}" });
+    const bad = await c("device-intruder1");
+    expect(bad.status).toBe(403);
+    expect(((await bad.json()) as { error: string }).error).toBe("forbidden");
+    expect((await c("device-owner0001")).status).toBe(201);
+  });
+});
+
+describe("/p 캐시 키 정규화", () => {
+  it("변형 경로는 404, 정규 경로 삭제 후 캐시도 무효", async () => {
+    const u = crypto.randomUUID();
+    const dev = { "X-Device": "device-canoncanon" };
+    const put = (k: string, b: Uint8Array) => rawReq(`/photos/${u}/${k}`, { method: "PUT", headers: dev, body: b });
+    expect((await put("full", webp(800))).status).toBe(204);
+    expect((await put("thumb", webp(600, 400, 300))).status).toBe(204);
+    const c = await rawReq(`/photos/${u}/commit`, { method: "POST", headers: { ...dev, "Content-Type": "application/json" }, body: "{}" });
+    expect(c.status).toBe(201);
+    for (const v of [`/p/${u}/full/`, `/p/%${u.charCodeAt(0).toString(16)}${u.slice(1)}/full`, `/p/${u}/%66ull`, `/p/${u.toUpperCase()}/full`])
+      expect((await rawReq(v)).status, v).toBe(404);
+    expect((await rawReq(`/p/${u}/full`)).status).toBe(200);
+    await sleepMs(200);
+    const del = await rawReq(`/photos/${u}`, { method: "DELETE", headers: dev });
+    expect(del.status).toBe(204);
+    await sleepMs(200);
+    expect((await rawReq(`/p/${u}/full`)).status).toBe(404);
+  });
+});
+
 describe("/p 캐시", () => {
   it("캐시 적중 응답에도 헤더 병합 오류 없이 보안·CORS 헤더 부여", async () => {
     const u = crypto.randomUUID();
