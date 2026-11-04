@@ -9,7 +9,7 @@ const TOO_LARGE = "이 사진은 너무 커서 처리할 수 없어요. 다른 �
 const HEIC_BRANDS = ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
 
 type Packed = { blob: Blob; type: string };
-type In = { id: number; file: File; prev?: number } | { id: number; bitmap: ImageBitmap; size: number; prev?: number };
+type In = { warm: true } | { id: number; file: File; prev?: number } | { id: number; bitmap: ImageBitmap; size: number; prev?: number };
 const ctx = self as unknown as { postMessage(m: unknown, t?: Transferable[]): void; onmessage: ((e: MessageEvent<In>) => void) | null };
 
 let webpOk = true;
@@ -57,6 +57,9 @@ async function isHeicFile(f: File) {
   return t.startsWith("ftyp") && HEIC_BRANDS.includes(t.slice(4));
 }
 
+/** 청크 지연 로드(모듈 캐시로 1회). */
+const loadHeic = () => import("heic-to").then((m) => m.heicTo);
+
 const viaBitmap = (f: Blob) => createImageBitmap(f, { imageOrientation: "from-image" });
 
 /** createImageBitmap → (HEIC 만) heic-to 지연 로드. null 이면 메인 스레드 <img> 디코드가 마지막 수단. */
@@ -66,8 +69,7 @@ async function decode(f: File): Promise<ImageBitmap | null> {
   } catch {}
   if (await isHeicFile(f)) {
     try {
-      const { heicTo } = await import("heic-to");
-      return (await heicTo({ blob: f, type: "bitmap" })) as ImageBitmap;
+      return (await (await loadHeic())({ blob: f, type: "bitmap" })) as ImageBitmap;
     } catch {}
   }
   return null;
@@ -108,6 +110,12 @@ async function square(bmp: ImageBitmap, size: number) {
 
 ctx.onmessage = async (e) => {
   const m = e.data;
+  if ("warm" in m) {
+    try {
+      await (await loadHeic())({ blob: new Blob(), type: "bitmap" });
+    } catch {}
+    return;
+  }
   const run = (b: ImageBitmap, n: number) => (m.prev ? square(b, m.prev).then((blob) => ({ blob })) : pack(b, n).then((ok) => ({ ok })));
   try {
     if ("bitmap" in m) return ctx.postMessage({ id: m.id, ...(await run(m.bitmap, m.size)) });

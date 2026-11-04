@@ -99,13 +99,38 @@ async function decode(f: File): Promise<ImageBitmap> {
   throw new Error(UNSUPPORTED);
 }
 
-/** 압축·미리보기가 한 번에 하나씩만 디코드하도록 잇는 직렬 큐(메모리 보호). */
-let lock: Promise<unknown> = Promise.resolve();
-const serial = <T>(fn: () => Promise<T>): Promise<T> => {
-  const p = lock.then(fn, fn);
-  lock = p.catch(() => {});
-  return p;
+/** 압축·미리보기가 한 번에 하나씩만 디코드하도록 잇는 직렬 큐(메모리 보호). 미리보기(hi)는 대기 중인 압축보다 먼저 실행. */
+type Job = { hi: boolean; go: () => void };
+const queue: Job[] = [];
+let running = false;
+const next = () => {
+  if (running) return;
+  const j = queue.shift();
+  if (!j) return;
+  running = true;
+  j.go();
 };
+const serial = <T>(fn: () => Promise<T>, hi = false): Promise<T> =>
+  new Promise<T>((res, rej) => {
+    const go = () =>
+      fn().then(res, rej).finally(() => {
+        running = false;
+        next();
+      });
+    const at = hi ? queue.findIndex((j) => !j.hi) : -1;
+    queue.splice(at < 0 ? queue.length : at, 0, { hi, go });
+    next();
+  });
+
+/** HEIC 디코더(heic-to 청크·WASM)를 워커에서 미리 받아 둠. 페이지당 1회, 실패는 무시. */
+let warmed = false;
+export function warm() {
+  if (warmed || !workerOk()) return;
+  warmed = true;
+  try {
+    getWorker().postMessage({ warm: true });
+  } catch {}
+}
 
 /** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거됨. */
 export function compress(file: File): Promise<Compressed> {
@@ -122,8 +147,9 @@ export function compress(file: File): Promise<Compressed> {
 }
 
 /** 긴 변 size 의 중앙 정사각 JPEG 미리보기. HEIC 도 compress 와 같은 디코드 체인으로 처리. */
-export function preview(file: File, size = 112): Promise<Blob> {
+export function preview(file: File, size = 112, stale?: () => boolean): Promise<Blob> {
   return serial(async () => {
+    if (stale?.()) throw new Error("stale");
     if (workerOk()) {
       const m = await viaWorker(file, size);
       if (m) {
@@ -132,7 +158,7 @@ export function preview(file: File, size = 112): Promise<Blob> {
       }
     }
     return previewMain(file, size);
-  });
+  }, true);
 }
 
 const workerOk = () =>

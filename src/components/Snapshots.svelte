@@ -3,7 +3,7 @@
   import { reduced } from "../lib/motion";
   import Gallery from "./Gallery.svelte";
   import Toast from "./ui/Toast.svelte";
-  import { compress, isHeicFile, preview, type Compressed } from "../lib/compress";
+  import { compress, isHeicFile, preview, warm, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
 
   type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string; locked?: boolean };
@@ -36,7 +36,7 @@
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
   let pending = $state<File[]>([]);
-  type Tile = { url: string; ok: boolean; fell: boolean };
+  type Tile = { url: string; ok: boolean; fell: boolean; bad: boolean };
   let tiles = $state<Tile[]>([]);
   let previewGen = 0;
   let overPick = $state(false);
@@ -230,7 +230,7 @@
     overPick = files.length > MAX_PICK;
     pending = files.slice(0, MAX_PICK);
     const gen = ++previewGen;
-    tiles = pending.slice(0, PREVIEW_N).map(() => ({ url: "", ok: false, fell: false }));
+    tiles = pending.slice(0, PREVIEW_N).map(() => ({ url: "", ok: false, fell: false, bad: false }));
     pending.slice(0, PREVIEW_N).forEach((f, i) => void fill(f, tiles[i], gen));
     sheetPw = sheetErr = "";
     pickBtn?.focus();
@@ -248,12 +248,14 @@
     if (t.fell) return;
     t.fell = true;
     try {
-      const b = await preview(f);
+      const b = await preview(f, 112, () => gen !== previewGen);
       if (gen !== previewGen) return;
       if (t.url) URL.revokeObjectURL(t.url);
       t.ok = false;
       t.url = URL.createObjectURL(b);
-    } catch {}
+    } catch {
+      if (gen === previewGen) t.bad = true;
+    }
   }
 
   function submit() {
@@ -419,7 +421,7 @@
   {#if mounted}
     <div class="up">
       <input bind:this={input} class="file" type="file" accept="image/*,.heic,.heif" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
-      <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => input?.click()}>사진 올리기</button>
+      <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => (warm(), input?.click())}>사진 올리기</button>
       <p class="hint">한 번에 {MAX_PICK}장까지 올릴 수 있어요</p>
     </div>
   {/if}
@@ -429,7 +431,7 @@
       <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>사진 {pending.length}장을 올릴까요?</h2>
       <div class="pvs" aria-hidden="true">
         {#each tiles as t, i (i)}
-          <span class="pvt">{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</span>
+          <span class="pvt" class:ld={!t.ok && !t.bad}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</span>
         {/each}
         {#if pending.length > PREVIEW_N}<span class="more">외 {pending.length - PREVIEW_N}장</span>{/if}
       </div>
@@ -527,8 +529,11 @@
   .ttl { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; outline: none; }
   .pvs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .pvt { position: relative; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--track) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Ccircle cx='9' cy='11' r='1.6'/%3E%3Cpath d='m21 16-5-5-8 8'/%3E%3C/svg%3E") center / 22px no-repeat; }
-  .pvt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+  .pvt.ld { background: var(--track) linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%) 0 0 / 200% 100% no-repeat; animation: pv-shimmer 1.2s linear infinite; }
+  .pvt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 150ms ease-out; }
   .pvt img.on { opacity: 1; }
+  @keyframes pv-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+  @media (prefers-reduced-motion: reduce) { .pvt.ld { animation: none; background-image: none; } .pvt img { transition: none; } }
   .more { font-size: 14px; color: var(--ink-2); padding-left: 4px; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
   .sheet input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
