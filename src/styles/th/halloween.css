@@ -157,7 +157,7 @@ html[data-theme="halloween"] .gal-sets { position: relative; }
 @media (max-width: 360px) { .hw-hat { right: 0; } }
 
 /* 호박 등불(계좌 좌측): 사슬에 매달려 속불이 일렁임, 탭하면 흔들리며 밝아짐 */
-.hw-lantern { left: 10px; top: 0; width: 36px; height: 70px; color: var(--ink); }
+.hw-lantern { left: 6px; top: 0; width: 44px; height: 70px; padding: 0 4px; box-sizing: border-box; color: var(--ink); }
 .hw-lan-swing { position: absolute; inset: 0; transform-origin: 50% 0; }
 .hw-lan-glow { transform-box: fill-box; transform-origin: center; opacity: .45; animation: hw-flick 2.3s ease-in-out infinite; }
 @keyframes hw-flick { 0%, 100% { opacity: .4; } 18% { opacity: .62; } 34% { opacity: .46; } 55% { opacity: .7; } 78% { opacity: .5; } }
