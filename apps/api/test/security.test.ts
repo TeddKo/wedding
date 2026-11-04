@@ -133,15 +133,35 @@ describe("인증 시도 제한 보강", () => {
     expect(s.filter((x) => x === 429).length).toBeGreaterThanOrEqual(2);
   });
 
-  it("/auth/kakao 실패 KAKAO_IP_N회 초과는 429", async () => {
+  it("잠금 이후 추가 시도는 pw_fails 행을 만들지 않음", async () => {
+    const made = await rawReq("/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(good), ip: "20.5.0.1" });
+    const { id } = (await made.json()) as { id: number };
+    const del = () => call(`/entries/${id}`, { method: "DELETE", body: { password: "bad" }, ip: "20.5.0.9" });
+    for (let i = 0; i < 11; i++) await del();
+    const rows = () => env.DB.prepare("SELECT COUNT(*) n FROM pw_fails").first<{ n: number }>();
+    const before = await rows();
+    for (let i = 0; i < 3; i++) expect((await del()).status).toBe(429);
+    expect(await rows()).toEqual(before);
+  });
+
+  it("카카오 장애(502)는 시도를 반납해 공유 IP 를 잠그지 않음", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((async () => {
       throw new DOMException("timeout", "TimeoutError");
     }) as typeof fetch);
+    const rows = () => env.DB.prepare("SELECT COUNT(*) n FROM pw_fails WHERE ip_hash LIKE 'kakao:%'").first<{ n: number }>();
+    const before = await rows();
+    for (let i = 0; i < 3; i++)
+      expect((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.6.0.1" })).status).toBe(502);
+    expect(await rows()).toEqual(before);
+  });
+
+  it("/auth/kakao 거절(401) KAKAO_IP_N회 초과는 429", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((async () => new Response("{}", { status: 400 })) as typeof fetch);
     const s: number[] = [];
     for (let i = 0; i <= KAKAO_IP_N; i++)
       s.push((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.1" })).status);
-    expect(s).toEqual([...Array(KAKAO_IP_N).fill(502), 429]);
-    expect((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.2" })).status).toBe(502);
+    expect(s).toEqual([...Array(KAKAO_IP_N).fill(401), 429]);
+    expect((await call("/auth/kakao", { method: "POST", body: { code: "ok-1", redirectUri: REDIR }, ip: "20.4.0.2" })).status).toBe(401);
   });
 
   it("커밋은 업로드한 기기만 가능", async () => {

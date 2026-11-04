@@ -4,9 +4,18 @@ import { dims, sniff } from "../domain/image";
 import { b64, pbkdf2, safeEqStr } from "../domain/crypto";
 import type { Env } from "../env";
 import { fail } from "../errors";
-import { DIM_TOLERANCE, IMMUTABLE, LIMIT_MS, PHOTO_DEVICE_MAX, PHOTO_IP_N } from "../limits";
-import { deletePhoto, findPhoto, hidePhoto, insertPhoto, type PhotoRow, photoExists } from "../repo/photos";
-import { countUploadsByDevice, countUploadsByIp, deleteUpload, findUpload, insertUpload, setFullDims, setThumbDims } from "../repo/uploads";
+import { DIM_TOLERANCE, IMMUTABLE, LIMIT_MS, PHOTO_DEVICE_MAX, PHOTO_IP_N, PHOTO_TOTAL_N } from "../limits";
+import { countVisiblePhotos, deletePhoto, findPhoto, hidePhoto, insertPhoto, type PhotoRow, photoExists } from "../repo/photos";
+import {
+  countPendingUploads,
+  countUploadsByDevice,
+  countUploadsByIp,
+  deleteUpload,
+  findUpload,
+  insertUpload,
+  setFullDims,
+  setThumbDims,
+} from "../repo/uploads";
 
 /** 원본/썸네일 업로드. 값싼 검사(존재·한도) 후에만 본문을 읽는다 */
 export async function putImage(env: Env, a: { uuid: string; kind: PhotoKind; device: string; ip: string }, readBody: () => Promise<Uint8Array | null>) {
@@ -16,6 +25,7 @@ export async function putImage(env: Env, a: { uuid: string; kind: PhotoKind; dev
   if (!(await findUpload(d, uuid))) {
     if ((await countUploadsByIp(d, a.ip, Date.now() - LIMIT_MS)) >= PHOTO_IP_N || (await countUploadsByDevice(d, a.device)) >= PHOTO_DEVICE_MAX)
       fail(429, "too many uploads");
+    if ((await countVisiblePhotos(d)) + (await countPendingUploads(d)) >= (Number(env.PHOTO_TOTAL_N) || PHOTO_TOTAL_N)) fail(403, "full");
   }
   const bytes = (await readBody()) ?? fail(413, "too large");
   const ext = sniff(bytes.subarray(0, 12)) ?? fail(415, "unsupported type");

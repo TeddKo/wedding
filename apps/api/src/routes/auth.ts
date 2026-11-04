@@ -30,6 +30,7 @@ export const auth = new Hono<AppEnv>()
     try {
       id = await kakaoId(code, redirectUri, c.env);
     } catch {
+      await release();
       return fail(502, "kakao unavailable");
     }
     if (!id) fail(401, "kakao");

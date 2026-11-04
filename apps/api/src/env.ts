@@ -10,6 +10,7 @@ export interface Env {
   KAKAO_REST_KEY?: string;
   KAKAO_CLIENT_SECRET?: string;
   ORPHAN_MS?: string;
+  PHOTO_TOTAL_N?: string;
 }
 
 export type AppEnv = { Bindings: Env };

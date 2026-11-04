@@ -22,3 +22,5 @@ export const orphanUploads = (d: Db, cutoff: number) =>
     .from(uploads)
     .where(and(lt(uploads.createdAt, cutoff), notInArray(uploads.uuid, d.select({ uuid: photos.uuid }).from(photos))))
     .limit(500);
+
+export const countPendingUploads = (d: Db) => d.$count(uploads, notInArray(uploads.uuid, d.select({ uuid: photos.uuid }).from(photos)));

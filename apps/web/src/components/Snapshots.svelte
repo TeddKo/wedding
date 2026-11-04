@@ -382,6 +382,7 @@
       j.err =
         e instanceof Error && s === -1 && e.message.startsWith("이 사진") ? e.message
         : s === 413 || s === 415 || s === 422 ? "이 사진은 올릴 수 없어요. 다른 사진을 선택해 주세요."
+        : s === 403 ? "업로드 가능한 사진 수를 모두 채웠어요."
         : s === 429 ? "업로드 한도에 도달했어요. 잠시 후 다시 시도해 주세요."
         : GENERIC;
       j.state = "fail";
