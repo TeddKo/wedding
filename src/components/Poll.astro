@@ -1,0 +1,23 @@
+---
+import { fnv7 } from "../lib/hash";
+import PollIsland from "./Poll.svelte";
+import { wedding } from "../data/wedding";
+---
+
+{
+  wedding.guestbookApi && wedding.poll?.question && (
+    <section class="section poll-section" data-reveal aria-labelledby="poll-h">
+      <p class="eyebrow" data-rv="fade">VOTE</p>
+      <h2 class="sec-title" id="poll-h" tabindex="-1" data-rv="mask" style="--d:120ms"><span class="hash" data-th="dev" aria-hidden="true">{fnv7("vote")}</span>하객 투표</h2>
+      <p class="body-copy" data-rv="lines" style="--d:320ms">{wedding.poll.question}</p>
+      <PollIsland client:idle api={wedding.guestbookApi} question={wedding.poll.question} kakaoKey={wedding.kakaoJsKey} />
+      <noscript><p class="cap">투표는 JavaScript가 켜진 브라우저에서 할 수 있어요</p></noscript>
+    </section>
+  )
+}
+
+<style>
+  .poll-section { text-align: center; }
+  .poll-section .body-copy { margin: 20px 0 28px; }
+  #poll-h { scroll-margin-top: 24px; outline: none; }
+</style>

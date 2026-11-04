@@ -5,13 +5,32 @@ import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { createHmac } from "node:crypto";
 
 const PORT = 8799;
 const BASE = `http://127.0.0.1:${PORT}`;
 const OK = "https://teddko.github.io";
 const persist = mkdtempSync(join(tmpdir(), "gb-"));
 const varsFile = join(persist, ".dev.vars");
-writeFileSync(varsFile, "IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\n");
+const KMOCK = 8798;
+const SECRET = "test-session-secret";
+writeFileSync(varsFile, `IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\nVOTE_MODE=device\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\nKAKAO_REST_KEY=rk\nKAKAO_CLIENT_SECRET=cs\nKAKAO_MOCK=http://127.0.0.1:${KMOCK}\n`);
+const kseen = [];
+const kmock = createServer(async (rq, rs) => {
+  const raw = rq.method === "POST" ? await new Promise((r) => { let b = ""; rq.on("data", (c) => (b += c)); rq.on("end", () => r(b)); }) : "";
+  const q = new URLSearchParams(raw);
+  rs.setHeader("content-type", "application/json");
+  if (rq.url === "/oauth/token") {
+    kseen.push(Object.fromEntries(q));
+    const ok = q.get("code")?.startsWith("ok-");
+    rs.statusCode = ok ? 200 : 400;
+    rs.end(JSON.stringify(ok ? { access_token: "at-" + q.get("code").slice(3) } : { error: "invalid_grant" }));
+  } else if (rq.url === "/v1/user/access_token_info") {
+    const at = (rq.headers.authorization ?? "").replace("Bearer at-", "");
+    rs.end(JSON.stringify({ id: Number(at) }));
+  } else { rs.statusCode = 404; rs.end("{}"); }
+}).listen(KMOCK, "127.0.0.1");
 const w = (...a) => ["wrangler", ...a, "--env", "dev", "--persist-to", persist];
 
 execFileSync("npx", ["--no-install", ...w("d1", "migrations", "apply", "wedding-guestbook", "--local")], { stdio: "ignore" });
@@ -199,10 +218,122 @@ try {
   const pre2 = await call("/photos/x/full", { method: "OPTIONS" });
   assert.match(pre2.headers.get("access-control-allow-methods"), /PUT/);
   assert.match(pre2.headers.get("access-control-allow-headers"), /X-Device/);
+  /* ---------- 투표 ---------- */
+  const pc = (path, { method = "GET", body, token, ip = "10.0.0.1", origin = OK } = {}) =>
+    fetch(BASE + path, {
+      method,
+      headers: { "content-type": "application/json", "CF-Connecting-IP": ip, Origin: origin, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  const tok = async () => (await (await pc("/auth/device", { method: "POST" })).json()).token;
+  const addOpt = (text, token, ip) => pc("/poll/options", { method: "POST", body: { text }, token, ip });
+  const castVote = (optionId, token) => pc("/poll/vote", { method: "POST", body: { optionId }, token });
+  const state = async (token) => (await pc("/poll", { token })).json();
+
+  let g = await state();
+  assert.deepEqual([g.options, g.total, g.myVote, g.mode], [[], 0, null, "device"]);
+  assert.equal((await addOpt("x")).status, 401);
+  assert.equal((await castVote(1)).status, 401);
+
+  const tA = await tok(), tB = await tok(), tC = await tok();
+  for (const t of ["", "   ", "a".repeat(31), "a\u0007b", "a\tb", "a\nb", 123, null])
+    assert.equal((await addOpt(t, tA)).status, 400, JSON.stringify(t));
+  assert.equal((await pc("/poll/options", { method: "POST", body: {}, token: tA })).status, 400);
+  r = await addOpt("  Vampire    Bat ", tA);
+  assert.equal(r.status, 201);
+  g = await r.json();
+  const o1 = g.created;
+  assert.deepEqual(g.options, [{ id: o1, text: "Vampire Bat", votes: 0, mine: true }]);
+  assert.equal((await state(tB)).options[0].mine, false);
+  assert.equal((await state()).options[0].mine, false);
+  assert.equal((await addOpt("vampire bat", tB)).status, 409);
+  assert.equal((await (await addOpt("VAMPIRE BAT", tB)).json()).error, "duplicate");
+  assert.equal((await addOpt("Ghost", tA)).status, 201);
+  r = await addOpt("Mummy", tA);
+  assert.equal(r.status, 409);
+  assert.equal((await r.json()).error, "limit");
+
+  assert.equal((await castVote(999, tB)).status, 404);
+  assert.equal((await castVote("1", tB)).status, 400);
+  r = await castVote(o1, tB);
+  assert.equal(r.status, 200);
+  g = await r.json();
+  assert.equal(g.total, 1);
+  assert.equal(g.myVote, o1);
+  r = await castVote(o1, tB);
+  assert.equal(r.status, 409);
+  g = await r.json();
+  assert.deepEqual([g.error, g.total, g.myVote], ["already", 1, o1]);
+  assert.equal((await state()).myVote, null);
+
+  const rs = await Promise.all(Array.from({ length: 10 }, () => castVote(o1, tC)));
+  assert.deepEqual(rs.map((x) => x.status).sort(), [200, ...Array(9).fill(409)]);
+  assert.equal((await state()).total, 2);
+
+  const sTamper = tA.slice(0, -2) + (tA.endsWith("AA") ? "BB" : "AA");
+  const [pA, sA] = tA.split(".");
+  const forged = Buffer.from(JSON.stringify({ vk: "device:evil", exp: Date.now() + 1e9 })).toString("base64url") + "." + sA;
+  const mint = (obj, secret = SECRET) => { const p = Buffer.from(JSON.stringify(obj)).toString("base64url"); return `${p}.${createHmac("sha256", secret).update(p).digest("base64url")}`; };
+  for (const t of [sTamper, forged, "garbage", `${pA}.${sA}.x`, mint({ vk: "device:z", exp: Date.now() - 1000 }), mint({ vk: "device:z", exp: Date.now() + 1e9 }, "other-secret"), mint({ vk: 5, exp: Date.now() + 1e9 })])
+    assert.equal((await castVote(o1, t)).status, 401, t);
+  assert.equal((await state(sTamper)).myVote, null);
+  assert.equal((await castVote(o1, mint({ vk: "device:minted", exp: Date.now() + 1e9 }))).status, 200);
+
+  const raw = JSON.stringify(await state(tB));
+  assert.ok(!raw.match(/voter_key|creator_key|ip_hash|device:|vk/));
+  assert.match((await pc("/poll")).headers.get("cache-control"), /no-store/);
+
+  const rl = [];
+  for (let i = 0; i < 6; i++) rl.push((await addOpt(`rate${i}`, await tok(), "10.9.9.9")).status);
+  assert.deepEqual(rl, [201, 201, 201, 201, 201, 429]);
+
+  assert.equal((await pc(`/poll/options/${o1}`, { method: "DELETE" })).status, 403);
+  assert.equal((await pc(`/poll/options/${o1}`, { method: "DELETE", token: tA })).status, 403);
+  assert.equal((await pc(`/poll/options/${o1}`, { method: "DELETE", token: "test-admin" })).status, 204);
+  g = await state(tB);
+  assert.ok(!g.options.some((o) => o.id === o1));
+  assert.equal(g.total, 0);
+  assert.equal((await castVote(o1, await tok())).status, 404);
+
+  let k = 0;
+  while ((await state()).options.length < 20) assert.equal((await addOpt(`fill${k}`, await tok(), `10.2.${k >> 2}.1`)).status, 201), k++;
+  r = await addOpt("one too many", await tok(), "10.3.0.1");
+  assert.equal(r.status, 409);
+  assert.equal((await r.json()).error, "full");
+
+  assert.equal((await pc("/poll", { origin: "https://evil.example" })).headers.get("access-control-allow-origin"), null);
+  assert.equal((await pc("/poll", { origin: "https://evil.example" })).status, 200);
+  assert.match((await pc("/poll", { method: "OPTIONS" })).headers.get("access-control-allow-headers"), /Authorization/);
+  assert.equal((await pc("/poll", { method: "POST", body: {} })).status, 405);
+
+  /* 카카오 교환(모의 서버) */
+  const REDIR = "https://teddko.github.io/wedding/";
+  const kk = (body) => pc("/auth/kakao", { method: "POST", body });
+  r = await kk({ code: "ok-7777777001", redirectUri: REDIR });
+  assert.equal(r.status, 200);
+  const kt = (await r.json()).token;
+  assert.deepEqual(kseen.at(-1), { grant_type: "authorization_code", client_id: "rk", redirect_uri: REDIR, code: "ok-7777777001", client_secret: "cs" });
+  assert.ok(!Buffer.from(kt.split(".")[0], "base64url").toString().includes("7777777001"));
+  const optK = (await state(kt)).options[0].id;
+  assert.equal((await castVote(optK, kt)).status, 200);
+  const kt2 = (await (await kk({ code: "ok-7777777001", redirectUri: REDIR })).json()).token;
+  assert.equal((await castVote(optK, kt2)).status, 409);
+  assert.equal((await state(kt2)).myVote, optK);
+  const kt3 = (await (await kk({ code: "ok-7777777002", redirectUri: REDIR })).json()).token;
+  assert.equal((await castVote(optK, kt3)).status, 200);
+  r = await kk({ code: "bad-code", redirectUri: REDIR });
+  assert.equal(r.status, 401);
+  assert.ok(!(await r.json()).token);
+  assert.equal((await kk({ code: "ok-1", redirectUri: "https://evil.example/" })).status, 400);
+  assert.equal((await kk({ code: "ok-1", redirectUri: "http://localhost:4321/wedding/" })).status, 200);
+  assert.equal((await kk({ redirectUri: REDIR })).status, 400);
+  assert.equal((await pc("/auth/kakao", { method: "GET" })).status, 405);
+
   console.log("ALL PASS");
 } catch (e) {
   console.error(e);
   process.exitCode = 1;
 } finally {
   dev.kill();
+  kmock.close();
 }

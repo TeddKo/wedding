@@ -15,6 +15,7 @@ Astro 정적 사이트 + Svelte 5 아일랜드. 배포 주소 예정: `https://t
 | `MapApps.svelte` | visible | 길찾기 앱 버튼(네이버지도/티맵/카카오맵) 3개. 브랜드 아이콘은 `src/lib/brand.ts`, 플랫폼별 딥링크는 `src/lib/maps.ts`, UA 판별은 `src/lib/platform.ts`, 검증은 `node scripts/maps.check.mjs`. JS 가 꺼지면 웹 링크 |
 | `KakaoMap.svelte` | visible | 카카오맵 임베드(JS SDK 지연 로드, `autoload=false` + `kakao.maps.load`). 기본은 이동/줌 잠금, `지도 이동` 토글로 해제(페이지 스크롤 가로채기 방지). 8초 안에 타일이 안 뜨거나 SDK 오류면 주소 카드 + `카카오맵에서 보기` 링크로 대체. JS 가 꺼지면 서버 HTML 의 주소 카드 |
 | `Guestbook.svelte` | visible | 축하 글: 최신 5개 + 더보기(IntersectionObserver 무한 스크롤, 커서 페이지), 접기(로드된 앞 5개, 재요청 없음), 작성/비밀번호 삭제, 스켈레톤/빈 상태/오류 재시도. API 는 `guestbook/`(Cloudflare Worker + D1, 별도 패키지)이고 주소는 `wedding.guestbookApi`(비면 섹션 숨김). 메시지는 줄바꿈을 허용한다(서버가 `\r\n`→`\n`, 빈 줄은 최대 1줄로 정리). 그 밖의 제어문자는 거부. 모든 글은 텍스트로만 렌더링 |
+| `Poll.svelte` | idle | 하객 투표: 결과(막대/%/표)는 누구나 보고, 투표·항목 추가는 카카오 로그인(JS SDK `Kakao.Auth.authorize` 리다이렉트, 필요할 때 SDK 로드) 후 1인 1표(변경 불가). 항목은 하객이 추가(30자, 최대 20개, 1인 2개). 로그인 복귀(`?code=&state=poll`)를 처리하고 URL 을 정리한 뒤 투표 섹션으로 돌아온다. 질문은 `wedding.poll.question`(비면 섹션 숨김), API 는 방명록과 같은 Worker. 20초마다 새로고침(화면에 보일 때만) |
 | `AccountGroups.svelte` | load | 계좌 신랑측/신부측 탭(`role="tablist"`, 방향키/Home/End 이동). JS 가 없으면 두 그룹이 모두 보인다 |
 | `ActionButtons.svelte` | idle | 복사/카카오 공유 버튼: 리플, 스프링 토스트 "복사됨", 공유 시 불씨 폭죽 |
 | `ThemeSwitch.svelte` | idle | 우하단 원형 테마 순환 버튼 |
@@ -66,6 +67,7 @@ corepack pnpm build    # astro check + astro build -> dist/
   - 부모 이름과 `number` 가 모두 비면 그 행은 숨김. 항목이 0개면 섹션 전체 숨김
   - `payLink`: 있으면 "송금" 버튼(토스/카카오페이 등 링크). 복사 버튼은 `은행 번호` 를 복사
 - 축하 글 API: `guestbookApi` (Worker URL). 비면 섹션 숨김. 서버는 `guestbook/` 참고(루트 빌드/CI 와 무관, `tsconfig` 에서 제외)
+- 하객 투표: `poll.question`. 비면(또는 `guestbookApi` 가 비면) 섹션 숨김. 항목은 DB 에 시드하지 않고 하객이 추가한다.
 - 참석 여부: `rsvpUrl` 에 구글폼 URL. 비면 섹션 숨김.
 - 날짜/시간: `date`, `time` (공유 문구 제외 전부 자동 반영)
 - 공유 문구: `share` (카카오 공유 제목/설명)

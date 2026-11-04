@@ -4,6 +4,12 @@ export interface Env {
   ADMIN_TOKEN?: string;
   IP_PEPPER: string;
   ALLOW_LOCAL?: string;
+  VOTE_MODE?: string;
+  VOTER_PEPPER?: string;
+  SESSION_SECRET?: string;
+  KAKAO_REST_KEY?: string;
+  KAKAO_CLIENT_SECRET?: string;
+  KAKAO_MOCK?: string;
 }
 
 const ORIGIN = "https://teddko.github.io";
@@ -79,6 +85,139 @@ const field = (v: unknown, min: number, max: number, multiline = false) => {
   return t.length >= min && t.length <= max && !hasCtrl(checked) ? t : null;
 };
 
+
+const POLL = { max: 20, perCreator: 2, ipN: 5, len: 30, session: 30 * 24 * 3600 * 1000 };
+const REDIRECT = "https://teddko.github.io/wedding/";
+const b64u = (b: Uint8Array) => b64(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64u = (s: string) => unb64(s.replace(/-/g, "+").replace(/_/g, "/"));
+
+async function hmac(secret: string | undefined, msg: string) {
+  if (!secret) throw new Error("secret missing");
+  const k = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", k, enc.encode(msg)));
+}
+
+async function sign(vk: string, env: Env) {
+  const p = b64u(enc.encode(JSON.stringify({ vk, exp: Date.now() + POLL.session })));
+  return `${p}.${b64u(await hmac(env.SESSION_SECRET, p))}`;
+}
+
+async function verify(req: Request, env: Env): Promise<string | null> {
+  const [p, s, extra] = (req.headers.get("Authorization") ?? "").replace(/^Bearer /, "").split(".");
+  if (!p || !s || extra !== undefined) return null;
+  try {
+    if (!eq(unb64u(s), await hmac(env.SESSION_SECRET, p))) return null;
+    const { vk, exp } = JSON.parse(new TextDecoder().decode(unb64u(p)));
+    return typeof vk === "string" && typeof exp === "number" && exp > Date.now() ? vk : null;
+  } catch {
+    return null;
+  }
+}
+
+async function kakaoId(code: string, redirectUri: string, env: Env): Promise<string | null> {
+  const mock = env.ALLOW_LOCAL === "1" ? env.KAKAO_MOCK : undefined;
+  const t = await fetch(`${mock ?? "https://kauth.kakao.com"}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: env.KAKAO_REST_KEY ?? "",
+      redirect_uri: redirectUri,
+      code,
+      client_secret: env.KAKAO_CLIENT_SECRET ?? "",
+    }),
+  });
+  const tok = t.ok ? ((await t.json()) as { access_token?: string }).access_token : null;
+  if (!tok) return null;
+  const i = await fetch(`${mock ?? "https://kapi.kakao.com"}/v1/user/access_token_info`, { headers: { Authorization: `Bearer ${tok}` } });
+  const id = i.ok ? ((await i.json()) as { id?: number | string }).id : null;
+  return typeof id === "number" || typeof id === "string" ? String(id) : null;
+}
+
+async function poll(req: Request, env: Env, url: URL, cors: string | null): Promise<Response | null> {
+  const m = url.pathname.match(/^\/(auth\/(?:kakao|device)|poll(?:\/(?:options(?:\/(\d+))?|vote))?)\/?$/);
+  if (!m) return null;
+  const route = m[1].replace(/\/\d+$/, "");
+  const oid = m[2];
+  const device = env.VOTE_MODE === "device";
+
+  const results = async (vk: string | null) => {
+    const { results: rows } = await env.DB.prepare(
+      "SELECT o.id,o.text,o.creator_key,COUNT(v.voter_key) AS votes FROM poll_options o LEFT JOIN poll_votes v ON v.option_id = o.id WHERE o.hidden = 0 GROUP BY o.id ORDER BY votes DESC, o.id ASC",
+    ).all<{ id: number; text: string; creator_key: string; votes: number }>();
+    const mine = vk ? await env.DB.prepare("SELECT option_id FROM poll_votes WHERE voter_key = ?").bind(vk).first<{ option_id: number }>() : null;
+    return {
+      mode: device ? "device" : "kakao",
+      options: rows.map((o) => ({ id: o.id, text: o.text, votes: o.votes, mine: !!vk && o.creator_key === vk })),
+      total: rows.reduce((a, o) => a + o.votes, 0),
+      myVote: mine?.option_id ?? null,
+    };
+  };
+
+  if (route === "poll" && req.method === "GET") return json(await results(await verify(req, env)), 200, cors);
+
+  if (route === "auth/device" && req.method === "POST") {
+    if (!device) return bad(cors, "not found", 404);
+    return json({ token: await sign(`device:${crypto.randomUUID()}`, env) }, 200, cors);
+  }
+
+  if (route === "auth/kakao" && req.method === "POST") {
+    const body = await readJson(req);
+    const code = body && field(body.code, 1, 512);
+    const redirectUri = body && typeof body.redirectUri === "string" ? body.redirectUri : "";
+    const okUri = redirectUri === REDIRECT || (env.ALLOW_LOCAL === "1" && /^http:\/\/(localhost|127\.0\.0\.1):\d+\/wedding\/$/.test(redirectUri));
+    if (!code || !okUri) return bad(cors, "invalid body");
+    let id: string | null;
+    try {
+      id = await kakaoId(code, redirectUri, env);
+    } catch {
+      return bad(cors, "kakao unavailable", 502);
+    }
+    if (!id) return bad(cors, "kakao", 401);
+    return json({ token: await sign(b64u(await hmac(env.VOTER_PEPPER, `kakao:${id}`)), env) }, 200, cors);
+  }
+
+  if (route === "poll/options" && oid && req.method === "DELETE") {
+    const t = (req.headers.get("Authorization") ?? "").replace(/^Bearer /, "");
+    if (!env.ADMIN_TOKEN || !t || !eq(enc.encode(t), enc.encode(env.ADMIN_TOKEN))) return bad(cors, "forbidden", 403);
+    await env.DB.prepare("UPDATE poll_options SET hidden = 1 WHERE id = ?").bind(Number(oid)).run();
+    return json(null, 204, cors);
+  }
+
+  if ((route === "poll/options" && !oid && req.method === "POST") || (route === "poll/vote" && req.method === "POST")) {
+    const vk = await verify(req, env);
+    if (!vk) return bad(cors, "unauthorized", 401);
+    const body = await readJson(req);
+    if (!body) return bad(cors, "invalid body");
+    const now = Date.now();
+    const n = (sql: string, ...a: unknown[]) => env.DB.prepare(sql).bind(...a).first<{ n: number }>().then((r) => r?.n ?? 0);
+
+    if (route === "poll/vote") {
+      const optionId = body.optionId;
+      if (!Number.isInteger(optionId)) return bad(cors, "invalid option");
+      if (!(await n("SELECT COUNT(*) AS n FROM poll_options WHERE id = ? AND hidden = 0", optionId))) return bad(cors, "not found", 404);
+      const r = await env.DB.prepare("INSERT INTO poll_votes (voter_key,option_id,created_at) VALUES (?,?,?) ON CONFLICT(voter_key) DO NOTHING")
+        .bind(vk, optionId, now)
+        .run();
+      const out = await results(vk);
+      return r.meta.changes ? json(out, 200, cors) : json({ error: "already", ...out }, 409, cors);
+    }
+
+    const text = typeof body.text === "string" && !hasCtrl(body.text) ? field(body.text.replace(/\s+/g, " "), 1, POLL.len) : null;
+    if (!text) return bad(cors, "invalid text");
+    const ipHash = await sha256((req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
+    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE ip_hash = ? AND created_at > ?", ipHash, now - LIMIT_MS)) >= POLL.ipN) return bad(cors, "too many", 429);
+    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE hidden = 0")) >= POLL.max) return bad(cors, "full", 409);
+    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE creator_key = ?", vk)) >= POLL.perCreator) return bad(cors, "limit", 409);
+    const row = await env.DB.prepare("INSERT INTO poll_options (text,norm,creator_key,ip_hash,created_at) VALUES (?,?,?,?,?) ON CONFLICT(norm) DO NOTHING RETURNING id")
+      .bind(text, text.toLowerCase(), vk, ipHash, now)
+      .first<{ id: number }>();
+    if (!row) return bad(cors, "duplicate", 409);
+    return json({ ...(await results(vk)), created: row.id }, 201, cors);
+  }
+
+  return bad(cors, "method not allowed", 405);
+}
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
 type Photo = { id: number; uuid: string; ext: keyof typeof EXT; w: number; h: number; created_at: number };
@@ -251,7 +390,7 @@ export default {
       }
       return new Response(null, { status: 204, headers: h });
     }
-    if (!m) return (await photos(req, env, ctx, url, cors)) ?? json({ error: "not found" }, 404, cors);
+    if (!m) return (await poll(req, env, url, cors)) ?? (await photos(req, env, ctx, url, cors)) ?? json({ error: "not found" }, 404, cors);
     const id = m[1];
 
     if (!id && req.method === "GET") {
