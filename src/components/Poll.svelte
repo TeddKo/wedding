@@ -11,9 +11,9 @@
   const SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
   const SDK_SRI = "sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w";
   const ADD_ERR: Record<string, string> = {
-    duplicate: "이미 있는 항목이에요",
-    full: `항목이 가득 찼어요 (최대 ${MAX_OPTS}개)`,
-    limit: "항목은 한 사람당 2개까지 추가할 수 있어요",
+    duplicate: "이미 있는 후보예요",
+    full: `후보가 가득 찼어요 (최대 ${MAX_OPTS}개)`,
+    limit: "후보는 한 사람당 2개까지 추가할 수 있어요",
     "too many": "잠시 후 다시 시도해 주세요",
   };
 
@@ -112,14 +112,14 @@
       } else if (s === 404) {
         await load(true);
         sel = null;
-        say("항목이 사라졌어요. 다시 선택해 주세요.", true);
+        say("후보가 사라졌어요. 다시 선택해 주세요.", true);
       } else say("잠시 후 다시 시도해 주세요", true);
     });
 
   const add = (e: SubmitEvent) => {
     e.preventDefault();
     const t = norm(text);
-    textErr = !t ? "항목을 입력해 주세요" : t.length > MAX_LEN ? `${MAX_LEN}자 이내로 입력해 주세요` : /[\u0000-\u001f\u007f-\u009f]|\p{Cf}/u.test(text.normalize("NFKC")) ? "사용할 수 없는 문자가 있어요" : "";
+    textErr = !t ? "후보를 입력해 주세요" : t.length > MAX_LEN ? `${MAX_LEN}자 이내로 입력해 주세요` : /[\u0000-\u001f\u007f-\u009f]|\p{Cf}/u.test(text.normalize("NFKC")) ? "사용할 수 없는 문자가 있어요" : "";
     if (textErr) return document.getElementById("poll-add")?.focus();
     void act(async () => {
       const { status: s, body } = await call("/poll/options", { method: "POST", body: JSON.stringify({ text: t }) });
@@ -127,7 +127,7 @@
       if (s === 201) {
         apply(body);
         text = "";
-        say("항목을 추가했어요");
+        say("후보를 추가했어요");
       } else {
         textErr = s === 429 ? ADD_ERR["too many"] : (ADD_ERR[body.error] ?? "잠시 후 다시 시도해 주세요");
         document.getElementById("poll-add")?.focus();
@@ -225,7 +225,7 @@
     <p class="cap err-line" role="alert">투표를 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((status = "loading"), load())}>다시 시도</button></p>
   {:else}
     {#if data.options.length === 0}
-      <p class="cap empty">아직 항목이 없어요. 첫 항목을 추가해 주세요.</p>
+      <p class="cap empty">아직 후보가 없어요. 첫 후보를 추가해 주세요.</p>
     {:else}
       <div class="opts" role="radiogroup" aria-label={question}>
         {#each data.options as o (o.id)}
@@ -258,13 +258,13 @@
     {/if}
 
     <form class="add" onsubmit={add} novalidate>
-      <label for="poll-add">항목 추가</label>
+      <label for="poll-add">후보 추가</label>
       <div class="row">
         <input id="poll-add" type="text" bind:value={text} oninput={() => (textErr = "")} maxlength={MAX_LEN} autocomplete="off" enterkeyhint="send" disabled={data.options.length >= MAX_OPTS}
-          aria-invalid={!!textErr} aria-describedby={textErr ? "poll-add-e poll-add-c" : "poll-add-c"} placeholder="직접 입력해 보세요" />
+          aria-invalid={!!textErr} aria-describedby={textErr ? "poll-add-e poll-add-c" : "poll-add-c"} placeholder="예: 마녀로 변신한 OO" />
         <button type="submit" class="pbtn" disabled={busy || data.options.length >= MAX_OPTS}>추가</button>
       </div>
-      <p class="hint cnt" id="poll-add-c">{data.options.length >= MAX_OPTS ? `항목이 가득 찼어요 (최대 ${MAX_OPTS}개)` : `${text.length} / ${MAX_LEN}`}</p>
+      <p class="hint cnt" id="poll-add-c">{data.options.length >= MAX_OPTS ? `후보가 가득 찼어요 (최대 ${MAX_OPTS}개)` : `${text.length} / ${MAX_LEN}`}</p>
       {#if textErr}<p class="err" id="poll-add-e" role="alert">{textErr}</p>{/if}
     </form>
   {/if}

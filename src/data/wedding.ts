@@ -86,7 +86,7 @@ export const wedding = {
   // 스냅샷 이미지를 서빙할 R2 공개 커스텀 도메인(끝 슬래시 없이). 비우면 Worker 의 /p/:uuid/:kind 를 쓴다.
   snapshotsCdn: "",
   // 하객 투표(방명록과 같은 Worker 사용). question 이 비면 섹션이 숨겨진다. 항목은 하객이 직접 추가한다.
-  poll: { question: "두 사람에게 가장 어울리는 할로윈 코스튬은?" },
+  poll: { question: "하객 중 코스튬을 가장 잘한 사람은?" },
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {
     title: `${groom.name} & ${bride.name} 결혼합니다`,

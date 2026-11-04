@@ -356,7 +356,7 @@
       </div>
       <input bind:this={input} class="file" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
       <button type="button" class="btn-outline pick" data-press onclick={openPicker}>사진 올리기</button>
-      <p class="hint">한 번에 {MAX_PICK}장까지 · 용량은 자동으로 줄여서 올려요</p>
+      <p class="hint">한 번에 {MAX_PICK}장까지 올릴 수 있어요</p>
     </div>
   {/if}
 
