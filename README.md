@@ -127,9 +127,22 @@ Cloudflare Worker `wedding-guestbook` 하나가 방명록, 스냅샷(R2 `wedding
 
 ## CI·배포 흐름
 
-- `.github/workflows/ci.yml`: push·PR 시 Biome, 타입 검사, API 테스트, 웹 빌드, `pnpm audit --audit-level high`
+- `.github/workflows/ci.yml`: push·PR 시 Biome, peer 의존성 호환, 타입 검사, API 테스트, 웹 빌드, Worker 번들 리허설(`wrangler deploy --dry-run`), PR 한정 Pages 결과물 업로드 리허설, `pnpm audit --audit-level high`. PR 에는 `dependency-review`(새 버전 취약점·라이선스, moderate 이상 실패) 추가
 - `.github/workflows/deploy.yml`: `main` push(웹 관련 경로 변경) 시 GitHub Pages 배포, 수동 실행은 `workflow_dispatch`
-- 액션은 커밋 SHA 고정, Dependabot 주간 갱신(npm 14일 쿨다운)
+- 액션은 커밋 SHA 고정, Dependabot 주간 갱신(npm·Actions, 14일 쿨다운, 마이너·패치는 그룹 PR)
+- main 보호: 필수 체크 `check`·`dependency-review`, 강제 push·삭제 금지
+
+### 의존성 자동 병합 (`.github/workflows/dependabot-automerge.yml`)
+
+| 업데이트 | 처리 |
+|---|---|
+| 패치·마이너 | 필수 체크 통과 시 자동 스쿼시 병합 |
+| 메이저: 개발 도구(devDependencies)·GitHub Actions | Workers AI 리뷰 코멘트, 판정 OK + 필수 체크 통과 시 자동 병합 |
+| 메이저: 실서비스 의존성(hono, drizzle, zod, astro, svelte, heic-to 등) | Workers AI 리뷰 코멘트만, 수동 병합 |
+
+- AI 리뷰: Cloudflare Workers AI(무료 하루 10,000 Neurons, 초과 시 과금 없이 실패) OpenAI 호환 엔드포인트, 기본 모델 `@cf/meta/llama-3.3-70b-instruct-fp8-fast`(저장소 변수 `AI_REVIEW_MODEL` 로 교체 가능). Dependabot PR 본문의 릴리스 노트와 레포 내 사용처를 대조해 영향 가능 변경·보안 항목 판정, 응답 해석 실패나 정보 부족은 BLOCK
+- 필요 시크릿: 저장소 Settings > Secrets and variables > **Dependabot** 에 `CF_AI_TOKEN`(Workers AI 권한 API 토큰), `CF_ACCOUNT_ID`. 미등록 시 AI 리뷰 생략, 메이저는 수동 병합
+- 봇 병합 커밋은 Pages 배포 미실행, 다음 수동 push 시 사이트 반영. Worker 의존성은 `wrangler deploy` 수동 실행 시 반영
 
 순서
 

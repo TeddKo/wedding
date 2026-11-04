@@ -23,6 +23,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: peer 의존성 호환 검사
+        run: |
+          pnpm install --resolution-only 2>&1 | tee /tmp/peers.log
+          if grep -q "Issues with peer dependencies" /tmp/peers.log; then pnpm peers check || true; exit 1; fi
       - run: pnpm exec biome ci .
       - run: pnpm typecheck
       - run: pnpm -F @wedding/api test
@@ -31,4 +35,22 @@ jobs:
           PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL || 'https://api.example.invalid' }}
           PUBLIC_KAKAO_JS_KEY: ${{ vars.PUBLIC_KAKAO_JS_KEY || 'ci-placeholder' }}
           PUBLIC_SNAPSHOTS_CDN: ${{ vars.PUBLIC_SNAPSHOTS_CDN }}
+      - name: Worker 번들 리허설
+        run: pnpm -F @wedding/api exec wrangler deploy --dry-run --outdir /tmp/worker-dist
+      - name: Pages 결과물 업로드 리허설
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: apps/web/dist/
+          name: pages-rehearsal
+          retention-days: 1
       - run: pnpm audit --audit-level high
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate

@@ -1,6 +1,8 @@
 name: Dependabot auto-merge
 
-# Dependabot 패치·마이너 PR 한정, 필수 체크(CI) 통과 시 자동 스쿼시 병합 예약
+# 패치·마이너: 필수 체크(CI·dependency-review) 통과 시 자동 스쿼시 병합 예약
+# 메이저: Workers AI 무료 리뷰(릴리스 노트·코드 사용처 대조) 결과 코멘트,
+#   개발 도구·GitHub Actions 는 AI 판정 OK 일 때만 자동 병합 예약, 실서비스 의존성은 수동 병합
 on: pull_request
 
 permissions:
@@ -14,7 +16,95 @@ jobs:
     steps:
       - id: meta
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
+
+      - name: 패치·마이너 자동 병합 예약
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: 메이저 업데이트 AI 리뷰
+        id: ai
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        env:
+          CF_AI_TOKEN: ${{ secrets.CF_AI_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          MODEL: ${{ vars.AI_REVIEW_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast' }}
+          DEPS: ${{ steps.meta.outputs.dependency-names }}
+          PREV: ${{ steps.meta.outputs.previous-version }}
+          NEXT: ${{ steps.meta.outputs.new-version }}
+          DEP_TYPE: ${{ steps.meta.outputs.dependency-type }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$CF_AI_TOKEN" ] || [ -z "$CF_ACCOUNT_ID" ]; then
+            echo "verdict=SKIP" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "AI 리뷰 미실행: Dependabot 시크릿 CF_AI_TOKEN·CF_ACCOUNT_ID 미등록, 수동 판단 필요" > /tmp/review.md
+            exit 0
+          fi
+          : > /tmp/usage.txt
+          IFS=',' read -ra names <<< "$DEPS"
+          for n in "${names[@]}"; do
+            n="$(echo "$n" | xargs)"
+            git grep -n -F -e "\"$n\"" -e "'$n'" -e "$n/" -e "$n@" -- ':!pnpm-lock.yaml' ':!*.md' | head -40 >> /tmp/usage.txt || true
+          done
+          python3 - <<'PY'
+          import json, os
+          system = (
+              "You review a major dependency upgrade for a small pnpm monorepo (Astro 7 + Svelte 5 static site, "
+              "Cloudflare Worker with Hono + Drizzle + zod, vitest, GitHub Actions). "
+              "Use ONLY the release notes and code usages given. Identify breaking changes that affect the shown usages, "
+              "required migration steps, and any security advisories mentioned. Be conservative: if information is "
+              "insufficient or any breaking change plausibly affects the usages, answer BLOCK. "
+              'Reply with ONLY a JSON object: {"verdict":"OK"|"BLOCK","summary_ko":"<Korean, noun-form endings>",'
+              '"breaking":["..."],"security":["..."]}'
+          )
+          user = (
+              f"Dependencies: {os.environ['DEPS']}\nFrom {os.environ['PREV']} to {os.environ['NEXT']} "
+              f"({os.environ['DEP_TYPE']})\n\nRelease notes (Dependabot PR body, truncated):\n"
+              f"{os.environ.get('PR_BODY', '')[:14000]}\n\nCode usages in repo:\n{open('/tmp/usage.txt').read()[:6000]}"
+          )
+          json.dump({"model": os.environ["MODEL"], "temperature": 0, "max_tokens": 800,
+                     "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]},
+                    open("/tmp/req.json", "w"))
+          PY
+          curl -sS --max-time 120 -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/ai/v1/chat/completions" \
+            -H "Authorization: Bearer $CF_AI_TOKEN" -H "Content-Type: application/json" \
+            --data @/tmp/req.json -o /tmp/res.json || true
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          verdict, md = "BLOCK", "AI 리뷰 응답 해석 실패, 수동 판단 필요"
+          try:
+              content = json.load(open("/tmp/res.json"))["choices"][0]["message"]["content"]
+              r = json.loads(re.search(r"\{.*\}", content, re.S).group(0))
+              verdict = "OK" if r.get("verdict") == "OK" else "BLOCK"
+              lines = [f"**AI 판정: {verdict}**", "", str(r.get("summary_ko", ""))]
+              for title, key in (("영향 가능 변경", "breaking"), ("보안 관련", "security")):
+                  items = [str(x) for x in r.get(key) or []]
+                  if items:
+                      lines += ["", f"{title}:"] + [f"- {x}" for x in items]
+              md = "\n".join(lines)
+          except Exception:
+              pass
+          open("/tmp/review.md", "w").write(md + "\n\n_Cloudflare Workers AI 무료 리뷰 결과, 참고용 판단_\n")
+          print(f"verdict={verdict}")
+          PY
+
+      - name: 리뷰 코멘트
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: gh pr comment "$PR_URL" --body-file /tmp/review.md
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 메이저 자동 병합 예약 (개발 도구·Actions, AI OK 한정)
+        if: >-
+          steps.meta.outputs.update-type == 'version-update:semver-major' && steps.ai.outputs.verdict == 'OK' &&
+          (steps.meta.outputs.package-ecosystem == 'github_actions' || steps.meta.outputs.dependency-type == 'direct:development')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

@@ -6,9 +6,6 @@ updates:
       interval: weekly
     cooldown:
       default-days: 14
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
     groups:
       minor-patch:
         update-types: [minor, patch]
@@ -18,9 +15,6 @@ updates:
       interval: weekly
     cooldown:
       default-days: 14
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
     groups:
       actions:
         update-types: [minor, patch]
