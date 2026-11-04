@@ -93,6 +93,23 @@
     im.src = f;
   }
 
+  /* 확대 상태를 기록에 한 칸 쌓아 휴대폰 뒤로가기가 페이지 이탈 대신 확대만 닫게 한다 */
+  let pushed = false;
+  const releaseHistory = () => {
+    if (!pushed) return;
+    pushed = false;
+    history.back();
+  };
+  $effect(() => {
+    const onPop = () => {
+      if (!pushed) return;
+      pushed = false;
+      if (open) void close();
+    };
+    addEventListener("popstate", onPop);
+    return () => removeEventListener("popstate", onPop);
+  });
+
   export async function openAt(i: number) {
     idx = i;
     onindex?.(i);
@@ -104,6 +121,10 @@
     p.set(0, instant);
     open = true;
     setInert(true);
+    if (!pushed) {
+      history.pushState({ ...history.state, lightbox: true }, "");
+      pushed = true;
+    }
     preload();
     await tick();
     lb?.focus({ preventScroll: true });
@@ -114,6 +135,7 @@
   async function close() {
     if (closing) return;
     closing = true;
+    releaseHistory();
     view.target = { x: 0, y: 0, s: 1 };
     const visible = !!thumbRect(idx) && !reduced();
     /* 닫는 도중 go/openAt 이 p 를 건드리면 Spring 이 "Aborted" 로 거부한다. 정리를 건너뛰면 inert·스크롤 잠금이 남아 화면이 멈춘다 */
@@ -166,6 +188,7 @@
       open = false;
       closing = false;
       setInert(false);
+      releaseHistory();
       await tick();
       const back = Math.min(idx, n - 1);
       ((bare ? thumbAt?.(back) : btns[back]) ?? document.querySelector<HTMLElement>(".pick"))?.focus({ preventScroll: true });
