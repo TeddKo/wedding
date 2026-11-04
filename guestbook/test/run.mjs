@@ -15,7 +15,7 @@ const persist = mkdtempSync(join(tmpdir(), "gb-"));
 const varsFile = join(persist, ".dev.vars");
 const KMOCK = 8798;
 const SECRET = "test-session-secret";
-writeFileSync(varsFile, `IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\nVOTE_MODE=device\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\nKAKAO_REST_KEY=rk\nKAKAO_CLIENT_SECRET=cs\nKAKAO_MOCK=http://127.0.0.1:${KMOCK}\n`);
+writeFileSync(varsFile, `IP_PEPPER=test-pepper\nADMIN_TOKEN=test-admin\nVOTE_MODE=device\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\nORPHAN_MS=2000\nKAKAO_REST_KEY=rk\nKAKAO_CLIENT_SECRET=cs\nKAKAO_MOCK=http://127.0.0.1:${KMOCK}\n`);
 const kseen = [];
 const kmock = createServer(async (rq, rs) => {
   const raw = rq.method === "POST" ? await new Promise((r) => { let b = ""; rq.on("data", (c) => (b += c)); rq.on("end", () => r(b)); }) : "";
@@ -33,8 +33,10 @@ const kmock = createServer(async (rq, rs) => {
 }).listen(KMOCK, "127.0.0.1");
 const w = (...a) => ["wrangler", ...a, "--env", "dev", "--persist-to", persist];
 
-execFileSync("npx", ["--no-install", ...w("d1", "migrations", "apply", "wedding-guestbook", "--local")], { stdio: "ignore" });
-const dev = spawn("npx", ["--no-install", ...w("dev", "--local", "--port", String(PORT), "--env-file", varsFile)], { stdio: "ignore" });
+execFileSync("npx", ["--no-install", ...w("d1", "migrations", "apply", "wedding-guestbook-dev", "--local")], { stdio: "ignore" });
+const dev = spawn("npx", ["--no-install", ...w("dev", "--local", "--test-scheduled", "--port", String(PORT), "--env-file", varsFile)], { stdio: "ignore" });
+let dev2;
+const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const call = (path, { method = "GET", body, ip = "1.1.1.1", origin = OK } = {}) =>
   fetch(BASE + path, {
@@ -97,8 +99,15 @@ try {
   assert.equal((await call("/entries", { origin: "http://localhost:4321" })).headers.get("access-control-allow-origin"), "http://localhost:4321");
 
   /* ---------- 스냅샷 ---------- */
-  const jpg = (n) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(n - 4, 7)]);
-  const webp = (n) => Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBP"), Buffer.alloc(n - 12, 7)]);
+  const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16BE(v); return b; };
+  const le16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
+  const le24 = (v) => Buffer.from([v & 255, (v >> 8) & 255, (v >> 16) & 255]);
+  const pad = (head, n) => Buffer.concat([head, Buffer.alloc(Math.max(0, n - head.length), 7)]);
+  const jpg = (n, w = 1000, h = 800) => pad(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0, 17, 8]), u16(h), u16(w), Buffer.from([3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1])]), n);
+  const riff = (chunk, n) => pad(Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBP"), chunk]), n);
+  const webp = (n, w = 1000, h = 800) => riff(Buffer.concat([Buffer.from("VP8 "), Buffer.alloc(4), Buffer.from([0, 0, 0, 0x9d, 0x01, 0x2a]), le16(w), le16(h)]), n);
+  const webpL = (n, w, h) => riff(Buffer.concat([Buffer.from("VP8L"), Buffer.alloc(4), Buffer.from([0x2f]), (() => { const b = Buffer.alloc(4); b.writeUInt32LE((w - 1) | ((h - 1) << 14)); return b; })()]), n);
+  const webpX = (n, w, h) => riff(Buffer.concat([Buffer.from("VP8X"), Buffer.alloc(4), Buffer.alloc(4), le24(w - 1), le24(h - 1)]), n);
   const dev = (d) => ({ "X-Device": d });
   const put = (u, kind, body, { d = "device-aaaaaaaa", ip = "2.2.2.2", origin = OK, len } = {}) =>
     fetch(`${BASE}/photos/${u}/${kind}`, {
@@ -112,16 +121,16 @@ try {
       headers: { "content-type": "application/json", "CF-Connecting-IP": ip, Origin: OK, ...dev(d) },
       body: JSON.stringify(b),
     });
-  const del = (u, { pw, token, q = "" } = {}) =>
+  const del = (u, { pw, token, q = "", ip = "5.5.5.5" } = {}) =>
     fetch(`${BASE}/photos/${u}${q}`, {
       method: "DELETE",
-      headers: { "content-type": "application/json", Origin: OK, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { "content-type": "application/json", Origin: OK, "CF-Connecting-IP": ip, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: pw === undefined ? undefined : JSON.stringify({ pw }),
     });
   const upload = async (b = {}, o = {}) => {
     const u = crypto.randomUUID();
     assert.equal((await put(u, "full", webp(5000), o)).status, 204);
-    assert.equal((await put(u, "thumb", webp(900), o)).status, 204);
+    assert.equal((await put(u, "thumb", webp(900, 400, 320), o)).status, 204);
     return [u, await commit(u, { w: 1000, h: 800, ...b }, o)];
   };
 
@@ -144,12 +153,12 @@ try {
   assert.equal((await commit(u1)).status, 409);
   assert.equal((await put(u1, "full", jpg(5000))).status, 204);
   assert.equal((await commit(u1)).status, 409);
-  assert.equal((await put(u1, "thumb", jpg(900))).status, 204);
-  assert.equal((await commit(u1, { w: 0, h: 5 })).status, 400);
+  assert.equal((await put(u1, "thumb", jpg(900, 400, 320))).status, 204);
   assert.equal((await commit(u1, { w: 10, h: 5, pw: "abc" })).status, 400);
   let r = await commit(u1, { w: 4032, h: 3024, pw: "pw1234" });
   assert.equal(r.status, 201);
   const e1 = await r.json();
+  assert.deepEqual([e1.w, e1.h], [1000, 800], "w/h come from server-parsed header, not the request body");
   assert.deepEqual(Object.keys(e1).sort(), ["created_at", "ext", "full", "h", "id", "thumb", "uuid", "w"]);
   assert.equal((await commit(u1)).status, 200);
   assert.equal((await put(u1, "full", jpg(5000))).status, 409);
@@ -204,14 +213,96 @@ try {
   assert.equal((await del(u4, { token: "test-admin" })).status, 204);
   assert.ok(!(await list()).includes(u4));
 
+  /* PUT 시점 한도: IP 10분 200건, 기기 30건 */
   const s2 = [];
-  for (let i = 0; i < 41; i++) s2.push((await upload({}, { d: `device-ip-${i}xxxx`, ip: "3.3.3.3" }))[1].status);
-  assert.deepEqual([...new Set(s2.slice(0, 40))], [201]);
-  assert.equal(s2[40], 429);
+  for (let i = 0; i < 201; i++) s2.push((await put(crypto.randomUUID(), "full", webp(300), { d: `device-ip-${i}xxxx`, ip: "3.3.3.3" })).status);
+  assert.deepEqual([...new Set(s2.slice(0, 200))], [204]);
+  assert.equal(s2[200], 429);
   const s3 = [];
-  for (let i = 0; i < 31; i++) s3.push((await upload({}, { d: "device-limit-1", ip: `4.4.${i}.1` }))[1].status);
-  assert.deepEqual([...new Set(s3.slice(0, 30))], [201]);
+  for (let i = 0; i < 31; i++) s3.push((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-1", ip: `4.4.${i}.1` })).status);
+  assert.deepEqual([...new Set(s3.slice(0, 30))], [204]);
   assert.equal(s3[30], 429);
+  const uSame = crypto.randomUUID();
+  assert.equal((await put(uSame, "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status, 204);
+  for (let i = 0; i < 29; i++) assert.equal((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status, 204);
+  assert.equal((await put(uSame, "thumb", webp(300, 400, 300), { d: "device-limit-2", ip: "4.5.0.1" })).status, 204, "known uuid is not re-counted");
+
+  /* 확장자 불일치 */
+  const uExt = crypto.randomUUID();
+  assert.equal((await put(uExt, "full", webp(500))).status, 204);
+  r = await put(uExt, "thumb", jpg(500, 400, 300));
+  assert.equal(r.status, 409);
+  assert.equal((await put(uExt, "thumb", webp(500, 400, 300))).status, 204);
+
+  /* 픽셀 치수 검증 */
+  const uDim = crypto.randomUUID();
+  const dimCases = [
+    ["full", jpg(600, 2562, 100), 204], ["full", jpg(600, 2563, 100), 422], ["full", jpg(600, 100, 3000), 422],
+    ["full", webp(600, 4000, 3000), 422], ["full", webpL(600, 3000, 100), 422], ["full", webpX(600, 100, 5000), 422],
+    ["full", webpL(600, 2560, 1920), 204], ["full", webpX(600, 2560, 1707), 204],
+    ["thumb", webp(600, 483, 100), 422], ["thumb", webp(600, 482, 100), 204], ["thumb", webpL(600, 480, 480), 204],
+    ["thumb", webpX(600, 100, 481), 204], ["thumb", webpX(600, 100, 600), 422],
+  ];
+  for (const [kind, body, want] of dimCases) {
+    const x = jpgOrWebp(body) === "jpg" ? "jpg" : "webp";
+    const uu = x === "jpg" ? crypto.randomUUID() : uDim;
+    assert.equal((await put(uu, kind, body)).status, want, `${kind} ${x} ${body.length} want ${want}`);
+  }
+  function jpgOrWebp(b) { return b[0] === 0xff ? "jpg" : "webp"; }
+  assert.equal((await put(crypto.randomUUID(), "full", Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0]), Buffer.alloc(300, 7)]))).status, 422, "no SOF");
+  assert.equal((await put(crypto.randomUUID(), "full", riff(Buffer.from("VP8 "), 100))).status, 422, "bad vp8");
+  const uStore = crypto.randomUUID();
+  assert.equal((await put(uStore, "full", jpg(4000, 2000, 1500))).status, 204);
+  assert.equal((await put(uStore, "thumb", jpg(800, 400, 300))).status, 204);
+  const cs = await commit(uStore, { w: 1, h: 1 });
+  assert.equal(cs.status, 201);
+  const csj = await cs.json();
+  assert.deepEqual([csj.w, csj.h], [2000, 1500]);
+  assert.deepEqual((await (await call("/photos?limit=1")).json()).items.map((x) => [x.w, x.h]), [[2000, 1500]]);
+
+  /* 커밋 레이스 */
+  const uRace = crypto.randomUUID();
+  assert.equal((await put(uRace, "full", webp(900))).status, 204);
+  assert.equal((await put(uRace, "thumb", webp(900, 400, 320))).status, 204);
+  const rr = await Promise.all(Array.from({ length: 8 }, () => commit(uRace)));
+  const rrs = rr.map((x) => x.status).sort();
+  assert.ok(rrs.every((x) => x === 200 || x === 201) && rrs.includes(201), rrs.join());
+  assert.equal((await Promise.all(rr.map((x) => x.json()))).map((x) => x.id).filter((v, i, a) => a.indexOf(v) === i).length, 1);
+  assert.equal(rr[0].headers.get("access-control-allow-origin"), OK);
+  assert.equal((await commit(crypto.randomUUID())).headers.get("access-control-allow-origin"), OK);
+
+  /* 고아 정리(cron) */
+  const orphan = crypto.randomUUID();
+  const keep = crypto.randomUUID();
+  assert.equal((await put(orphan, "full", webp(500))).status, 204);
+  assert.equal((await put(orphan, "thumb", webp(500, 400, 300))).status, 204);
+  assert.equal((await put(keep, "full", webp(500))).status, 204);
+  assert.equal((await put(keep, "thumb", webp(500, 400, 300))).status, 204);
+  assert.equal((await commit(keep)).status, 201);
+  await sleepMs(2300);
+  const fresh = crypto.randomUUID();
+  assert.equal((await put(fresh, "full", webp(500))).status, 204);
+  assert.ok(r2keys().includes(`full/${orphan}.webp`));
+  assert.equal((await fetch(`${BASE}/__scheduled?cron=17+*+*+*+*`)).status, 200);
+  assert.ok(!r2keys().some((k) => k.includes(orphan)), "orphan R2 objects removed");
+  assert.ok(r2keys().includes(`full/${keep}.webp`) && r2keys().includes(`thumb/${keep}.webp`), "committed kept");
+  assert.ok(r2keys().includes(`full/${fresh}.webp`), "fresh upload kept");
+  assert.equal((await put(orphan, "full", jpg(500))).status, 204, "orphan row gone so ext is free again");
+
+  /* 삭제 비밀번호 무차별 대입 제한 */
+  const [uBf, rBf] = await upload({ pw: "right-pw" }, { ip: "2.2.2.9" });
+  assert.equal(rBf.status, 201);
+  const bf = [];
+  for (let i = 0; i < 11; i++) bf.push((await del(uBf, { pw: `guess${i}`, ip: "6.6.6.6" })).status);
+  assert.deepEqual(bf, [...Array(10).fill(403), 429]);
+  assert.equal((await del(uBf, { pw: "right-pw", ip: "6.6.6.6" })).status, 429, "locked even with right pw");
+  assert.equal((await del(uBf, { pw: "right-pw", ip: "6.6.7.7" })).status, 204, "other IP unaffected");
+
+  /* IPv6 /64 */
+  const v6 = [];
+  for (const ip of ["2001:db8:1:2::1", "2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:0db8:0001:0002::9", "2001:db8:1:2::2", "2001:DB8:1:2:0:0:0:3", "2001:db8:1:2::4"]) v6.push((await post(good, ip)).status);
+  assert.deepEqual(v6, [201, 201, 201, 201, 201, 429]);
+  assert.equal((await post(good, "2001:db8:1:3::1")).status, 201);
 
   assert.equal((await put(crypto.randomUUID(), "full", webp(100), { origin: "https://evil.example" })).headers.get("access-control-allow-origin"), null);
   assert.equal((await call("/photos", { origin: "https://evil.example" })).headers.get("access-control-allow-origin"), null);
@@ -283,6 +374,18 @@ try {
   assert.ok(!raw.match(/voter_key|creator_key|ip_hash|device:|vk/));
   assert.match((await pc("/poll")).headers.get("cache-control"), /no-store/);
 
+  /* 항목 텍스트: NFKC 정규화, 서식(보이지 않는) 문자 거부 */
+  const tN = await tok(), tN2 = await tok();
+  for (const t of ["a\u200Bb", "a\u200Db", "\u202Eabc", "\uFEFFabc", "a\u2060b", "\u00ADabc"])
+    assert.equal((await addOpt(t, tN, "10.7.7.7")).status, 400, JSON.stringify(t));
+  r = await addOpt("ＮＦＫＣ　Ｔｅｓｔ", tN, "10.7.7.7");
+  assert.equal(r.status, 201);
+  assert.ok((await r.json()).options.some((o) => o.text === "NFKC Test"));
+  r = await addOpt("nfkc test", tN2, "10.7.7.7");
+  assert.equal(r.status, 409);
+  assert.equal((await r.json()).error, "duplicate");
+  assert.equal((await addOpt("ｎｆｋｃ\u00A0ｔｅｓｔ", tN2, "10.7.7.7")).status, 409);
+
   const rl = [];
   for (let i = 0; i < 6; i++) rl.push((await addOpt(`rate${i}`, await tok(), "10.9.9.9")).status);
   assert.deepEqual(rl, [201, 201, 201, 201, 201, 429]);
@@ -329,11 +432,33 @@ try {
   assert.equal((await kk({ redirectUri: REDIR })).status, 400);
   assert.equal((await pc("/auth/kakao", { method: "GET" })).status, 405);
 
+  /* 카카오 모드(VOTE_MODE 없음)에서는 device 토큰 거부 */
+  const persist2 = mkdtempSync(join(tmpdir(), "gb2-"));
+  const vars2 = join(persist2, ".dev.vars");
+  writeFileSync(vars2, `IP_PEPPER=p2\nVOTER_PEPPER=test-voter\nSESSION_SECRET=${SECRET}\n`);
+  const w2 = (...a) => ["wrangler", ...a, "--env", "dev", "--persist-to", persist2];
+  execFileSync("npx", ["--no-install", ...w2("d1", "migrations", "apply", "wedding-guestbook-dev", "--local")], { stdio: "ignore" });
+  dev2 = spawn("npx", ["--no-install", ...w2("dev", "--local", "--port", "8797", "--env-file", vars2)], { stdio: "ignore" });
+  const B2 = "http://127.0.0.1:8797";
+  for (let i = 0; i < 60; i++) {
+    try { await fetch(B2 + "/x"); break; } catch { await sleepMs(500); }
+  }
+  const p2 = (path, token, method = "GET", body) =>
+    fetch(B2 + path, { method, headers: { "content-type": "application/json", Origin: OK, ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body && JSON.stringify(body) });
+  assert.equal((await (await p2("/poll")).json()).mode, "kakao");
+  assert.equal((await p2("/auth/device", undefined, "POST")).status, 404);
+  const devTok = mint({ vk: "device:minted", exp: Date.now() + 1e9 });
+  assert.equal((await p2("/poll/options", devTok, "POST", { text: "x" })).status, 401);
+  assert.equal((await p2("/poll/vote", devTok, "POST", { optionId: 1 })).status, 401);
+  const kakaoTok = mint({ vk: "kakao-user-key", exp: Date.now() + 1e9 });
+  assert.equal((await p2("/poll/options", kakaoTok, "POST", { text: "x" })).status, 201);
+
   console.log("ALL PASS");
 } catch (e) {
   console.error(e);
   process.exitCode = 1;
 } finally {
   dev.kill();
+  dev2?.kill();
   kmock.close();
 }

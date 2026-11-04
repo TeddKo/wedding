@@ -120,7 +120,7 @@
     (bare ? thumbAt?.(back) : btns[back])?.focus({ preventScroll: true });
   }
 
-  let waiting = false;
+  let waiting = $state(false);
   function go(d: number) {
     if (n < 2) return;
     if (more && idx + d >= n) {

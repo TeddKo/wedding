@@ -31,7 +31,6 @@
   let track = $state<HTMLElement>();
   let sentinel = $state<HTMLElement>();
   let gal = $state<{ openAt(i: number): void }>();
-  const thumbEls: HTMLElement[] = [];
   let raf = 0;
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
@@ -48,6 +47,13 @@
   let running = 0;
   let wake: { release(): Promise<void> } | null = null;
   const packed = new Map<number, Compressed>();
+  /* 압축은 한 번에 하나씩(대용량 디코드 메모리 보호). 업로드는 CONCURRENCY 개까지 병렬 */
+  let zq: Promise<unknown> = Promise.resolve();
+  const compressSerial = (f: File) => {
+    const p = zq.then(() => compress(f));
+    zq = p.then(() => {}, () => {});
+    return p;
+  };
 
   const busy = $derived(jobs.some((j) => j.state === "wait" || j.state === "compress" || j.state === "upload"));
   const doneN = $derived(jobs.filter((j) => j.state === "done").length);
@@ -72,11 +78,9 @@
 
   class HttpErr extends Error {
     status: number;
-    retryAfter: number;
-    constructor(status: number, retryAfter = 0) {
+    constructor(status: number) {
       super(String(status));
       this.status = status;
-      this.retryAfter = retryAfter;
     }
   }
 
@@ -153,8 +157,10 @@
     slide(e.key === "ArrowRight" ? 1 : -1);
   }
 
+  const thumbAt = (i: number) => track?.querySelectorAll<HTMLElement>("li.it .card")[i];
+
   function follow(i: number) {
-    thumbEls[i]?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "instant" as ScrollBehavior });
+    thumbAt(i)?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "instant" as ScrollBehavior });
     if (i >= photos.length - PREFETCH) void load(false);
   }
 
@@ -192,7 +198,7 @@
     if (!files.length) return;
     if (files.length > MAX_PICK) notify(`한 번에 ${MAX_PICK}장까지 올릴 수 있어요`, true);
     const add = files.slice(0, MAX_PICK).map(
-      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, orig: file.size, out: 0, err: "", url: URL.createObjectURL(file), pw: pw.trim() }),
+      (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, orig: file.size, out: 0, err: "", url: "", pw: pw.trim() }),
     );
     jobs = [...jobs, ...add];
     pump();
@@ -228,16 +234,15 @@
     pump();
   }
 
-  /* 네트워크/5xx 는 1·2·4초 뒤 재시도, 429 는 Retry-After 만큼 대기 */
+  /* 네트워크/5xx 만 1·2·4초 뒤 재시도. 429(한도)는 재시도하지 않는다 */
   async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     for (let i = 0; ; i++) {
       try {
         return await fn();
       } catch (e) {
         const s = e instanceof HttpErr ? e.status : 0;
-        const again = s === 0 || s >= 500 || s === 429;
-        if (!again || i >= RETRIES) throw e;
-        await sleep(s === 429 && e instanceof HttpErr && e.retryAfter ? e.retryAfter * 1000 : 1000 * 2 ** i);
+        if (!(s === 0 || s >= 500) || i >= RETRIES) throw e;
+        await sleep(1000 * 2 ** i);
       }
     }
   }
@@ -249,7 +254,7 @@
       x.setRequestHeader("X-Device", deviceId());
       x.upload.onprogress = (e) => onProgress(e.loaded);
       x.onerror = x.ontimeout = () => reject(new HttpErr(0));
-      x.onload = () => (x.status < 300 || x.status === 409 ? resolve() : reject(new HttpErr(x.status, Number(x.getResponseHeader("Retry-After")) || 0)));
+      x.onload = () => (x.status < 300 || x.status === 409 ? resolve() : reject(new HttpErr(x.status)));
       x.send(blob);
     });
   }
@@ -261,7 +266,7 @@
       body: JSON.stringify({ w: c.w, h: c.h, size: c.full.blob.size, ...(j.pw ? { pw: j.pw } : {}) }),
     }).catch(() => new HttpErr(0));
     if (r instanceof HttpErr) throw r;
-    if (r.status !== 200 && r.status !== 201) throw new HttpErr(r.status, Number(r.headers.get("Retry-After")) || 0);
+    if (r.status !== 200 && r.status !== 201) throw new HttpErr(r.status);
     return toPhoto((await r.json()) as Photo);
   }
 
@@ -269,9 +274,10 @@
     try {
       let c = packed.get(j.id);
       if (!c) {
-        c = await compress(j.file);
+        c = await compressSerial(j.file);
         packed.set(j.id, c);
       }
+      if (!j.url) j.url = URL.createObjectURL(c.thumb.blob);
       j.out = c.full.blob.size;
       j.state = "upload";
       const total = c.full.blob.size + c.thumb.blob.size;
@@ -288,11 +294,11 @@
       const s = e instanceof HttpErr ? e.status : -1;
       j.err =
         e instanceof Error && s === -1 && e.message.startsWith("이 사진") ? e.message
-        : s === 413 || s === 415 ? "이 사진은 올릴 수 없어요. 다른 사진을 선택해 주세요."
+        : s === 413 || s === 415 || s === 422 ? "이 사진은 올릴 수 없어요. 다른 사진을 선택해 주세요."
         : s === 429 ? "업로드 한도에 도달했어요. 잠시 후 다시 시도해 주세요."
         : GENERIC;
       j.state = "fail";
-      if (s === -1 || s === 413 || s === 415) packed.delete(j.id);
+      if (s === -1 || s === 413 || s === 415 || s === 422) packed.delete(j.id);
     }
   }
 
@@ -361,7 +367,7 @@
       <ul class="jobs">
         {#each jobs as j (j.id)}
           <li class="job" data-state={j.state}>
-            <img class="pv" src={j.url} alt="" width="56" height="56" />
+            {#if j.url}<img class="pv" src={j.url} alt="" width="56" height="56" />{:else}<span class="pv" aria-hidden="true"></span>{/if}
             <div class="info">
               <div class="line">
                 <span class="st">{LABEL[j.state]}</span>
@@ -385,6 +391,7 @@
                   <button type="submit" class="act" disabled={delBusy}>{delBusy ? "확인 중…" : "삭제"}</button>
                   <button type="button" class="act" onclick={() => (delId = null)}>취소</button>
                 </div>
+                <p class="hint">삭제한 사진은 반영까지 시간이 걸릴 수 있어요.</p>
                 {#if delErr}<p class="err" role="alert">{delErr}</p>{/if}
               </form>
             {/if}
@@ -409,7 +416,7 @@
         <ul class="track" bind:this={track} {onscroll} tabindex="0" aria-label="스냅샷 목록 (좌우 방향키로 넘기기)">
           {#each photos as p, i (p.uuid)}
             <li class="it">
-              <button type="button" class="card" bind:this={thumbEls[i]} aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
+              <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
                 <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" />
               </button>
             </li>
@@ -426,7 +433,7 @@
           <p class="cap err-line" role="alert">사진을 더 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((moreFailed = false), load(false))}>다시 시도</button></p>
         {/if}
       </div>
-      <Gallery bind:this={gal} bare {items} more={cursor !== null} total={count} thumbAt={(i) => thumbEls[i]} onindex={follow} />
+      <Gallery bind:this={gal} bare {items} more={cursor !== null} total={count} {thumbAt} onindex={follow} />
     {/if}
   </div>
 </div>

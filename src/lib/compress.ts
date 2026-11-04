@@ -6,6 +6,7 @@ const FULL_SOFT = 2.5 * 1024 * 1024;
 const FULL_HARD = 3 * 1024 * 1024;
 
 export const UNSUPPORTED = "이 사진 형식은 지원되지 않아요. 다른 사진을 선택해 주세요.";
+const TOO_LARGE = "이 사진은 너무 커서 처리할 수 없어요. 다른 사진을 선택해 주세요.";
 
 export type Packed = { blob: Blob; type: string };
 export type Compressed = { full: Packed; thumb: Packed; w: number; h: number; origSize: number };
@@ -39,7 +40,8 @@ function resize(bmp: ImageBitmap, long: number) {
     const c = document.createElement("canvas");
     c.width = tw;
     c.height = th;
-    const x = c.getContext("2d", { colorSpace: "srgb" })!;
+    const x = c.getContext("2d", { colorSpace: "srgb" });
+    if (!x) throw new Error(TOO_LARGE);
     x.imageSmoothingQuality = "high";
     x.drawImage(src, 0, 0, tw, th);
     return c;
@@ -56,7 +58,7 @@ function resize(bmp: ImageBitmap, long: number) {
   return out;
 }
 
-/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거된다. 호출은 순차적으로 한다. */
+/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거된다. 호출은 순차적으로 한다(호출자가 직렬화). */
 export async function compress(file: File): Promise<Compressed> {
   let bmp: ImageBitmap;
   try {

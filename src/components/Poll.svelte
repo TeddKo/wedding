@@ -29,9 +29,10 @@
   let note = $state("");
   let noteErr = $state(false);
   let visible = false;
+  let gen = 0;
 
   const voted = $derived(data.myVote !== null);
-  const norm = (s: string) => s.trim().replace(/\s+/g, " ");
+  const norm = (s: string) => s.trim().normalize("NFKC").replace(/\s+/g, " ");
   const pct = (o: Opt) => (data.total ? Math.round((o.votes / data.total) * 100) : 0);
   const redirectUri = () => new URL(import.meta.env.BASE_URL, location.origin).href.replace(/\/*$/, "/");
 
@@ -49,13 +50,15 @@
     return { status: r.status, body: await r.json().catch(() => ({})) };
   }
 
-  const apply = (b: Data) => ((data = { mode: b.mode, options: b.options, total: b.total, myVote: b.myVote }), (status = "ready"));
+  /* 상태를 바꿀 때마다 gen 을 올려, 그 전에 시작한 조회 응답은 버린다 */
+  const apply = (b: Data) => (gen++, (data = { mode: b.mode, options: b.options, total: b.total, myVote: b.myVote }), (status = "ready"));
 
   async function load(quiet = false) {
+    const g = ++gen;
     try {
       const { status: s, body } = await call("/poll");
       if (s !== 200 || !Array.isArray(body.options)) throw new Error(String(s));
-      apply(body);
+      if (g === gen) apply(body);
     } catch {
       if (!quiet) status = "error";
     }
@@ -116,7 +119,7 @@
   const add = (e: SubmitEvent) => {
     e.preventDefault();
     const t = norm(text);
-    textErr = !t ? "항목을 입력해 주세요" : t.length > MAX_LEN ? `${MAX_LEN}자 이내로 입력해 주세요` : /[\u0000-\u001f\u007f-\u009f]/.test(text) ? "사용할 수 없는 문자가 있어요" : "";
+    textErr = !t ? "항목을 입력해 주세요" : t.length > MAX_LEN ? `${MAX_LEN}자 이내로 입력해 주세요` : /[\u0000-\u001f\u007f-\u009f]|\p{Cf}/u.test(text.normalize("NFKC")) ? "사용할 수 없는 문자가 있어요" : "";
     if (textErr) return document.getElementById("poll-add")?.focus();
     void act(async () => {
       const { status: s, body } = await call("/poll/options", { method: "POST", body: JSON.stringify({ text: t }) });
@@ -133,6 +136,8 @@
   };
 
   async function login() {
+    const st = `poll-${crypto.randomUUID()}`;
+    store.set("poll-state", st, sessionStorage);
     store.set("poll-return", "1", sessionStorage);
     store.set("poll-draft", JSON.stringify({ sel, text }), sessionStorage);
     try {
@@ -150,7 +155,7 @@
         K = (window as any).Kakao;
       }
       if (!K.isInitialized()) K.init(kakaoKey);
-      K.Auth.authorize({ redirectUri: redirectUri(), state: "poll" });
+      K.Auth.authorize({ redirectUri: redirectUri(), state: st });
     } catch {
       say("카카오 로그인을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.", true);
     }
@@ -165,16 +170,23 @@
     mo.observe(h, { attributes: true, attributeFilter: ["class"] });
   }
 
-  async function finishLogin() {
+  /* 카카오 리다이렉트 복귀 파라미터를 즉시 URL 에서 지우고 값만 돌려준다 */
+  function takeReturn() {
     const q = new URLSearchParams(location.search);
-    if (q.get("state") !== "poll" || !(q.has("code") || q.has("error"))) return;
+    const state = q.get("state") ?? "";
+    if (!state.startsWith("poll-") || !(q.has("code") || q.has("error"))) return null;
     const code = q.get("code");
     for (const k of ["code", "state", "error", "error_description"]) q.delete(k);
     history.replaceState(history.state, "", location.pathname + (q.size ? `?${q}` : "") + location.hash);
+    return { state, code };
+  }
+
+  async function finishLogin({ state, code }: { state: string; code: string | null }) {
     const draft = (() => { try { return JSON.parse(store.get("poll-draft", sessionStorage) || "{}"); } catch { return {}; } })();
+    const expected = store.get("poll-state", sessionStorage);
     if (store.get("poll-return", sessionStorage)) backToPoll();
-    store.set("poll-return", "", sessionStorage);
-    store.set("poll-draft", "", sessionStorage);
+    for (const k of ["poll-return", "poll-draft", "poll-state"]) store.set(k, "", sessionStorage);
+    if (!expected || state !== expected) return say("로그인을 확인하지 못했어요. 다시 로그인해 주세요.", true);
     if (!code) return say("로그인을 취소했어요", true);
     try {
       const { status: s, body } = await call("/auth/kakao", { method: "POST", body: JSON.stringify({ code, redirectUri: redirectUri() }) });
@@ -192,8 +204,9 @@
 
   onMount(() => {
     token = store.get("poll-token");
+    const ret = takeReturn();
     const first = load();
-    void first.then(finishLogin);
+    if (ret) void first.then(() => finishLogin(ret));
     const io = new IntersectionObserver((e) => (visible = !!e[0]?.isIntersecting));
     if (root) io.observe(root);
     const t = setInterval(() => visible && document.visibilityState === "visible" && !busy && void load(true), REFRESH_MS);
@@ -251,7 +264,7 @@
           aria-invalid={!!textErr} aria-describedby={textErr ? "poll-add-e poll-add-c" : "poll-add-c"} placeholder="직접 입력해 보세요" />
         <button type="submit" class="pbtn" disabled={busy || data.options.length >= MAX_OPTS}>추가</button>
       </div>
-      <p class="hint cnt" id="poll-add-c">{data.options.length >= MAX_OPTS ? `항목이 가득 찼어요 (최대 ${MAX_OPTS}개)` : `${[...text].length} / ${MAX_LEN}`}</p>
+      <p class="hint cnt" id="poll-add-c">{data.options.length >= MAX_OPTS ? `항목이 가득 찼어요 (최대 ${MAX_OPTS}개)` : `${text.length} / ${MAX_LEN}`}</p>
       {#if textErr}<p class="err" id="poll-add-e" role="alert">{textErr}</p>{/if}
     </form>
   {/if}

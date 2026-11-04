@@ -10,6 +10,7 @@ export interface Env {
   KAKAO_REST_KEY?: string;
   KAKAO_CLIENT_SECRET?: string;
   KAKAO_MOCK?: string;
+  ORPHAN_MS?: string;
 }
 
 const ORIGIN = "https://teddko.github.io";
@@ -22,9 +23,12 @@ const CAP = { full: 3 * 1024 * 1024, thumb: 200 * 1024 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DEVICE = /^[\w-]{8,64}$/;
 const EXT = { webp: "image/webp", jpg: "image/jpeg" } as const;
-const PHOTO_IP_N = 40;
+const PHOTO_IP_N = 200;
 const PHOTO_DEVICE_MAX = 30;
-const PHOTO_IP_MAX = 60;
+const PW_FAIL_N = 10;
+const ORPHAN_MS = 24 * 3600 * 1000;
+const DIM = { full: 2560, thumb: 480 };
+const DIM_TOLERANCE = 2;
 
 const b64 = (b: Uint8Array | ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b)));
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -39,6 +43,17 @@ async function pbkdf2(pw: string, salt: Uint8Array): Promise<Uint8Array> {
 async function sha256(s: string) {
   return b64(await crypto.subtle.digest("SHA-256", enc.encode(s)));
 }
+
+/** IPv6 는 /64 앞 4그룹만 쓴다(한 가정·회선이 /64 를 통째로 받으므로) */
+function ipKey(ip: string) {
+  if (!ip.includes(":") || ip.includes(".")) return ip;
+  const [head, tail] = ip.split("::");
+  const g = head ? head.split(":") : [];
+  while (tail !== undefined && g.length < 4) g.push("0");
+  return g.slice(0, 4).map((x) => parseInt(x || "0", 16).toString(16)).join(":");
+}
+
+const ipHash = (req: Request, env: Env) => sha256(ipKey(req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
 
 function eq(a: Uint8Array, b: Uint8Array) {
   let d = a.length ^ b.length;
@@ -108,7 +123,8 @@ async function verify(req: Request, env: Env): Promise<string | null> {
   try {
     if (!eq(unb64u(s), await hmac(env.SESSION_SECRET, p))) return null;
     const { vk, exp } = JSON.parse(new TextDecoder().decode(unb64u(p)));
-    return typeof vk === "string" && typeof exp === "number" && exp > Date.now() ? vk : null;
+    if (typeof vk !== "string" || typeof exp !== "number" || exp <= Date.now()) return null;
+    return env.VOTE_MODE !== "device" && vk.startsWith("device:") ? null : vk;
   } catch {
     return null;
   }
@@ -203,14 +219,15 @@ async function poll(req: Request, env: Env, url: URL, cors: string | null): Prom
       return r.meta.changes ? json(out, 200, cors) : json({ error: "already", ...out }, 409, cors);
     }
 
-    const text = typeof body.text === "string" && !hasCtrl(body.text) ? field(body.text.replace(/\s+/g, " "), 1, POLL.len) : null;
+    const raw = typeof body.text === "string" ? body.text.normalize("NFKC") : "";
+    const text = raw && !hasCtrl(raw) && !/\p{Cf}/u.test(raw) ? field(raw.replace(/\s+/g, " "), 1, POLL.len) : null;
     if (!text) return bad(cors, "invalid text");
-    const ipHash = await sha256((req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
-    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE ip_hash = ? AND created_at > ?", ipHash, now - LIMIT_MS)) >= POLL.ipN) return bad(cors, "too many", 429);
+    const ip = await ipHash(req, env);
+    if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE ip_hash = ? AND created_at > ?", ip, now - LIMIT_MS)) >= POLL.ipN) return bad(cors, "too many", 429);
     if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE hidden = 0")) >= POLL.max) return bad(cors, "full", 409);
     if ((await n("SELECT COUNT(*) AS n FROM poll_options WHERE creator_key = ?", vk)) >= POLL.perCreator) return bad(cors, "limit", 409);
     const row = await env.DB.prepare("INSERT INTO poll_options (text,norm,creator_key,ip_hash,created_at) VALUES (?,?,?,?,?) ON CONFLICT(norm) DO NOTHING RETURNING id")
-      .bind(text, text.toLowerCase(), vk, ipHash, now)
+      .bind(text, text.toLowerCase(), vk, ip, now)
       .first<{ id: number }>();
     if (!row) return bad(cors, "duplicate", 409);
     return json({ ...(await results(vk)), created: row.id }, 201, cors);
@@ -236,6 +253,48 @@ function sniff(b: Uint8Array): keyof typeof EXT | null {
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
   const t = (o: number, s: string) => [...s].every((c, i) => b[o + i] === c.charCodeAt(0));
   return t(0, "RIFF") && t(8, "WEBP") ? "webp" : null;
+}
+
+/** JPEG SOF0/1/2, WebP VP8/VP8L/VP8X 헤더에서 가로·세로를 읽는다. 실패하면 null */
+function dims(b: Uint8Array, ext: keyof typeof EXT): [number, number] | null {
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const ok = (w: number, h: number): [number, number] | null => (w >= 1 && h >= 1 ? [w, h] : null);
+  if (ext === "jpg") {
+    for (let i = 2; i + 9 <= b.length; ) {
+      if (b[i] !== 0xff) return null;
+      const m = b[i + 1];
+      if (m === 0xff) { i++; continue; }
+      if (m === 0xc0 || m === 0xc1 || m === 0xc2) return ok(v.getUint16(i + 7), v.getUint16(i + 5));
+      if (m === 0xd8 || m === 0x01 || (m >= 0xd0 && m <= 0xd7)) { i += 2; continue; }
+      i += 2 + v.getUint16(i + 2);
+    }
+    return null;
+  }
+  if (b.length < 30) return null;
+  const tag = String.fromCharCode(...b.subarray(12, 16));
+  if (tag === "VP8 ") return b[23] === 0x9d && b[24] === 0x01 && b[25] === 0x2a ? ok(v.getUint16(26, true) & 0x3fff, v.getUint16(28, true) & 0x3fff) : null;
+  if (tag === "VP8L") {
+    if (b[20] !== 0x2f) return null;
+    const bits = v.getUint32(21, true);
+    return ok((bits & 0x3fff) + 1, ((bits >>> 14) & 0x3fff) + 1);
+  }
+  if (tag === "VP8X") return ok((b[24] | (b[25] << 8) | (b[26] << 16)) + 1, (b[27] | (b[28] << 8) | (b[29] << 16)) + 1);
+  return null;
+}
+
+/** 24시간(ORPHAN_MS) 넘게 커밋되지 않은 업로드의 R2 객체와 행을 지우고, 만료된 비밀번호 실패 기록을 정리한다 */
+async function sweep(env: Env) {
+  const cutoff = Date.now() - (Number(env.ORPHAN_MS) || ORPHAN_MS);
+  const { results } = await env.DB.prepare(
+    "SELECT uuid,ext FROM uploads WHERE created_at < ? AND uuid NOT IN (SELECT uuid FROM photos) LIMIT 500",
+  )
+    .bind(cutoff)
+    .all<{ uuid: string; ext: string }>();
+  if (results.length) {
+    await env.BUCKET.delete(results.flatMap((r) => [`full/${r.uuid}.${r.ext}`, `thumb/${r.uuid}.${r.ext}`]));
+    await env.DB.batch(results.map((r) => env.DB.prepare("DELETE FROM uploads WHERE uuid = ?").bind(r.uuid)));
+  }
+  await env.DB.prepare("DELETE FROM pw_fails WHERE created_at < ?").bind(Date.now() - 3600 * 1000).run();
 }
 
 async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, cors: string | null): Promise<Response | null> {
@@ -291,12 +350,28 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     if (!DEVICE.test(device)) return bad(cors, "invalid device");
     const len = Number(req.headers.get("Content-Length"));
     if (!Number.isInteger(len) || len <= 0 || len > CAP[sub]) return bad(cors, "too large", 413);
+    if (await env.DB.prepare("SELECT 1 FROM photos WHERE uuid = ?").bind(uuid).first()) return bad(cors, "exists", 409);
+    const ip = await ipHash(req, env);
+    const known = await env.DB.prepare("SELECT ext FROM uploads WHERE uuid = ?").bind(uuid).first<{ ext: string }>();
+    if (!known) {
+      const n = (sql: string, ...a: unknown[]) => env.DB.prepare(sql).bind(...a).first<{ n: number }>().then((r) => r?.n ?? 0);
+      if (
+        (await n("SELECT COUNT(*) AS n FROM uploads WHERE ip_hash = ? AND created_at > ?", ip, Date.now() - LIMIT_MS)) >= PHOTO_IP_N ||
+        (await n("SELECT COUNT(*) AS n FROM uploads WHERE device_id = ?", device)) >= PHOTO_DEVICE_MAX
+      ) return bad(cors, "too many uploads", 429);
+    }
     const buf = await req.arrayBuffer();
     if (buf.byteLength > CAP[sub]) return bad(cors, "too large", 413);
-    const ext = sniff(new Uint8Array(buf, 0, Math.min(12, buf.byteLength)));
+    const bytes = new Uint8Array(buf);
+    const ext = sniff(bytes.subarray(0, 12));
     if (!ext) return bad(cors, "unsupported type", 415);
-    if (await env.DB.prepare("SELECT 1 FROM photos WHERE uuid = ?").bind(uuid).first()) return bad(cors, "exists", 409);
+    const d = dims(bytes, ext);
+    if (!d || Math.max(...d) > DIM[sub] + DIM_TOLERANCE) return bad(cors, "invalid dimensions", 422);
+    await env.DB.prepare("INSERT OR IGNORE INTO uploads (uuid,ext,ip_hash,device_id,created_at) VALUES (?,?,?,?,?)").bind(uuid, ext, ip, device, Date.now()).run();
+    const rec = await env.DB.prepare("SELECT ext FROM uploads WHERE uuid = ?").bind(uuid).first<{ ext: string }>();
+    if (rec?.ext !== ext) return bad(cors, "type mismatch", 409);
     await env.BUCKET.put(`${sub}/${uuid}.${ext}`, buf, { httpMetadata: { contentType: EXT[ext], cacheControl: IMMUTABLE } });
+    await env.DB.prepare(`UPDATE uploads SET ${sub === "full" ? "fw=?,fh=?" : "tw=?,th=?"} WHERE uuid = ?`).bind(d[0], d[1], uuid).run();
     return json(null, 204, cors);
   }
 
@@ -304,48 +379,32 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     if (!DEVICE.test(device)) return bad(cors, "invalid device");
     const body = await readJson(req);
     if (!body) return bad(cors, "invalid body");
-    const dim = (v: unknown) => (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 20000 ? (v as number) : null);
-    const w = dim(body.w);
-    const h = dim(body.h);
-    if (!w || !h) return bad(cors, "invalid size");
     const pw = body.pw === undefined || body.pw === "" ? null : field(body.pw, 4, 64);
     if (body.pw !== undefined && body.pw !== "" && !pw) return bad(cors, "invalid password");
 
-    const prev = await env.DB.prepare("SELECT id,uuid,ext,w,h,created_at FROM photos WHERE uuid = ?").bind(uuid).first<Photo>();
+    const find = () => env.DB.prepare("SELECT id,uuid,ext,w,h,created_at FROM photos WHERE uuid = ?").bind(uuid).first<Photo>();
+    const prev = await find();
     if (prev) return json(view(prev, url.origin), 200, cors);
 
-    let ext: keyof typeof EXT | null = null;
-    let size = 0;
-    for (const e of ["webp", "jpg"] as const) {
-      const f = await env.BUCKET.head(`full/${uuid}.${e}`);
-      if (f && (await env.BUCKET.head(`thumb/${uuid}.${e}`))) {
-        ext = e;
-        size = f.size;
-        break;
-      }
-    }
-    if (!ext) return bad(cors, "upload incomplete", 409);
+    const up = await env.DB.prepare("SELECT ext,ip_hash,device_id,fw,fh,tw FROM uploads WHERE uuid = ?")
+      .bind(uuid)
+      .first<{ ext: keyof typeof EXT; ip_hash: string; device_id: string | null; fw: number | null; fh: number | null; tw: number | null }>();
+    const full = up && up.fw && up.tw ? await env.BUCKET.head(`full/${uuid}.${up.ext}`) : null;
+    if (!up || !full || !(await env.BUCKET.head(`thumb/${uuid}.${up.ext}`))) return bad(cors, "upload incomplete", 409);
 
-    const ipHash = await sha256((req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
     const now = Date.now();
-    const n = (sql: string, ...a: unknown[]) => env.DB.prepare(sql).bind(...a).first<{ n: number }>().then((r) => r?.n ?? 0);
-    if (
-      (await n("SELECT COUNT(*) AS n FROM photos WHERE ip_hash = ? AND created_at > ?", ipHash, now - LIMIT_MS)) >= PHOTO_IP_N ||
-      (await n("SELECT COUNT(*) AS n FROM photos WHERE ip_hash = ?", ipHash)) >= PHOTO_IP_MAX ||
-      (await n("SELECT COUNT(*) AS n FROM photos WHERE device_id = ?", device)) >= PHOTO_DEVICE_MAX
-    ) {
-      await Promise.all([`full/${uuid}.${ext}`, `thumb/${uuid}.${ext}`].map((k) => env.BUCKET.delete(k)));
-      return bad(cors, "too many uploads", 429);
-    }
-
     const salt = pw ? crypto.getRandomValues(new Uint8Array(16)) : null;
     const hash = pw && salt ? b64(await pbkdf2(pw, salt)) : null;
     const row = await env.DB.prepare(
-      "INSERT INTO photos (uuid,ext,w,h,size,pw_hash,salt,ip_hash,device_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+      "INSERT INTO photos (uuid,ext,w,h,size,pw_hash,salt,ip_hash,device_id,created_at) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(uuid) DO NOTHING RETURNING id",
     )
-      .bind(uuid, ext, w, h, size, hash, salt && b64(salt), ipHash, device, now)
+      .bind(uuid, up.ext, up.fw, up.fh, full.size, hash, salt && b64(salt), up.ip_hash, up.device_id ?? device, now)
       .first<{ id: number }>();
-    return json(view({ id: row!.id, uuid, ext, w, h, created_at: now }, url.origin), 201, cors);
+    if (!row) {
+      const again = await find();
+      return again ? json(view(again, url.origin), 200, cors) : bad(cors, "upload incomplete", 409);
+    }
+    return json(view({ id: row.id, uuid, ext: up.ext, w: up.fw!, h: up.fh!, created_at: now }, url.origin), 201, cors);
   }
 
   if (req.method === "DELETE" && !sub) {
@@ -359,8 +418,15 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
       const body = await readJson(req);
       const pw = body && typeof body.pw === "string" ? body.pw.trim() : "";
       if (!pw) return bad(cors, "invalid password");
-      if (!row.pw_hash || !row.salt || !eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) return bad(cors, "wrong password", 403);
+      const ip = await ipHash(req, env);
+      const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?").bind(ip, Date.now() - LIMIT_MS).first<{ n: number }>();
+      if ((fails?.n ?? 0) >= PW_FAIL_N) return bad(cors, "too many attempts", 429);
+      if (!row.pw_hash || !row.salt || !eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
+        await env.DB.prepare("INSERT INTO pw_fails (ip_hash,created_at) VALUES (?,?)").bind(ip, Date.now()).run();
+        return bad(cors, "wrong password", 403);
+      }
     }
+    await env.DB.prepare("DELETE FROM uploads WHERE uuid = ?").bind(uuid).run();
     await Promise.all([`full/${uuid}.${row.ext}`, `thumb/${uuid}.${row.ext}`].map((k) => env.BUCKET.delete(k)));
     if (admin && url.searchParams.get("hide") === "1") {
       await env.DB.prepare("UPDATE photos SET hidden = 1 WHERE uuid = ?").bind(uuid).run();
@@ -374,9 +440,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
   return bad(cors, "method not allowed", 405);
 }
 
-export default {
-  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const cors = allowedOrigin(req.headers.get("Origin"), env);
+async function handle(req: Request, env: Env, ctx: ExecutionContext, cors: string | null): Promise<Response> {
     const url = new URL(req.url);
     const m = url.pathname.match(/^\/entries(?:\/(\d+))?\/?$/);
 
@@ -418,10 +482,10 @@ export default {
       if (!message) return bad(cors, "invalid message");
       if (!password) return bad(cors, "invalid password");
 
-      const ipHash = await sha256((req.headers.get("CF-Connecting-IP") ?? "") + env.IP_PEPPER);
+      const ip = await ipHash(req, env);
       const now = Date.now();
       const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM entries WHERE ip_hash = ? AND created_at > ?")
-        .bind(ipHash, now - LIMIT_MS)
+        .bind(ip, now - LIMIT_MS)
         .first<{ n: number }>();
       if ((recent?.n ?? 0) >= LIMIT_N) return bad(cors, "too many posts", 429);
 
@@ -430,7 +494,7 @@ export default {
       const row = await env.DB.prepare(
         "INSERT INTO entries (name,message,pw_hash,salt,ip_hash,created_at) VALUES (?,?,?,?,?,?) RETURNING id",
       )
-        .bind(name, message, b64(hash), b64(salt), ipHash, now)
+        .bind(name, message, b64(hash), b64(salt), ip, now)
         .first<{ id: number }>();
       return json({ id: row!.id, name, message, created_at: now }, 201, cors);
     }
@@ -449,5 +513,18 @@ export default {
     }
 
     return bad(cors, "method not allowed", 405);
+}
+
+export default {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const cors = allowedOrigin(req.headers.get("Origin"), env);
+    try {
+      return await handle(req, env, ctx, cors);
+    } catch {
+      return json({ error: "server error" }, 500, cors);
+    }
+  },
+  async scheduled(_e: ScheduledController, env: Env): Promise<void> {
+    await sweep(env);
   },
 };
