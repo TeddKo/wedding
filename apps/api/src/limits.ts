@@ -1,0 +1,10 @@
+export const LIMIT_MS = 10 * 60 * 1000;
+export const ENTRY_IP_N = 5;
+export const PHOTO_IP_N = 200;
+export const PHOTO_DEVICE_MAX = 30;
+export const PW_FAIL_N = 10;
+export const ORPHAN_MS = 24 * 3600 * 1000;
+export const FAIL_TTL_MS = 3600 * 1000;
+export const SESSION_MS = 30 * 24 * 3600 * 1000;
+export const DIM_TOLERANCE = 2;
+export const IMMUTABLE = "public, max-age=31536000, immutable";
