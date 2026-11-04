@@ -7,7 +7,20 @@
   import { portal } from "../lib/portal";
 
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
-  let { items }: { items: Item[] } = $props();
+  type Props = {
+    items: Item[];
+    /** true 면 그리드를 그리지 않고 라이트박스만 쓴다 (호출 쪽이 openAt 을 호출) */
+    bare?: boolean;
+    /** bare 일 때 FLIP·포커스 복귀에 쓸 i 번째 썸네일 요소 */
+    thumbAt?: (i: number) => HTMLElement | null | undefined;
+    /** 아직 불러올 항목이 남았는지. 끝에 닿으면 순환 대신 onindex 로 추가 로드를 기다린다 */
+    more?: boolean;
+    /** 라이트박스가 보여 주는 인덱스가 바뀔 때 */
+    onindex?: (i: number) => void;
+    /** 카운터에 표시할 전체 장수 (없으면 items 길이) */
+    total?: number;
+  };
+  let { items, bare = false, thumbAt, more = false, onindex, total }: Props = $props();
 
   const n = $derived(items.length);
 
@@ -34,7 +47,7 @@
   });
 
   function thumbRect(i: number) {
-    const img = btns[i]?.querySelector("img");
+    const img = (bare ? thumbAt?.(i) : btns[i])?.querySelector("img");
     const r = img?.getBoundingClientRect();
     return r && r.bottom > 0 && r.top < innerHeight ? r : null;
   }
@@ -76,8 +89,9 @@
     im.src = f;
   }
 
-  async function openAt(i: number) {
+  export async function openAt(i: number) {
     idx = i;
+    onindex?.(i);
     dir = 1;
     closing = false;
     SW = innerWidth;
@@ -103,17 +117,31 @@
     const back = idx;
     open = false;
     setInert(false);
-    btns[back]?.focus({ preventScroll: true });
+    (bare ? thumbAt?.(back) : btns[back])?.focus({ preventScroll: true });
   }
 
+  let waiting = false;
   function go(d: number) {
     if (n < 2) return;
+    if (more && idx + d >= n) {
+      waiting = true;
+      onindex?.(n - 1);
+      return;
+    }
     dir = d;
     idx = (idx + d + n) % n;
+    onindex?.(idx);
     view.set({ x: 0, y: 0, s: 1 }, instant);
     p.set(1, instant);
     preload();
   }
+
+  $effect(() => {
+    if (waiting && open && idx < n - 1) {
+      waiting = false;
+      go(1);
+    }
+  });
 
   /* ---------- 제스처: 스와이프 / 핀치 / 드래그 / 더블탭 / 휠 ---------- */
   const ptrs = new Map<number, { x: number; y: number }>();
@@ -243,6 +271,7 @@
   }
 </script>
 
+{#if !bare}
 <ul class="gallery">
   {#each items as it, i}
     <li class="cell" data-rv="curtain" style="--d:{320 + Math.min(i, 8) * 60}ms">
@@ -261,6 +290,7 @@
     </li>
   {/each}
 </ul>
+{/if}
 
 {#if open && cur}
   <div
@@ -298,7 +328,7 @@
       {/key}
     </div>
     <div class="ui" style:opacity={dim}>
-      <span class="count latin" aria-live="polite">{idx + 1} / {n}</span>
+      <span class="count latin" aria-live="polite">{idx + 1} / {Math.max(total ?? 0, n)}</span>
       <button type="button" class="b close" aria-label="닫기" onclick={close}>×</button>
       {#if n > 1}
         <button type="button" class="b prev" aria-label="이전 사진" onclick={() => go(-1)}>‹</button>

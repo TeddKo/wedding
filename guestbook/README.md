@@ -14,8 +14,10 @@ CORS 는 `https://teddko.github.io` 만 허용. 응답은 항상 `application/js
 - 스냅샷(R2 `BUCKET` = `wedding-snapshots`, 헤더 `X-Device` 필수):
   - `PUT /photos/:uuid/:kind` (`full` 3MB / `thumb` 200KB, JPEG·WebP 만) `204` / `400` / `409` 이미 등록 / `413` / `415`
   - `POST /photos/:uuid/commit` `{w,h,size,pw?}` : `201 {id,uuid,w,h,created_at,thumb,full}` (재호출 `200`) / `409` 업로드 미완 / `429` IP 10분 40장·평생 60장·기기 30장
-  - `GET /photos?cursor=&limit=` : 숨김 제외 최신순. `GET /p/:uuid/:kind` : 이미지(immutable 캐시)
-  - `DELETE /photos/:uuid` `{pw}` 소유자 또는 `Authorization: Bearer <ADMIN_TOKEN>` (`?hide=1` 은 숨김만)
+  - `GET /photos?cursor=&limit=` : 숨김 제외 최신순, 항목에 `ext`(`webp`|`jpg`) 포함, 첫 페이지(cursor 없음)만 `total`. `Cache-Control: no-store`. `GET /p/:uuid/:kind` : 이미지(immutable 캐시)
+  - `DELETE /photos/:uuid` `{pw}` 소유자 또는 `Authorization: Bearer <ADMIN_TOKEN>` (`?hide=1` 은 D1 행만 `hidden=1` 로 남기고 R2 객체는 삭제)
+  - R2 공개 커스텀 도메인: 객체 키는 `full/<uuid>.<ext>` · `thumb/<uuid>.<ext>`, 업로드 시 `Cache-Control: public, max-age=31536000, immutable`. 프런트 `src/data/wedding.ts` 의 `snapshotsCdn` 에 도메인을 넣으면 `${snapshotsCdn}/${key}` 로 직접 로드한다(비우면 Worker `/p/...`).
+  - 주의: 숨김·삭제는 R2 객체를 지우지만 CDN·브라우저 캐시(immutable 1년)에는 퍼지 전까지 이미지가 남을 수 있다. 급하면 Cloudflare 캐시 퍼지를 한다.
 - 그 외 경로 `404`, 메서드 불일치 `405`. 오류 본문은 `{error}`.
 
 ## Deploy

@@ -1,18 +1,21 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { reduced } from "../lib/motion";
   import Gallery from "./Gallery.svelte";
   import Toast from "./ui/Toast.svelte";
   import { compress, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
 
-  type Photo = { id: number; uuid: string; w: number; h: number; thumb: string; full: string };
+  type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string };
   type State = "wait" | "compress" | "upload" | "done" | "fail";
   type Job = { id: number; file: File; uuid: string; state: State; pct: number; orig: number; out: number; err: string; url: string; pw: string };
-  let { api }: { api: string } = $props();
+  let { api, cdn = "" }: { api: string; cdn?: string } = $props();
 
   const MAX_PICK = 20;
   const CONCURRENCY = 2;
   const RETRIES = 3;
+  const PAGE = 30;
+  const PREFETCH = 6;
   const GENERIC = "업로드에 실패했어요. 다시 시도해 주세요.";
   const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -21,6 +24,16 @@
   let photos = $state<Photo[]>([]);
   let cursor = $state<number | null>(null);
   let moreBusy = $state(false);
+  let moreFailed = $state(false);
+  let overall = $state(0);
+  let cur = $state(0);
+  let live = $state("");
+  let track = $state<HTMLElement>();
+  let sentinel = $state<HTMLElement>();
+  let gal = $state<{ openAt(i: number): void }>();
+  const thumbEls: HTMLElement[] = [];
+  let raf = 0;
+  let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
   let pw = $state("");
   let pwErr = $state("");
@@ -67,29 +80,82 @@
     }
   }
 
-  const toPhoto = (e: Photo): Photo => ({ id: e.id, uuid: e.uuid, w: e.w, h: e.h, thumb: e.thumb, full: e.full });
+  const base = cdn.replace(/\/+$/, "");
+  const toPhoto = (e: Photo): Photo => ({
+    id: e.id, uuid: e.uuid, w: e.w, h: e.h, ext: e.ext,
+    thumb: base ? `${base}/thumb/${e.uuid}.${e.ext}` : e.thumb,
+    full: base ? `${base}/full/${e.uuid}.${e.ext}` : e.full,
+  });
   const items = $derived(photos.map((p) => ({ thumb: p.thumb, srcset: `${p.thumb} 480w`, full: p.full, w: p.w, h: p.h })));
+  const count = $derived(Math.max(overall, photos.length));
 
   async function load(first: boolean) {
-    if (!first) moreBusy = true;
+    if (!first) {
+      if (moreBusy || cursor === null) return;
+      moreBusy = true;
+      moreFailed = false;
+    }
     try {
-      const q = new URLSearchParams({ limit: "30" });
+      const q = new URLSearchParams({ limit: String(PAGE) });
       if (!first && cursor !== null) q.set("cursor", String(cursor));
       const r = await fetch(`${api}/photos?${q}`);
       if (!r.ok) throw new Error(String(r.status));
-      const d = (await r.json()) as { items: Photo[]; nextCursor: number | null };
+      const d = (await r.json()) as { items: Photo[]; nextCursor: number | null; total?: number };
       if (!Array.isArray(d.items)) throw new Error("shape");
       const have = new Set(photos.map((p) => p.uuid));
       photos = first ? d.items.map(toPhoto) : [...photos, ...d.items.filter((p) => !have.has(p.uuid)).map(toPhoto)];
       cursor = d.nextCursor ?? null;
+      if (typeof d.total === "number") overall = d.total;
       status = "ready";
-      if (!first) announce = `${d.items.length}장의 사진을 더 불러왔어요`;
     } catch {
       if (first) status = "error";
-      else notify("사진을 불러오지 못했어요", true);
+      else moreFailed = true;
     } finally {
       moreBusy = false;
     }
+  }
+
+  /* 끝에서 PREFETCH 장 이내로 다가오면 다음 페이지를 미리 불러온다 */
+  $effect(() => {
+    void photos.length;
+    void moreBusy;
+    if (!sentinel || !track || cursor === null || moreFailed) return;
+    const io = new IntersectionObserver((e) => e[0]?.isIntersecting && void load(false), { root: track, rootMargin: "0px 1500px 0px 0px" });
+    io.observe(sentinel);
+    return () => io.disconnect();
+  });
+
+  const step = () => {
+    const li = track?.querySelectorAll<HTMLElement>("li.it");
+    return li && li.length > 1 ? li[1].offsetLeft - li[0].offsetLeft : (li?.[0]?.offsetWidth ?? 1);
+  };
+
+  function sync() {
+    raf = 0;
+    if (!track) return;
+    const last = photos.length - 1;
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+    cur = Math.max(0, Math.min(last, atEnd && cursor === null ? last : Math.round(track.scrollLeft / step())));
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => (live = `${cur + 1} / ${count}`), 250);
+  }
+
+  const onscroll = () => (raf ||= requestAnimationFrame(sync));
+
+  function slide(d: number) {
+    const per = Math.max(1, Math.floor((track?.clientWidth ?? 0) / step()));
+    track?.scrollBy({ left: d * per * step(), behavior: reduced() ? "auto" : "smooth" });
+  }
+
+  function onkey(e: KeyboardEvent) {
+    if ((e.key !== "ArrowRight" && e.key !== "ArrowLeft") || (e.target as HTMLElement).closest("input")) return;
+    e.preventDefault();
+    slide(e.key === "ArrowRight" ? 1 : -1);
+  }
+
+  function follow(i: number) {
+    thumbEls[i]?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "instant" as ScrollBehavior });
+    if (i >= photos.length - PREFETCH) void load(false);
   }
 
   onMount(() => {
@@ -213,6 +279,7 @@
       await withRetry(() => putXhr(j, "full", c.full.blob, (l) => (j.pct = Math.round((l / total) * 100))));
       await withRetry(() => putXhr(j, "thumb", c.thumb.blob, (l) => (j.pct = Math.round(((fullN + l) / total) * 100))));
       const p = await withRetry(() => commit(j, c));
+      if (!photos.some((x) => x.uuid === p.uuid)) overall++;
       photos = [p, ...photos.filter((x) => x.uuid !== p.uuid)];
       j.pct = 100;
       j.state = "done";
@@ -254,6 +321,7 @@
     try {
       const r = await fetch(`${api}/photos/${j.uuid}`, { method: "DELETE", headers: JSON_HEADERS, body: JSON.stringify({ pw: v }) });
       if (r.status === 204 || r.status === 404) {
+        if (photos.some((p) => p.uuid === j.uuid)) overall = Math.max(0, overall - 1);
         photos = photos.filter((p) => p.uuid !== j.uuid);
         URL.revokeObjectURL(j.url);
         jobs = jobs.filter((x) => x.id !== j.id);
@@ -337,10 +405,28 @@
     {:else if photos.length === 0}
       <p class="cap empty">아직 올라온 스냅샷이 없어요. 첫 사진을 남겨 주세요.</p>
     {:else}
-      <Gallery {items} />
-      {#if cursor !== null}
-        <button type="button" class="btn-outline more" data-press disabled={moreBusy} aria-busy={moreBusy} onclick={() => load(false)}>{moreBusy ? "불러오는 중…" : "더 보기"}</button>
-      {/if}
+      <div class="car" role="region" aria-roledescription="carousel" aria-label="하객 스냅샷" onkeydown={onkey}>
+        <ul class="track" bind:this={track} {onscroll} tabindex="0" aria-label="스냅샷 목록 (좌우 방향키로 넘기기)">
+          {#each photos as p, i (p.uuid)}
+            <li class="it">
+              <button type="button" class="card" bind:this={thumbEls[i]} aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
+                <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" />
+              </button>
+            </li>
+          {/each}
+          {#if cursor !== null}<li class="sent" class:busy={moreBusy} bind:this={sentinel} aria-hidden="true"></li>{/if}
+        </ul>
+        <div class="nav">
+          <button type="button" class="arrow" aria-label="이전 사진" disabled={cur <= 0} onclick={() => slide(-1)}>‹</button>
+          <p class="count latin" aria-hidden="true">{cur + 1} / {count}</p>
+          <button type="button" class="arrow" aria-label="다음 사진" disabled={cur >= photos.length - 1 && cursor === null} onclick={() => slide(1)}>›</button>
+        </div>
+        <p class="sr" role="status" aria-live="polite">{live}</p>
+        {#if moreFailed}
+          <p class="cap err-line" role="alert">사진을 더 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((moreFailed = false), load(false))}>다시 시도</button></p>
+        {/if}
+      </div>
+      <Gallery bind:this={gal} bare {items} more={cursor !== null} total={count} thumbAt={(i) => thumbEls[i]} onindex={follow} />
     {/if}
   </div>
 </div>
@@ -369,7 +455,7 @@
   .hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
   .err { margin: 0; font-size: 14px; line-height: 1.5; color: #c0392b; }
   .pick { display: flex; width: 100%; max-width: 280px; min-height: 52px; border-radius: 9999px; }
-  .pick:focus-visible, .more:focus-visible, .act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .pick:focus-visible, .act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .queue { margin-bottom: 28px; }
   .sum { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--ink); }
@@ -395,14 +481,32 @@
   .del-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
 
-  .more { display: flex; width: 100%; max-width: 280px; margin: 20px auto 0; min-height: 48px; border-radius: 9999px; }
-  .more:disabled { opacity: 0.7; cursor: progress; }
+  .car { min-width: 0; }
+  .track {
+    list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; position: relative;
+    scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; border-radius: 10px;
+  }
+  .track::-webkit-scrollbar { display: none; }
+  .track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .it, .sent.busy { flex: 0 0 min(68%, 240px); aspect-ratio: 4 / 5; scroll-snap-align: start; }
+  .card { display: block; width: 100%; height: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--track); cursor: zoom-in; }
+  .card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .card:focus-visible, .arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sent { flex: 0 0 1px; }
+  .sent.busy { border-radius: 10px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
+  .nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; }
+  .count { margin: 0; min-width: 7ch; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .arrow {
+    width: 44px; height: 44px; padding: 0 0 3px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    font-size: 26px; line-height: 1; cursor: pointer;
+  }
+  .arrow:disabled { opacity: 0.35; cursor: default; }
   .empty { margin: 8px 0; text-align: center; }
   .err-line { margin: 20px 0 0; text-align: center; }
   .skel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .sk { display: block; aspect-ratio: 1; border-radius: 6px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
   @keyframes snap-pulse { from { opacity: 0.5; } to { opacity: 0.8; } }
-  @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .sk, .sent.busy { animation: none; } }
 
   .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
 </style>

@@ -16,7 +16,7 @@ import { wedding } from "../data/wedding";
         <br />
         두 사람의 모습을 나눠 주세요.
       </p>
-      <SnapshotsIsland client:visible api={wedding.snapshotsApi} />
+      <SnapshotsIsland client:visible api={wedding.snapshotsApi} cdn={wedding.snapshotsCdn} />
       <noscript><p class="cap">스냅샷은 JavaScript가 켜진 브라우저에서 볼 수 있어요</p></noscript>
     </section>
   )

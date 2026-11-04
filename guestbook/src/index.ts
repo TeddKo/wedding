@@ -80,6 +80,7 @@ const field = (v: unknown, min: number, max: number, multiline = false) => {
 };
 
 
+const IMMUTABLE = "public, max-age=31536000, immutable";
 type Photo = { id: number; uuid: string; ext: keyof typeof EXT; w: number; h: number; created_at: number };
 const view = (p: Photo, origin: string) => ({
   id: p.id,
@@ -87,6 +88,7 @@ const view = (p: Photo, origin: string) => ({
   w: p.w,
   h: p.h,
   created_at: p.created_at,
+  ext: p.ext,
   thumb: `${origin}/p/${p.uuid}/thumb`,
   full: `${origin}/p/${p.uuid}/full`,
 });
@@ -113,7 +115,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const res = new Response(obj.body, {
       headers: {
         "Content-Type": EXT[row.ext],
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": IMMUTABLE,
         ETag: etag,
         "X-Content-Type-Options": "nosniff",
         "Cross-Origin-Resource-Policy": "cross-origin",
@@ -140,7 +142,8 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
       .all<Photo>();
     const more = results.length > limit;
     const items = more ? results.slice(0, limit) : results;
-    return json({ items: items.map((p) => view(p, url.origin)), nextCursor: more ? items[items.length - 1].id : null }, 200, cors);
+    const total = before === Number.MAX_SAFE_INTEGER ? (await env.DB.prepare("SELECT COUNT(*) AS n FROM photos WHERE hidden = 0").first<{ n: number }>())?.n ?? 0 : undefined;
+    return json({ items: items.map((p) => view(p, url.origin)), nextCursor: more ? items[items.length - 1].id : null, total }, 200, cors);
   }
 
   if (!uuid || !UUID.test(uuid)) return bad(cors, "invalid uuid");
@@ -154,7 +157,7 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
     const ext = sniff(new Uint8Array(buf, 0, Math.min(12, buf.byteLength)));
     if (!ext) return bad(cors, "unsupported type", 415);
     if (await env.DB.prepare("SELECT 1 FROM photos WHERE uuid = ?").bind(uuid).first()) return bad(cors, "exists", 409);
-    await env.BUCKET.put(`${sub}/${uuid}.${ext}`, buf, { httpMetadata: { contentType: EXT[ext] } });
+    await env.BUCKET.put(`${sub}/${uuid}.${ext}`, buf, { httpMetadata: { contentType: EXT[ext], cacheControl: IMMUTABLE } });
     return json(null, 204, cors);
   }
 
@@ -219,10 +222,10 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
       if (!pw) return bad(cors, "invalid password");
       if (!row.pw_hash || !row.salt || !eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) return bad(cors, "wrong password", 403);
     }
+    await Promise.all([`full/${uuid}.${row.ext}`, `thumb/${uuid}.${row.ext}`].map((k) => env.BUCKET.delete(k)));
     if (admin && url.searchParams.get("hide") === "1") {
       await env.DB.prepare("UPDATE photos SET hidden = 1 WHERE uuid = ?").bind(uuid).run();
     } else {
-      await Promise.all([`full/${uuid}.${row.ext}`, `thumb/${uuid}.${row.ext}`].map((k) => env.BUCKET.delete(k)));
       await env.DB.prepare("DELETE FROM photos WHERE uuid = ?").bind(uuid).run();
     }
     ctx.waitUntil(Promise.all(["full", "thumb"].map((k) => caches.default.delete(`${url.origin}/p/${uuid}/${k}`))));

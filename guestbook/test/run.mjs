@@ -1,6 +1,7 @@
 // 로컬 wrangler dev 를 띄워 fetch 로 검증. 사용: pnpm test
 import { spawn, execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readdirSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import assert from "node:assert/strict";
@@ -105,6 +106,14 @@ try {
     return [u, await commit(u, { w: 1000, h: 800, ...b }, o)];
   };
 
+  const r2keys = () => {
+    const dir = join(persist, "v3/r2/miniflare-R2BucketObject");
+    return readdirSync(dir).filter((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite").flatMap((f) => {
+      const db = new DatabaseSync(join(dir, f), { readOnly: true });
+      try { return db.prepare("SELECT key FROM _mf_objects").all().map((r) => r.key); } finally { db.close(); }
+    });
+  };
+
   const u1 = crypto.randomUUID();
   assert.equal((await put("not-a-uuid", "full", webp(100))).status, 400);
   assert.equal((await put(u1, "full", webp(100), { d: "x" })).status, 400);
@@ -122,7 +131,7 @@ try {
   let r = await commit(u1, { w: 4032, h: 3024, pw: "pw1234" });
   assert.equal(r.status, 201);
   const e1 = await r.json();
-  assert.deepEqual(Object.keys(e1).sort(), ["created_at", "full", "h", "id", "thumb", "uuid", "w"]);
+  assert.deepEqual(Object.keys(e1).sort(), ["created_at", "ext", "full", "h", "id", "thumb", "uuid", "w"]);
   assert.equal((await commit(u1)).status, 200);
   assert.equal((await put(u1, "full", jpg(5000))).status, 409);
 
@@ -147,16 +156,30 @@ try {
   assert.equal((await del(u1)).status, 400);
   assert.equal((await del(u1, { pw: "pw1234", q: "?hide=1" })).status, 204);
   assert.equal((await fetch(e1.thumb)).status, 404);
+  assert.equal(e1.ext, "jpg");
   assert.equal((await del(u1, { pw: "pw1234" })).status, 404);
   assert.equal((await del(u2, { pw: "whatever" })).status, 403);
   assert.equal((await del(u2, { token: "wrong" })).status, 400);
 
   const [u3] = await upload();
+  const lst = await (await call("/photos?limit=30")).json();
+  assert.ok(lst.items.every((x) => x.ext === "webp" || x.ext === "jpg"));
+  assert.equal(lst.total, lst.items.length);
+  assert.equal((await call(`/photos?limit=1&cursor=${lst.items[0].id}`)).status, 200);
+  assert.equal((await (await call(`/photos?limit=1&cursor=${lst.items[0].id}`)).json()).total, undefined);
+  assert.match((await call("/photos")).headers.get("cache-control"), /no-store/);
+  assert.ok(r2keys().includes(`full/${u3}.webp`) && r2keys().includes(`thumb/${u3}.webp`));
   assert.equal((await del(u3, { token: "test-admin", q: "?hide=1" })).status, 204);
+  assert.ok(!r2keys().some((k) => k.includes(u3)), "hide must delete R2 objects");
+  assert.equal((await put(u3, "full", webp(100))).status, 409);
+  assert.equal((await call("/photos?limit=30").then((r) => r.json())).total, lst.total - 1);
   assert.ok(!(await list()).includes(u3));
   assert.equal((await fetch(`${BASE}/p/${u3}/full`)).status, 404);
   assert.equal((await del(u3, { token: "test-admin" })).status, 204);
   assert.equal((await put(u3, "full", webp(100))).status, 204);
+  const [u5] = await upload();
+  assert.equal((await del(u5, { token: "test-admin" })).status, 204);
+  assert.ok(!r2keys().some((k) => k.includes(u5)), "delete must remove R2 objects");
 
   const [u4] = await upload();
   assert.equal((await del(u4, { token: "test-admin" })).status, 204);
