@@ -163,7 +163,12 @@
 
   /* intro 게이트가 열린 뒤에 투표 섹션으로 돌아온다 */
   function backToPoll() {
-    const go = () => root?.closest("section")?.scrollIntoView({ block: "start" });
+    /* 위쪽 이미지·지도가 늦게 자리를 잡으며 밀어낼 수 있어 한 번 더 맞춘다 */
+    const go = () => {
+      const to = () => root?.closest("section")?.scrollIntoView({ block: "start" });
+      to();
+      setTimeout(to, 700);
+    };
     const h = document.documentElement;
     if (!h.classList.contains("gated")) return go();
     const mo = new MutationObserver(() => !h.classList.contains("gated") && (mo.disconnect(), go()));
