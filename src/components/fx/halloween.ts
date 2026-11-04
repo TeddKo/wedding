@@ -44,7 +44,7 @@ export function start(ctx: { first: boolean }): () => void {
       { opacity: 1, transform: "translateY(-4px) scale(1.12)", offset: 0.3, easing: "cubic-bezier(.5,0,.75,0)" },
       { opacity: 0, transform: "translate(6px, -22px) scale(.3)" },
     ];
-    /* 말풍선: 상단·동행 상태 모두에서 텀을 두고 반복(첫 2.5초, 누르기 전 28초, 누른 뒤엔 60초 간격). 전환 순간엔 떠 있던 말풍선만 지운다 */
+    /* 말풍선: 상단·동행 상태 모두에서 텀을 두고 반복(첫 2.5초, 누르기 전 14초, 누른 뒤엔 30초 간격). 전환 순간엔 떠 있던 말풍선만 지운다 */
     const HINTS = ["Boo! 눌러봐요", "드레스코드 알려줄게요", "나 한번 눌러볼래요?", "코스튬 준비됐나요?"];
     let on = false, tapped = false, hinted = 0, last = -1e9;
     let an: Animation | undefined;
@@ -59,7 +59,7 @@ export function start(ctx: { first: boolean }): () => void {
         b.setAttribute("aria-hidden", "true");
         b.textContent = HINTS[hinted++ % HINTS.length];
         ghost.append(b);
-        ht.push(window.setTimeout(() => { b.remove(); hint(tapped ? 60000 : 28000); }, 3200));
+        ht.push(window.setTimeout(() => { b.remove(); hint(tapped ? 30000 : 14000); }, 3200));
       }, delay));
     };
     const wander = () => {
@@ -76,7 +76,7 @@ export function start(ctx: { first: boolean }): () => void {
       if (on) {
         ghost.classList.add("is-follow");
         const now = performance.now();
-        const swoop = !reduced && now - last > 3000;
+        const swoop = !reduced && now - last > 600;
         if (swoop) last = now;
         an = ghost.animate(swoop ? SWOOP : [{ opacity: 0 }, { opacity: 1 }], swoop ? 1600 : 200);
         an.onfinish = wander;
@@ -89,7 +89,7 @@ export function start(ctx: { first: boolean }): () => void {
     const onTap = () => {
       tapped = true;
       clearHints();
-      hint(60000);
+      hint(30000);
     };
     ghost.addEventListener("click", onTap);
     const io = new IntersectionObserver(([e]) => set(!e.isIntersecting && e.boundingClientRect.bottom <= 0));
