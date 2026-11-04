@@ -43,7 +43,7 @@
             label.innerHTML = pin(name);
             const tag = label.firstElementChild as HTMLElement;
             new k.maps.CustomOverlay({ map, position: c, content: tag, yAnchor: 1 });
-            /* 핀 끝이 좌표라 라벨+핀 묶음이 위로 치우친다. 묶음 높이 절반만큼 좌표를 아래로 내려 묶음을 중앙에 둔다 */
+            /* 핀 끝이 좌표라 라벨+핀 묶음이 위로 치우침. 묶음 높이 절반만큼 좌표를 아래로 내려 묶음을 중앙에 배치 */
             const recenter = () => {
               map.relayout();
               map.setCenter(c);

@@ -1,8 +1,8 @@
 import { THEME_NAMES, THEMES, isTheme, type ThemeName } from "./themes";
 
 /**
- * 현재 테마. 마크업은 이 값으로 분기하지 않는다(SSR/하이드레이션 불일치 방지).
- * 마크업 변형은 `data-th` + CSS 로, JS 연출(캔버스, 날아가는 요소)만 이 값을 읽는다.
+ * 현재 테마. 마크업은 이 값으로 분기 금지(SSR/하이드레이션 불일치 방지).
+ * 마크업 변형은 `data-th` + CSS 로, JS 연출(캔버스, 날아가는 요소)만 이 값 참조.
  */
 export const theme = $state<{ name: ThemeName }>({ name: "halloween" });
 

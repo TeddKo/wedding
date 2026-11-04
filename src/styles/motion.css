@@ -1,7 +1,7 @@
 /**
  * 공유 모션 시스템. 엔진은 components/Reveal.svelte.
- * 규약: 기본 CSS 는 항상 최종 상태. 숨김은 html.js [data-reveal].rv:not(.in) 아래에서만 걸린다.
- * html.js 가 제거되거나(JS off, 4.5s 폴백) 모션 감소이면 .rv 가 없어 전부 최종 상태로 보인다.
+ * 규약: 기본 CSS 는 항상 최종 상태. 숨김은 html.js [data-reveal].rv:not(.in) 아래에서만 적용.
+ * html.js 가 제거되거나(JS off, 4.5s 폴백) 모션 감소이면 .rv 가 없어 전부 최종 상태로 노출.
  * transform/opacity 만 사용. 예외: draw 의 stroke-dashoffset, mask 래퍼 overflow:clip, data-dir=x 의 clip-path.
  */
 :root {

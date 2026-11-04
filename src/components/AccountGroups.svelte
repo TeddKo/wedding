@@ -7,7 +7,7 @@
 
   let { groups }: { groups: { title: string; rows: AccountRow[] }[] } = $props();
 
-  /* JS 가 없으면 서버 HTML 의 두 그룹이 모두 보이고, 마운트 후 세그먼트 토글로 바뀐다 */
+  /* JS 가 없으면 서버 HTML 의 두 그룹이 모두 보이고, 마운트 후 세그먼트 토글로 전환 */
   let mounted = $state(false);
   let sel = $state(0);
   let leaving = $state(false);

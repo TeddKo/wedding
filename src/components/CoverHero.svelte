@@ -171,7 +171,7 @@
   :global([data-theme="halloween"]) .hero { width: min(300px, calc(100% - 64px)); margin-top: 0; aspect-ratio: 336 / 440; }
   :global([data-theme="halloween"]) .frame { clip-path: var(--clip); }
   .rules { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  /* 촛불: 탭으로 끄고 켠다(fx/halloween 이 .out 토글). 끄면 커버 빛이 함께 어두워진다 */
+  /* 촛불: 탭으로 끄고 켬(fx/halloween 이 .out 토글). 끄면 커버 빛이 함께 어두워짐 */
   .flame { position: absolute; z-index: 3; left: 50%; top: -44px; width: 44px; height: 44px; margin-left: -22px; padding: 11px 16px; border: 0; background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   .flame:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
   .flame svg { display: block; transform-origin: 50% 100%; animation: flick 3s linear infinite; transition: transform 420ms cubic-bezier(0.5, 0, 0.75, 0), opacity 360ms ease-in; }

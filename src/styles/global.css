@@ -98,7 +98,7 @@
   --bride: var(--accent);
 }
 
-/* 테마별 마크업 변형: data-th="dev" 는 dev 테마에서만 보인다 */
+/* 테마별 마크업 변형: data-th="dev" 는 dev 테마에서만 노출 */
 [data-theme="halloween"] [data-th]:not([data-th~="halloween"]),
 [data-theme="dev"] [data-th]:not([data-th~="dev"]),
 [data-theme="puppy"] [data-th]:not([data-th~="puppy"]) { display: none !important; }
@@ -190,7 +190,7 @@ html[data-theme="dev"] .footer.ending::after { content: "v1.0.0"; position: abso
 [data-theme="puppy"] .card { border-radius: 14px; box-shadow: 0 1px 0 #fff inset, 0 10px 20px -14px rgb(var(--sh) / 0.35); }
 [data-theme="dev"] .card { border: 0; box-shadow: 0 0 0 1px var(--line), 0 2px 4px rgb(0 0 0 / 0.04); }
 
-/* 인트로 게이트: JS 가 켜져 있는 동안 스크롤만 잠근다. 섹션 등장 모션은 motion.css */
+/* 인트로 게이트: JS 가 켜져 있는 동안 스크롤만 잠금. 섹션 등장 모션은 motion.css */
 html.gated, html.gated body { overflow: hidden; }
 
 /* 플로팅 원형 버튼: 우하단, 커버를 지나면 표시 */

@@ -6,6 +6,6 @@ export const THEMES = {
 } as const;
 
 export type ThemeName = keyof typeof THEMES;
-/** 방문자에게 열어 둔 테마. 1개면 테마 전환 FAB 이 숨고 인트로 선택지도 그 1개만 보인다(다른 테마 코드는 유지) */
+/** 방문자에게 열어 둔 테마. 1개면 테마 전환 FAB 이 숨고 인트로 선택지도 그 1개만 보임(다른 테마 코드는 유지) */
 export const THEME_NAMES: ThemeName[] = ["halloween"];
 export const isTheme = (v: unknown): v is ThemeName => typeof v === "string" && (THEME_NAMES as string[]).includes(v);

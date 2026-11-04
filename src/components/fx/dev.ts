@@ -1,6 +1,6 @@
 /**
  * dev 테마 연출: .gl 화면 밖 일시정지, 브랜치 레일(읽기 기준선 0.6vh 에 팁 고정, 노드 .lit 점등을 레일이 구동, 푸터 노드 중심에서 clamp, 도달 시 v1.0.0 태그 stamp).
- * 점화/신호/hum 은 CSS(html.opened)가 담당하고 여기서는 런타임 행동만 다룬다.
+ * 점화/신호/hum 은 CSS(html.opened)가 담당, 여기서는 런타임 행동만 처리.
  * @param ctx first=true 면 시그니처 연출 1회 재생 시점
  * @returns 정리 함수(타이머/옵저버/리스너/DOM 해제)
  */
@@ -79,7 +79,7 @@ export function start(ctx: { first: boolean }): () => void {
       );
       undo.push(() => an.cancel());
     };
-    /* 앵커는 offsetTop 누적(transform 무관)으로 캐시. 레이아웃 읽기는 여기서만 한다 */
+    /* 앵커는 offsetTop 누적(transform 무관)으로 캐시. 레이아웃 읽기는 여기서만 수행 */
     const measure = () => {
       top = topIn(trunk);
       end = foot ? topIn(foot) + END : page.offsetHeight;

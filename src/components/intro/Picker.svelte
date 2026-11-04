@@ -4,7 +4,7 @@
 
   let opts = $state<HTMLButtonElement[]>([]);
 
-  /** 라디오 그룹 방향키: 좌/상=이전, 우/하=다음. 선택과 포커스가 함께 이동한다 */
+  /** 라디오 그룹 방향키: 좌/상=이전, 우/하=다음. 선택과 포커스가 함께 이동 */
   function onkeydown(e: KeyboardEvent) {
     const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
     if (!d) return;

@@ -95,7 +95,7 @@ function armOrns(anims: Animation[], cleanups: Array<() => void>): void {
   });
 }
 
-/** 엔딩 피날레: 진입 시 발자국 5개가 좌→우로 엔딩 아트까지 140ms 간격으로 찍히고 개들이 엎드려 내려앉는다(1회) */
+/** 엔딩 피날레: 진입 시 발자국 5개가 좌→우로 엔딩 아트까지 140ms 간격으로 찍히고 개들이 엎드려 내려앉음(1회) */
 function endingPaws(anims: Animation[], cleanups: Array<() => void>): void {
   const foot = document.querySelector<HTMLElement>("footer.ending");
   const art = foot?.querySelector<HTMLElement>(".end-art");
@@ -238,7 +238,7 @@ function pawTrail(cleanups: Array<() => void>): void {
 }
 
 /**
- * puppy 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출한다.
+ * puppy 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출.
  * @param ctx first=true 면 시그니처 연출 1회 재생 시점
  * @returns 정리 함수(타이머/캔버스/리스너/애니메이션 해제)
  */

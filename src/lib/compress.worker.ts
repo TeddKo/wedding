@@ -1,4 +1,4 @@
-/* 압축 워커: 디코드·리사이즈·인코딩을 메인 스레드 밖에서 한다. 규칙은 compress.ts 와 같다. */
+/* 압축 워커: 디코드·리사이즈·인코딩을 메인 스레드 밖에서 수행. 규칙은 compress.ts 와 동일. */
 const MAX = 2560;
 const THUMB = 480;
 const Q_WEBP = 0.82;
@@ -59,7 +59,7 @@ async function isHeicFile(f: File) {
 
 const viaBitmap = (f: Blob) => createImageBitmap(f, { imageOrientation: "from-image" });
 
-/** createImageBitmap → (HEIC 만) heic-to 지연 로드. null 이면 메인 스레드 <img> 디코드가 마지막 수단이다. */
+/** createImageBitmap → (HEIC 만) heic-to 지연 로드. null 이면 메인 스레드 <img> 디코드가 마지막 수단. */
 async function decode(f: File): Promise<ImageBitmap | null> {
   try {
     return await viaBitmap(f);

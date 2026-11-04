@@ -13,7 +13,7 @@
   let btn = $state<HTMLButtonElement>();
   const frame = () => new Promise<unknown>((r) => requestAnimationFrame(r));
 
-  /** 맨 위로 이동하면 FAB 이 숨겨져 포커스가 body 로 빠진다. 버튼이 보이면 되돌리고, 숨겨져 있으면 main 으로 옮긴다 */
+  /** 맨 위로 이동하면 FAB 이 숨겨져 포커스가 body 로 빠짐. 버튼이 보이면 되돌리고, 숨겨져 있으면 main 으로 이동 */
   function keepFocus() {
     if (!btn || document.activeElement === btn) return;
     if (document.activeElement && document.activeElement !== document.body) return;
@@ -24,7 +24,7 @@
   }
 
   /**
-   * 테마 전환: 중립색 베일이 250ms 로 화면을 덮은 동안 맨 위로 이동, wedding:theme-reset 으로 Reveal 초기화, 테마 적용(레일/시그니처는 Fx 가 재시작)한 뒤 걷는다.
+   * 테마 전환: 중립색 베일이 250ms 로 화면을 덮은 동안 맨 위로 이동, wedding:theme-reset 으로 Reveal 초기화, 테마 적용(레일/시그니처는 Fx 가 재시작) 후 베일 해제.
    * 모션 감소 시 베일 없이 즉시 전환. 아이콘은 반 바퀴 회전
    */
   async function swap() {

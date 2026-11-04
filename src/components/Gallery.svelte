@@ -9,17 +9,17 @@
   type Item = { thumb: string; srcset: string; full: string; w: number; h: number };
   type Props = {
     items: Item[];
-    /** true 면 그리드를 그리지 않고 라이트박스만 쓴다 (호출 쪽이 openAt 을 호출) */
+    /** true 면 그리드를 그리지 않고 라이트박스만 사용 (호출 쪽이 openAt 호출) */
     bare?: boolean;
     /** bare 일 때 FLIP·포커스 복귀에 쓸 i 번째 썸네일 요소 */
     thumbAt?: (i: number) => HTMLElement | null | undefined;
-    /** 아직 불러올 항목이 남았는지. 끝에 닿으면 순환 대신 onindex 로 추가 로드를 기다린다 */
+    /** 아직 불러올 항목이 남았는지 여부. 끝에 닿으면 순환 대신 onindex 로 추가 로드 대기 */
     more?: boolean;
     /** 라이트박스가 보여 주는 인덱스가 바뀔 때 */
     onindex?: (i: number) => void;
     /** 카운터에 표시할 전체 장수 (없으면 items 길이) */
     total?: number;
-    /** 있으면 라이트박스에 삭제 버튼을 보인다. 성공하면 null, 실패하면 보여 줄 메시지를 돌려준다 */
+    /** 있으면 라이트박스에 삭제 버튼 표시. 성공 시 null, 실패 시 보여 줄 메시지 반환 */
     remove?: (i: number, pw?: string) => Promise<string | null>;
     /** i 번째 사진 삭제에 필요한 확인: "pw" 비밀번호 입력, "confirm" 확인만, null 삭제 버튼 숨김 */
     need?: (i: number) => "pw" | "confirm" | null;
@@ -93,7 +93,7 @@
     im.src = f;
   }
 
-  /* 확대 상태를 기록에 한 칸 쌓아 휴대폰 뒤로가기가 페이지 이탈 대신 확대만 닫게 한다 */
+  /* 확대 상태를 기록에 한 칸 쌓아, 휴대폰 뒤로가기가 페이지 이탈 대신 확대만 닫게 함 */
   let pushed = false;
   const releaseHistory = () => {
     if (!pushed) return;
@@ -138,7 +138,7 @@
     releaseHistory();
     view.target = { x: 0, y: 0, s: 1 };
     const visible = !!thumbRect(idx) && !reduced();
-    /* 닫는 도중 go/openAt 이 p 를 건드리면 Spring 이 "Aborted" 로 거부한다. 정리를 건너뛰면 inert·스크롤 잠금이 남아 화면이 멈춘다 */
+    /* 닫는 도중 go/openAt 이 p 를 건드리면 Spring 이 "Aborted" 로 거부함. 정리를 건너뛰면 inert·스크롤 잠금이 남아 화면이 멈춤 */
     if (visible) await p.set(0).catch(() => {});
     else await new Promise<void>((r) => setTimeout(r, reduced() ? 0 : 160));
     if (!closing) return;
@@ -269,7 +269,7 @@
     if (v.s > 1.02) {
       const b = bound(v.s);
       const nx = start.x + dx, ny = start.y + dy;
-      /* 경계 밖은 고무줄처럼 1/3 만 따라간다 */
+      /* 경계 밖은 고무줄처럼 1/3 만 추종 */
       const rb = (val: number, m: number) => (Math.abs(val) > m ? Math.sign(val) * (m + (Math.abs(val) - m) / 3) : val);
       view.set({ s: v.s, x: rb(nx, b.x), y: rb(ny, b.y) }, instant);
     } else if (Math.abs(dx) > Math.abs(dy) * 0.8 || Math.abs(v.x) > 0) {

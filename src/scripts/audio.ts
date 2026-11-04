@@ -58,7 +58,7 @@ async function start() {
   render();
 }
 
-/** 트랙이 없으면(src 빈 문자열) 아무것도 하지 않고 토글도 숨겨둔다. */
+/** 트랙이 없으면(src 빈 문자열) 아무것도 하지 않고 토글도 숨김. */
 export function initAudio(button: HTMLButtonElement | null, src: string) {
   if (!src || !button) return;
   audio = new Audio(src);

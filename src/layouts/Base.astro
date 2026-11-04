@@ -38,7 +38,7 @@ const colors = Object.fromEntries(THEME_NAMES.map((k) => [k, THEMES[k].color]));
           if (q === t) localStorage.setItem("theme", t);
         }
       } catch (e) {}
-      /* 카카오 로그인에서 돌아온 경우(?state=poll-…&code|error) 인트로 게이트 없이 바로 본문을 연다 */
+      /* 카카오 로그인에서 돌아온 경우(?state=poll-…&code|error) 인트로 게이트 없이 바로 본문 열기 */
       var back = /[?&]state=poll-/.test(location.search) && /[?&](code|error)=/.test(location.search);
       document.documentElement.classList.add("has-js");
       if (!back) document.documentElement.classList.add("js", "gated");

@@ -1,4 +1,4 @@
-/* th/dev: dev 테마 전용 스타일. global.css 뒤에 로드되어 override 한다. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
+/* th/dev: dev 테마 전용 스타일. global.css 뒤에 로드되어 override. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
 html[data-theme="dev"] .gl { z-index: 1; }
 html[data-theme="dev"] .gl::before { content: ""; position: absolute; top: -12px; bottom: -12px; left: calc(var(--rail-x, 28px) - 48px); width: 140px; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgb(26 26 26 / 0.028), transparent 100%); pointer-events: none; }
 

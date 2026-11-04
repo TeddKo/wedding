@@ -2,8 +2,8 @@ import { createFall, svgToImage, type Fall } from "../../lib/fx/fall";
 import { CANDIES, FLECKS } from "../../lib/fx/sprites-candy";
 
 /**
- * halloween 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출한다.
- * 오픈 버스트, 호박·사탕 바구니 탭, 촛불 끄기/켜기, 엔딩 유령 인사·도망, 섹션 장난감 탭, 무한 장식 오프스크린 일시정지를 DOM 조회로 연결한다.
+ * halloween 테마 연출 모듈. Fx.svelte 가 오픈/테마 전환 시 호출.
+ * 오픈 버스트, 호박·사탕 바구니 탭, 촛불 끄기/켜기, 엔딩 유령 인사·도망, 섹션 장난감 탭, 무한 장식 오프스크린 일시정지를 DOM 조회로 연결.
  * @param ctx first=true 면 시그니처 연출 1회 재생 시점
  * @returns 정리 함수(타이머/캔버스/리스너 해제)
  */
@@ -24,11 +24,11 @@ export function start(ctx: { first: boolean }): () => void {
     });
   }
 
-  /* 커버 유령 동행: 아치(.hero)가 화면 위로 지나가면 같은 버튼을 우하단 fixed 로 전환(포커스·aria·팝업 원점 유지). 들어올 땐 다가왔다 물러나고, 돌아갈 땐 작아지며 사라진다 */
+  /* 커버 유령 동행: 아치(.hero)가 화면 위로 지나가면 같은 버튼을 우하단 fixed 로 전환(포커스·aria·팝업 원점 유지). 들어올 땐 다가왔다 물러나고, 돌아갈 땐 작아지며 사라짐 */
   const ghost = q<HTMLButtonElement>(".hw-ghost");
   const hero = ghost?.closest<HTMLElement>(".hero");
   if (ghost && hero && "IntersectionObserver" in window) {
-    /* 화면 쪽으로 크게 다가왔다가(빠르게) 천천히 물러난다 */
+    /* 화면 쪽으로 크게 다가왔다가(빠르게) 천천히 물러남 */
     const SWOOP: Keyframe[] = [
       { opacity: 0, transform: "translate(8px, 28px) scale(.35)", easing: "cubic-bezier(.2,.7,.3,1)" },
       { opacity: 1, transform: "translate(-48px, -60px) scale(2.3) rotate(-8deg)", offset: 0.3, easing: "cubic-bezier(.33,0,.2,1)" },
@@ -44,7 +44,7 @@ export function start(ctx: { first: boolean }): () => void {
       { opacity: 1, transform: "translateY(-4px) scale(1.12)", offset: 0.3, easing: "cubic-bezier(.5,0,.75,0)" },
       { opacity: 0, transform: "translate(6px, -22px) scale(.3)" },
     ];
-    /* 말풍선: 상단·동행 상태 모두에서 텀을 두고 반복(첫 2.5초, 누르기 전 14초, 누른 뒤엔 30초 간격). 전환 순간엔 떠 있던 말풍선만 지운다 */
+    /* 말풍선: 상단·동행 상태 모두에서 텀을 두고 반복(첫 2.5초, 누르기 전 14초, 누른 뒤엔 30초 간격). 전환 순간엔 떠 있던 말풍선만 삭제 */
     const HINTS = ["Boo! 눌러봐요", "드레스코드 알려줄게요", "나 한번 눌러볼래요?", "코스튬 준비됐나요?"];
     let on = false, tapped = false, hinted = 0, last = -1e9;
     let an: Animation | undefined;
@@ -140,7 +140,7 @@ export function start(ctx: { first: boolean }): () => void {
     });
   }
 
-  /* 엔딩 유령: 탭하면 다시 인사. 4초 안에 5번 넘게 누르면 놀라서 도망갔다가 잠시 뒤 슬그머니 돌아온다 */
+  /* 엔딩 유령: 탭하면 다시 인사. 4초 안에 5번 넘게 누르면 놀라서 도망갔다가 잠시 뒤 슬그머니 복귀 */
   const endGhost = q<HTMLButtonElement>(".hw-end");
   const endBody = q(".hw-end-body");
   if (endGhost && endBody) {
@@ -207,7 +207,7 @@ export function start(ctx: { first: boolean }): () => void {
     });
   }
 
-  /* 사탕 바구니: 탭하면 들썩이고 사탕이 튀어오른다(사탕은 아래 fall 준비 후 연결). 모션 감소면 깜빡임만 */
+  /* 사탕 바구니: 탭하면 들썩이고 사탕이 튀어오름(사탕은 아래 fall 준비 후 연결). 모션 감소면 깜빡임만 */
   const basket = q<HTMLButtonElement>(".hw-basket");
   const jiggle = () =>
     reduced
@@ -285,7 +285,7 @@ export function start(ctx: { first: boolean }): () => void {
       .catch(() => {});
   }
 
-  /* 섹션 장식: 탭 1회=연출 1회, 연출 중 탭 무시. 각 연출은 점유 ms 를 반환. 모션 감소면 불투명도 깜빡임만 */
+  /* 섹션 장식: 탭 1회=연출 1회, 연출 중 탭 무시. 각 연출은 점유 ms 반환. 모션 감소면 불투명도 깜빡임만 */
   const Y: [number, number, string][] = [[0, 0, "cubic-bezier(.5,0,.75,0)"], [0.14, 30, "cubic-bezier(.2,.7,.3,1)"], [0.24, 21, "cubic-bezier(.5,0,.75,0)"], [0.32, 30, "ease-out"], [0.38, 27, "linear"], [0.58, 27, "ease-in-out"], [0.68, 18, "linear"], [0.74, 18, "ease-in-out"], [0.84, 9, "linear"], [0.9, 9, "ease-in-out"], [1, 0, "linear"]];
   const spider = (el: HTMLElement) => {
     el.querySelector(".hw-drop")!.animate(Y.map(([offset, y, easing]) => ({ offset, easing, transform: `translateY(${y}px)` })), 2000);

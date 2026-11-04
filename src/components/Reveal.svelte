@@ -4,12 +4,12 @@
   import { stage } from "../lib/stage.svelte";
 
   /**
-   * 공유 모션 엔진. 속성 API(작업자는 속성만 붙인다):
+   * 공유 모션 엔진. 속성 API(작업자는 속성만 부착):
    * - data-reveal: 섹션 루트. IO 1회(rootMargin 하단 -12%), 보이면 .in. 게이트가 열리기 전이면 큐.
-   *   data-rv 자식이 없으면 루트 전체가 rise(레거시). 있으면 루트는 가만히 있고 자식이 안무.
+   *   data-rv 자식이 없으면 루트 전체가 rise(레거시). 있으면 루트는 정지, 자식이 안무.
    * - data-rv = fade | rise | mask | lines | letters | draw | curtain | count | type | stamp, 지연 style="--d:240ms".
    * - data-par="0.12": 보이는 동안만 스크롤 연동 이동(|px|<=24, individual translate).
-   * 모션 감소 선호이면 분해·래핑·.rv 모두 생략하여 최종 상태 그대로 둔다.
+   * 모션 감소 선호이면 분해·래핑·.rv 모두 생략, 최종 상태 그대로 유지.
    */
   const GEO = "path,line,polyline,circle,ellipse,rect";
   const PAR_MAX = 24;
@@ -48,7 +48,7 @@
     el.append(k);
   }
 
-  /** mask: 내용을 .m > .mi 로 감싼다(이동은 .mi, 클립은 .m). */
+  /** mask: 내용을 .m > .mi 로 감쌈(이동은 .mi, 클립은 .m). */
   function wrapMask(host: Element, i = 0) {
     const m = mk("m");
     const mi = mk("mi");
@@ -83,7 +83,7 @@
     el.replaceChildren(...lines);
   }
 
-  /** draw: SVG 도형에 pathLength=1 을 심어 dashoffset 1→0 이 길이와 무관하게 동작하게 한다. */
+  /** draw: SVG 도형에 pathLength=1 을 심어 dashoffset 1→0 이 길이와 무관하게 동작하도록 함. */
   function markDraw(el: Element) {
     const t = el.matches(GEO) ? [el] : Array.from(el.querySelectorAll(GEO));
     for (const p of t) p.setAttribute("pathLength", "1");
@@ -107,7 +107,7 @@
   const rolls = new Set<Roll>();
   let raf = 0;
 
-  /** count 롤러: 재생 중인 항목이 있을 때만 rAF 를 돌리고, 끝나면 멈춘다. */
+  /** count 롤러: 재생 중인 항목이 있을 때만 rAF 를 돌리고, 끝나면 정지. */
   function tick(now: number) {
     raf = 0;
     for (const r of rolls) {
@@ -212,7 +212,7 @@
       prepare(el);
       io.observe(el);
     }
-    /** wedding:theme-reset: 재생 중 롤러를 최종 값으로 마감하고 .in 을 걷어 IO 로 다시 등장시킨다 */
+    /** wedding:theme-reset: 재생 중 롤러를 최종 값으로 마감하고 .in 을 걷어 IO 로 다시 등장시킴 */
     const reset = () => {
       for (const r of rolls) r.el.textContent = r.text;
       rolls.clear();

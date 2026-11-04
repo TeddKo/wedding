@@ -20,7 +20,7 @@
 
   onMount(() => {
     const html = document.documentElement;
-    /* JS 가 느려 폴백 타이머가 이미 게이트를 걷어냈다면 인트로는 건너뛴다 */
+    /* JS 가 느려 폴백 타이머가 이미 게이트를 걷어냈다면 인트로 생략 */
     if (!html.classList.contains("js")) {
       done = true;
       stage.open = true;
@@ -31,14 +31,14 @@
     html.dataset.gate = "ready";
     for (const el of document.querySelectorAll("main, footer")) el.setAttribute("inert", "");
     openBtn?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
-    /* dev 연출 모듈은 마운트 즉시 미리 받아 클릭 직후 지연이 없게 한다 */
+    /* dev 연출 모듈은 마운트 즉시 미리 받아 클릭 직후 지연 방지 */
     void loadDev();
     return () => timers.forEach(clearTimeout);
   });
 
   /**
    * 클릭 → ENTRY[테마].lift 에 stage.open(커버 안무 시작) → total 에 게이트 제거.
-   * 연출 자체는 테마별 CSS(.leaving) 와 선택적 run() 이 맡는다. 모션 감소이면 즉시 열고 제거한다.
+   * 연출 자체는 테마별 CSS(.leaving) 와 선택적 run() 이 담당. 모션 감소이면 즉시 열고 제거.
    */
   function openGate() {
     if (leaving) return;
@@ -63,7 +63,7 @@
     const { lift, total, run } = ENTRY[name];
     gate?.style.setProperty("--ig-lift", `${lift}ms`);
     gate?.style.setProperty("--ig-total", `${total}ms`);
-    /* run 이 있으면 끝나는 즉시 제거하고, total 은 멈춤 방지용 최대 대기 */
+    /* run 이 있으면 끝나는 즉시 제거, total 은 멈춤 방지용 최대 대기 */
     const finish = () => (done = true);
     if (gate) run?.({ gate }).catch(() => {}).then(finish);
     timers.push(window.setTimeout(reveal, lift));

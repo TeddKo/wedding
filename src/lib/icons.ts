@@ -1,4 +1,4 @@
-/** 24px 라인 아이콘 path. svg 에 class="ico" 를 주면 stroke 1.5 round currentColor 로 그려진다 */
+/** 24px 라인 아이콘 path. svg 에 class="ico" 를 주면 stroke 1.5 round currentColor 로 렌더 */
 export const ICONS = {
   pin: "M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21zM12 12.2a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4z",
   car: "M5 16v-4l1.6-4.4A1.5 1.5 0 0 1 8 6.6h8a1.5 1.5 0 0 1 1.4 1L19 12v4M3.5 12h17M5 16v2.5M19 16v2.5M5 16h14M7.5 14h.01M16.5 14h.01",

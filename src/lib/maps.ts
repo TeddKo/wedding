@@ -29,7 +29,7 @@ export function mapApps(os: Os, mac: boolean, v: Venue): MapApp[] {
   const naverWeb = `https://map.naver.com/p/search/${encodeURIComponent(v.query)}`;
   const naverQ = `route/car?dlat=${L}&dlng=${G}&dname=${n}&appname=${APPNAME}`;
   const naverX = "action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;";
-  // 티맵: 공식 문서에 URL 스킴이 없다. 커뮤니티 확인 값(goalx=경도, goaly=위도)이므로 실기기 검증 필요
+  // 티맵: 공식 문서에 URL 스킴 없음. 커뮤니티 확인 값(goalx=경도, goaly=위도)이므로 실기기 검증 필요
   const tmapQ = `route?goalname=${n}&goalx=${G}&goaly=${L}`;
   const tmapPlay = "https://play.google.com/store/apps/details?id=com.skt.tmap.ku";
   const tmapStore = "https://apps.apple.com/app/id431589174";

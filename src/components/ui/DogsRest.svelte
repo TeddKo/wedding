@@ -1,4 +1,4 @@
-<!-- 푸터용: 말티즈와 네눈박이가 나란히 엎드려 턱을 앞발에 얹고 눈을 감았다 -->
+<!-- 푸터용: 말티즈와 네눈박이가 나란히 엎드려 턱을 앞발에 얹고 눈을 감은 모습 -->
 <svg class="orn-dogs-rest" viewBox="0 0 160 70" aria-hidden="true" focusable="false">
   <ellipse cx="80" cy="66" rx="74" ry="3.500" fill="#5a4030" opacity="0.16" />
 

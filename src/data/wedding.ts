@@ -27,7 +27,7 @@ export interface Account {
   payLink?: string;
 }
 
-// TODO: 혼주 성함 "ㅇㅇㅇ" 은 템플릿 자리. 실제 성함으로 교체. 부모 이름이 모두 비면 해당 쪽 혼주 줄은 숨겨진다.
+// TODO: 혼주 성함 "ㅇㅇㅇ" 은 템플릿 자리. 실제 성함으로 교체 필요. 부모 이름이 모두 비면 해당 쪽 혼주 줄 숨김.
 const groom: Person = { name: "고민혁", relation: "장남", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
 const bride: Person = { name: "김은정", relation: "장녀", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
 const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "", holder: "" });
@@ -39,7 +39,7 @@ export interface Transit {
   parking?: string;
 }
 
-// TODO: 교통/주차 안내는 확인된 내용만 입력. 비어 있으면 렌더하지 않는다.
+// TODO: 교통/주차 안내는 확인된 내용만 입력. 비어 있으면 렌더 생략.
 const transit: Transit = { subway: [], bus: [], car: "", parking: "" };
 
 const venue = {
@@ -55,9 +55,9 @@ const venue = {
 export const wedding = {
   groom,
   bride,
-  /** 기본 테마. 방문자는 하단 버튼이나 `?theme=halloween|dev|puppy` 로 바꿀 수 있다 */
+  /** 기본 테마. 방문자는 하단 버튼이나 `?theme=halloween|dev|puppy` 로 변경 가능 */
   theme: "halloween" as ThemeName,
-  /** 커버 사진 초점(object-position). 얼굴이 잘리면 값을 조정 */
+  /** 커버 사진 초점(object-position). 얼굴이 잘리면 값 조정 */
   cover: { focus: "50% 35%" },
   date: "2027-10-31",
   time: "10:30",
@@ -72,20 +72,20 @@ export const wedding = {
       "귀한 걸음으로 두 사람의 시작을 축복해 주시면 감사하겠습니다.",
     ],
   },
-  // TODO: 은행/계좌번호를 채우기. 번호가 비면 "준비 중", 부모 이름과 번호가 모두 비면 그 행은 숨겨진다. 항목이 0개면 섹션이 숨겨진다.
+  // TODO: 은행/계좌번호 채우기. 번호가 비면 "준비 중", 부모 이름과 번호가 모두 비면 그 행 숨김. 항목이 0개면 섹션 숨김.
   accounts: {
     groom: [empty("groom"), empty("father"), empty("mother")],
     bride: [empty("bride"), empty("father"), empty("mother")],
   } satisfies Record<Side, Account[]>,
-  // 구글폼 URL. 비어 있으면 참석 여부 섹션이 숨겨진다.
+  // 구글폼 URL. 비어 있으면 참석 여부 섹션 숨김.
   rsvpUrl: "",
-  // 방명록 Worker URL. 비어 있으면 축하 글 섹션이 숨겨진다.
+  // 방명록 Worker URL. 비어 있으면 축하 글 섹션 숨김.
   guestbookApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
-  // 하객 스냅샷 업로드 Worker URL(방명록과 같은 Worker). 비어 있으면 스냅샷 섹션이 숨겨진다.
+  // 하객 스냅샷 업로드 Worker URL(방명록과 같은 Worker). 비어 있으면 스냅샷 섹션 숨김.
   snapshotsApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
-  // 스냅샷 이미지를 서빙할 R2 공개 커스텀 도메인(끝 슬래시 없이). 비우면 Worker 의 /p/:uuid/:kind 를 쓴다.
+  // 스냅샷 이미지를 서빙할 R2 공개 커스텀 도메인(끝 슬래시 없이). 비우면 Worker 의 /p/:uuid/:kind 사용.
   snapshotsCdn: "",
-  // 하객 투표(방명록과 같은 Worker 사용). question 이 비면 섹션이 숨겨진다. 항목은 하객이 직접 추가한다.
+  // 하객 투표(방명록과 같은 Worker 사용). question 이 비면 섹션 숨김. 항목은 하객이 직접 추가.
   poll: { question: "하객 중 코스튬을 가장 잘한 사람은?" },
   kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
   share: {

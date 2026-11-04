@@ -28,7 +28,7 @@ async function encode(c: HTMLCanvasElement, q?: number): Promise<Packed> {
   return { blob, type };
 }
 
-/** 긴 변을 long 으로 줄인다(확대 없음). 비율이 2배를 넘으면 절반씩 단계적으로 줄여 품질을 지킨다. */
+/** 긴 변을 long 으로 축소(확대 없음). 비율이 2배를 넘으면 절반씩 단계적으로 줄여 품질 보존. */
 function resize(bmp: ImageBitmap, long: number) {
   const s = Math.min(1, long / Math.max(bmp.width, bmp.height));
   const tw = Math.max(1, Math.round(bmp.width * s));
@@ -69,7 +69,7 @@ async function isHeicFile(f: File) {
 
 const viaBitmap = (f: Blob) => createImageBitmap(f, { imageOrientation: "from-image" });
 
-/** Safari 등은 <img> 로는 HEIC 를 그릴 수 있다. <img> 는 EXIF 회전을 자동 적용한다. */
+/** Safari 등은 <img> 로는 HEIC 를 그릴 수 있음. <img> 는 EXIF 회전을 자동 적용. */
 async function viaImg(f: Blob) {
   const url = URL.createObjectURL(f);
   try {
@@ -82,7 +82,7 @@ async function viaImg(f: Blob) {
   }
 }
 
-/** createImageBitmap → <img> → (HEIC 만) heic-to 지연 로드 순으로 디코드한다. 디코더 청크는 HEIC 일 때만 내려받는다. */
+/** createImageBitmap → <img> → (HEIC 만) heic-to 지연 로드 순으로 디코드. 디코더 청크는 HEIC 일 때만 다운로드. */
 async function decode(f: File): Promise<ImageBitmap> {
   try {
     return await viaBitmap(f);
@@ -99,7 +99,7 @@ async function decode(f: File): Promise<ImageBitmap> {
   throw new Error(UNSUPPORTED);
 }
 
-/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거된다. 호출은 순차적으로 한다(호출자가 직렬화). */
+/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거됨. 호출은 순차 처리(호출자가 직렬화). */
 export function compress(file: File): Promise<Compressed> {
   return workerOk() ? viaWorker(file) : compressMain(file);
 }

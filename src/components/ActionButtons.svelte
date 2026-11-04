@@ -57,7 +57,7 @@
     });
   }
 
-  /* 카카오 공유: SDK 로드 실패 시 버튼은 숨겨진 채로 둔다 */
+  /* 카카오 공유: SDK 로드 실패 시 버튼은 숨김 유지 */
   onMount(() => () => clearTimeout(copiedTimer));
 
   onMount(() => {

@@ -44,7 +44,7 @@ async function sha256(s: string) {
   return b64(await crypto.subtle.digest("SHA-256", enc.encode(s)));
 }
 
-/** IPv6 는 /64 앞 4그룹만 쓴다(한 가정·회선이 /64 를 통째로 받으므로) */
+/** IPv6 는 /64 앞 4그룹만 사용(한 가정·회선이 /64 를 통째로 받으므로) */
 function ipKey(ip: string) {
   if (!ip.includes(":") || ip.includes(".")) return ip;
   const [head, tail] = ip.split("::");
@@ -256,7 +256,7 @@ function sniff(b: Uint8Array): keyof typeof EXT | null {
   return t(0, "RIFF") && t(8, "WEBP") ? "webp" : null;
 }
 
-/** JPEG SOF0/1/2, WebP VP8/VP8L/VP8X 헤더에서 가로·세로를 읽는다. 실패하면 null */
+/** JPEG SOF0/1/2, WebP VP8/VP8L/VP8X 헤더에서 가로·세로 읽기. 실패 시 null */
 function dims(b: Uint8Array, ext: keyof typeof EXT): [number, number] | null {
   const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
   const ok = (w: number, h: number): [number, number] | null => (w >= 1 && h >= 1 ? [w, h] : null);
@@ -283,7 +283,7 @@ function dims(b: Uint8Array, ext: keyof typeof EXT): [number, number] | null {
   return null;
 }
 
-/** 24시간(ORPHAN_MS) 넘게 커밋되지 않은 업로드의 R2 객체와 행을 지우고, 만료된 비밀번호 실패 기록을 정리한다 */
+/** 24시간(ORPHAN_MS) 넘게 커밋되지 않은 업로드의 R2 객체와 행 삭제, 만료된 비밀번호 실패 기록 정리 */
 async function sweep(env: Env) {
   const cutoff = Date.now() - (Number(env.ORPHAN_MS) || ORPHAN_MS);
   const { results } = await env.DB.prepare(

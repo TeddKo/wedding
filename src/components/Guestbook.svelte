@@ -60,7 +60,7 @@
   };
   const heading = () => document.getElementById("gb-h");
 
-  /* 서버는 KST 날짜 그대로 표시하므로 UTC+9 로 밀어 UTC getter 로 읽는다 */
+  /* 서버는 KST 날짜 그대로 표시하므로 UTC+9 로 밀어 UTC getter 로 읽음 */
   function dateKst(ms: number) {
     const d = new Date(ms + 9 * 3600e3);
     const p = (n: number) => String(n).padStart(2, "0");
@@ -119,7 +119,7 @@
     void load(true);
   });
 
-  /* 펼친 목록 끝의 sentinel 이 보이면 다음 페이지. 로딩이 끝날 때마다 새 observer 로 재판정한다 */
+  /* 펼친 목록 끝의 sentinel 이 보이면 다음 페이지. 로딩이 끝날 때마다 새 observer 로 재판정 */
   $effect(() => {
     if (!open || cursor === null || moreLoading || moreErr || !sentinel) return;
     const io = new IntersectionObserver(([x]) => x.isIntersecting && void load(false), { rootMargin: "300px" });
@@ -127,7 +127,7 @@
     return () => io.disconnect();
   });
 
-  /* 삭제로 5개 미만이 됐는데 서버에 더 있으면 채운다 */
+  /* 삭제로 5개 미만이 됐는데 서버에 더 있으면 채움 */
   $effect(() => {
     if (status === "ready" && !open && items.length < HEAD && cursor !== null) void load(false);
   });
@@ -258,7 +258,7 @@
     if (n >= 6) return { duration: 0 };
     return { delay: n * 60, duration: 420, easing: cubicOut, css: (t: number, u: number) => `opacity:${t};transform:translateY(${12 * u}px)` };
   }
-  /* 삭제는 흐름에서 빼서 나머지가 flip 으로 올라오게 하고, 접기는 높이를 줄인다 */
+  /* 삭제는 흐름에서 빼서 나머지가 flip 으로 올라오게 하고, 접기는 높이 축소 */
   function leave(node: Element) {
     if (reduced()) return { duration: 0 };
     if (!deleting) return slide(node, { duration: 360, easing: cubicOut });

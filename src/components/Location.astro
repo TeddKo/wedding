@@ -52,7 +52,7 @@ const rows = all.filter((r) => r.lines.length > 0);
 </section>
 
 <script>
-  /** 주소 복사 마이크로 피드백: 아이콘이 check 로 교차 전환되고 1.6s 뒤 복귀 */
+  /** 주소 복사 마이크로 피드백: 아이콘이 check 로 교차 전환, 1.6s 뒤 복귀 */
   for (const host of document.querySelectorAll<HTMLElement>("[data-copy-fb]")) {
     let t = 0;
     host.addEventListener("click", (e) => {

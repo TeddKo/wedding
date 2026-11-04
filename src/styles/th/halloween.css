@@ -1,6 +1,6 @@
-/* th/halloween: halloween 테마 전용 스타일. global.css 뒤에 로드되어 override 한다. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
+/* th/halloween: halloween 테마 전용 스타일. global.css 뒤에 로드되어 override. 기본=최종 정지 상태, html.js:not(.opened) 만 초기 숨김. */
 
-/* 밤 밴드: 커버와 엔딩만 딥 차콜. 안쪽 토큰을 야간 팔레트로 재매핑해 자식 컴포넌트가 그대로 따른다. */
+/* 밤 밴드: 커버와 엔딩만 딥 차콜. 안쪽 토큰을 야간 팔레트로 재매핑해 자식 컴포넌트가 그대로 적용. */
 html[data-theme="halloween"] :is(.cover, .footer.ending) {
   --ink: var(--on-night);
   --ink-2: var(--on-night);
@@ -27,13 +27,13 @@ html[data-theme="halloween"] .cover > .sr { position: absolute; }
 html[data-theme="halloween"] .cover::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-top: 1px solid rgb(var(--gold-rgb) / 0.55); box-shadow: inset 0 3px 0 var(--night), inset 0 4px 0 rgb(var(--gold-rgb) / 0.25); pointer-events: none; z-index: 2; }
 html[data-theme="halloween"] .footer.ending::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; border-bottom: 1px solid rgb(var(--gold-rgb) / 0.55); box-shadow: inset 0 -3px 0 var(--night-2), inset 0 -4px 0 rgb(var(--gold-rgb) / 0.25); pointer-events: none; z-index: 2; }
 
-/* 커버 일러스트 레이어: .hero 와 동일 기하(336:440) 위에 겹친다. */
+/* 커버 일러스트 레이어: .hero 와 동일 기하(336:440) 위에 겹침. */
 html[data-theme="halloween"] .hero > .art { position: absolute; inset: 0; pointer-events: none; }
 html[data-theme="halloween"] .hero::before { content: ""; position: absolute; inset: -14% -26% -6%; background: radial-gradient(closest-side, rgb(224 144 74 / 0.15), transparent); pointer-events: none; }
 .hw-ghost, .hw-float, .hw-pumpkin { display: block; }
 .hw-ghost svg, .hw-pumpkin svg, .hw-basket svg, .hw-end svg { display: block; width: 100%; height: auto; }
 
-/* 커버 유령: 누르고 싶게 밝게 빛나는 버튼. 누르면 DressCode 카드가 열린다 */
+/* 커버 유령: 누르고 싶게 밝게 빛나는 버튼. 누르면 DressCode 카드 열림 */
 .hw-ghost {
   position: absolute; top: 26%; left: calc(100% - 36px); width: 56px; padding: 8px; margin: 0; border: 0; background: none; border-radius: 50%;
   isolation: isolate; color: #2b2420; cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
@@ -51,7 +51,7 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
   position: absolute; z-index: 2; left: -26px; top: calc(100% - 40px); width: 72px; color: var(--gold);
   transform-origin: 50% 100%; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
-/* 사탕 바구니: 호박과 대칭(우하단). 탭하면 사탕이 튀어오른다(fx/halloween) */
+/* 사탕 바구니: 호박과 대칭(우하단). 탭하면 사탕이 튀어오름(fx/halloween) */
 .hw-basket {
   position: absolute; z-index: 2; right: -26px; top: calc(100% - 44px); width: 68px; padding: 0; margin: 0; border: 0; background: none; color: var(--gold);
   transform-origin: 50% 100%; cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
@@ -85,7 +85,7 @@ html.opened .fx-float { animation: hw-float 6s ease-in-out 1s infinite; }
 
 /* 엔딩 유령: 라인 마크 소형 1개 */
 .end-art-h { position: relative; width: 64px; margin: 0 auto 16px; color: var(--gold); }
-/* 엔딩 유령: 탭하면 인사, 너무 자주 누르면 도망갔다가 돌아온다(fx/halloween) */
+/* 엔딩 유령: 탭하면 인사, 너무 자주 누르면 도망갔다가 복귀(fx/halloween) */
 .hw-end { display: block; width: 100%; padding: 0; margin: 0; border: 0; background: none; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .hw-end-body { display: block; }
 .hw-say {
@@ -151,7 +151,7 @@ html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-
   translate: none !important;
 }
 .hw-ghost.is-follow .hw-float > svg { transform-origin: 50% 60%; animation: hw-near 12s 4s infinite; }
-/* 주기적으로 화면 쪽으로 크게 다가왔다가(0.7초) 천천히 물러난다(약 2초) */
+/* 주기적으로 화면 쪽으로 크게 다가왔다가(0.7초) 천천히 물러남(약 2초) */
 @keyframes hw-near {
   0%, 72% { transform: none; animation-timing-function: cubic-bezier(.2,.7,.3,1); }
   78% { transform: translate(-22px, -26px) scale(2.1) rotate(-6deg); animation-timing-function: cubic-bezier(.33,0,.2,1); }

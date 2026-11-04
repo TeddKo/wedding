@@ -5,7 +5,7 @@
   import { reduced } from "../../../lib/motion";
   import { BAT } from "./bat";
 
-  /** 커버 유령([data-dresscode], 정적 마크업)을 누르면 드레스코드 카드가 유령 자리에서 흔들리며 날아와 펼쳐진다 */
+  /** 커버 유령([data-dresscode], 정적 마크업)을 누르면 드레스코드 카드가 유령 자리에서 흔들리며 날아와 펼쳐짐 */
   let open = $state(false);
   let ox = 0;
   let oy = 0;
@@ -42,7 +42,7 @@
     trigger?.focus({ preventScroll: true });
   }
 
-  /** 유령처럼 좌우로 일렁이며 유령 위치에서 화면 중앙으로 떠오른다 */
+  /** 유령처럼 좌우로 일렁이며 유령 위치에서 화면 중앙으로 떠오름 */
   function boo(node: HTMLElement) {
     if (reduced()) return { duration: 160, css: (t: number) => `opacity:${t}` };
     const r = node.getBoundingClientRect();
@@ -59,7 +59,7 @@
     };
   }
 
-  /** 닫힐 때는 연기처럼 부풀며 흩어진다 */
+  /** 닫힐 때는 연기처럼 부풀며 흩어짐 */
   function poof() {
     if (reduced()) return { duration: 120, css: (t: number) => `opacity:${t}` };
     return { duration: 280, css: (t: number) => `opacity:${t};transform:scale(${1 + (1 - t) * 0.12}) translateY(${(1 - t) * -14}px)` };

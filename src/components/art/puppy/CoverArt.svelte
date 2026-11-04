@@ -7,7 +7,7 @@
 
 <!--
   기본 DOM 상태 = 앉은 쌍 + 공(최종 정지). 달리는 두 마리는 숨김.
-  fx/puppy.ts 가 [data-run] 요소를 WAAPI 로 움직인다.
+  fx/puppy.ts 가 [data-run] 요소를 WAAPI 로 구동.
 -->
 <div class="pc">
   <div class="pc-sit fx-pc-sit"><DogsCover /></div>

@@ -6,7 +6,7 @@ const CMD = "git checkout -b wedding".length;
 
 /**
  * dev 진입: 프롬프트 타이핑 → 출력 → 브랜치 선 → 위로 와이프(스캔라인).
- * 합성 가능한 속성(opacity/transform/clip-path)만 WAAPI 로 구동한다.
+ * 합성 가능한 속성(opacity/transform/clip-path)만 WAAPI 로 구동.
  */
 export default async function run({ gate }: EntryCtx): Promise<void> {
   const q = (s: string) => gate.querySelector<HTMLElement>(s);

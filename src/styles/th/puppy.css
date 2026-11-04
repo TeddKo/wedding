@@ -25,7 +25,7 @@ html[data-theme="puppy"] .end-art .pe-ball svg { display: block; width: 12px; he
 html[data-theme="puppy"] .pup-orn { display: block; margin: 8px 0; }
 html[data-theme="puppy"] .pup-orn .pp { transform-box: fill-box; transform-origin: center; }
 
-/* 열기 전 초기 숨김(게이트 뒤) + 오픈~JS 시작 사이 빈틈 유지. JS 시작 후엔 WAAPI 가 이어받는다 */
+/* 열기 전 초기 숨김(게이트 뒤) + 오픈~JS 시작 사이 빈틈 유지. JS 시작 후엔 WAAPI 가 이어받음 */
 html.js:not(.opened) .fx-pc-sit, html.js:not(.opened) .fx-pc-ball { opacity: 0; }
 html.js.opened .fx-pc-sit, html.js.opened .fx-pc-ball { animation: pc-hold 1.6s steps(1, end) backwards; }
 @keyframes pc-hold { from, to { opacity: 0; } }

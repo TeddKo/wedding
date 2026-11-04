@@ -79,7 +79,7 @@
   }
   let deviceMem = "";
 
-  /* 이 브라우저에서 올린 사진 uuid. 기기 ID 와 함께 서버에 보내 소유를 증명한다 */
+  /* 이 브라우저에서 올린 사진 uuid. 기기 ID 와 함께 서버에 보내 소유 증명 */
   const mineSet = (): string[] => {
     try {
       const v = JSON.parse(localStorage.getItem("snap-mine") ?? "[]");
@@ -143,7 +143,7 @@
     }
   }
 
-  /* 끝에서 PREFETCH 장 이내로 다가오면 다음 페이지를 미리 불러온다 */
+  /* 끝에서 PREFETCH 장 이내로 다가오면 다음 페이지 미리 로드 */
   $effect(() => {
     void photos.length;
     void moreBusy;
@@ -286,7 +286,7 @@
     pump();
   }
 
-  /* 네트워크/5xx 만 1·2·4초 뒤 재시도. 429(한도)는 재시도하지 않는다 */
+  /* 네트워크/5xx 만 1·2·4초 뒤 재시도. 429(한도)는 재시도 안 함 */
   async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     for (let i = 0; ; i++) {
       try {
@@ -357,7 +357,7 @@
     }
   }
 
-  /* 완료된 항목은 잠시 보여 준 뒤 스스로 사라진다 */
+  /* 완료된 항목은 잠시 보여 준 뒤 자동 제거 */
   function drop(j: Job) {
     URL.revokeObjectURL(j.url);
     jobs = jobs.filter((x) => x.id !== j.id);

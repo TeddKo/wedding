@@ -50,7 +50,7 @@
     return { status: r.status, body: await r.json().catch(() => ({})) };
   }
 
-  /* 상태를 바꿀 때마다 gen 을 올려, 그 전에 시작한 조회 응답은 버린다 */
+  /* 상태를 바꿀 때마다 gen 을 올려, 그 전에 시작한 조회 응답은 폐기 */
   const apply = (b: Data) => (gen++, (data = { mode: b.mode, options: b.options, total: b.total, myVote: b.myVote }), (status = "ready"));
 
   async function load(quiet = false) {
@@ -72,7 +72,7 @@
     say("로그인이 만료됐어요. 다시 로그인해 주세요.", true);
   }
 
-  /* 로그인 필요 시 false. device 모드는 즉시 토큰을 받는다 */
+  /* 로그인 필요 시 false. device 모드는 즉시 토큰 수령 */
   async function ensureAuth() {
     if (token) return true;
     if (data.mode === "device") {
@@ -161,9 +161,9 @@
     }
   }
 
-  /* intro 게이트가 열린 뒤에 투표 섹션으로 돌아온다 */
+  /* intro 게이트가 열린 뒤 투표 섹션으로 복귀 */
   function backToPoll() {
-    /* 위쪽 이미지·지도가 늦게 자리를 잡으며 밀어낼 수 있어 한 번 더 맞춘다 */
+    /* 위쪽 이미지·지도가 늦게 자리를 잡으며 밀어낼 수 있어 한 번 더 맞춤 */
     const go = () => {
       const to = () => root?.closest("section")?.scrollIntoView({ block: "start" });
       to();
@@ -175,7 +175,7 @@
     mo.observe(h, { attributes: true, attributeFilter: ["class"] });
   }
 
-  /* 카카오 리다이렉트 복귀 파라미터를 즉시 URL 에서 지우고 값만 돌려준다 */
+  /* 카카오 리다이렉트 복귀 파라미터를 즉시 URL 에서 지우고 값만 반환 */
   function takeReturn() {
     const q = new URLSearchParams(location.search);
     const state = q.get("state") ?? "";
