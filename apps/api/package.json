@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "wrangler dev --local --env dev",
     "test": "node test/run.mjs",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types"
   },
   "devDependencies": {
     "wrangler": "4.152.0"
