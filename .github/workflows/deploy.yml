@@ -33,6 +33,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+          PUBLIC_KAKAO_JS_KEY: ${{ vars.PUBLIC_KAKAO_JS_KEY }}
+          PUBLIC_SNAPSHOTS_CDN: ${{ vars.PUBLIC_SNAPSHOTS_CDN }}
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: apps/web/dist/

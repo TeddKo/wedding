@@ -41,11 +41,13 @@ corepack pnpm preview  # 빌드 결과 확인
 | `greeting` | 인사말 제목과 본문 배열 (TODO 문구 교체 필요) |
 | `accounts` | 신랑측/신부측 `{ role, bank, number, holder, payLink? }`. 번호가 비면 "준비 중", 부모 이름과 번호가 모두 비면 행 숨김, 항목 0개면 섹션 숨김 |
 | `rsvpUrl` | 구글폼 주소. 비면 섹션 숨김 |
-| `guestbookApi` | Worker 주소. 비면 축하 글과 투표 섹션 숨김 |
-| `snapshotsApi` | 스냅샷 업로드용 Worker 주소. 비면 스냅샷 섹션 숨김 |
-| `snapshotsCdn` | R2 공개 커스텀 도메인(끝 슬래시 없음). 비면 Worker `/p/:uuid/:kind` 사용 |
+| `guestbookApi` | Worker 주소, 빌드 변수 `PUBLIC_API_URL` 주입(누락 시 빌드 실패) |
+| `snapshotsApi` | 스냅샷 업로드용 Worker 주소, `PUBLIC_API_URL` 공유 |
+| `snapshotsCdn` | R2 공개 주소(끝 슬래시 없음), 빌드 변수 `PUBLIC_SNAPSHOTS_CDN`. 미설정 시 Worker `/p/:uuid/:kind` 사용, 로드 실패 시 Worker 로 1회 재시도 |
 | `poll.question` | 투표 질문. 비면 섹션 숨김. 항목은 하객이 직접 추가 |
-| `kakaoJsKey` | 카카오 JavaScript 키(공개 키). REST 키와 네이티브 키는 프런트 사용 금지 |
+| `kakaoJsKey` | 카카오 JavaScript 키(공개 키), 빌드 변수 `PUBLIC_KAKAO_JS_KEY`. REST 키와 네이티브 키는 프런트 사용 금지 |
+
+빌드 변수: 로컬은 `apps/web/.env`(`.env.example` 복사, git 제외), CI·배포는 GitHub 저장소 Actions Variables 3종(`PUBLIC_API_URL`, `PUBLIC_KAKAO_JS_KEY`, `PUBLIC_SNAPSHOTS_CDN`). 모두 번들에 노출되는 공개값이며 비밀값 등록 금지
 | `share` | 카카오 공유 제목과 설명, `copyUrl`(링크 복사 버튼이 복사하는 단축 주소, 비면 페이지 주소) |
 | `musicCredit` | 배경음악 출처. 트랙이 있을 때만 푸터 표시 |
 
@@ -100,7 +102,7 @@ Cloudflare Worker `wedding-guestbook` 하나가 방명록, 스냅샷(R2 `wedding
 ## 운영 메모
 
 - Workers 무료 플랜은 하루 100k 요청 제한. 결혼식 달(2027-10)에는 Workers Paid 전환 검토 필요
-- 스냅샷 이미지를 R2 커스텀 도메인으로 서빙하려면 도메인 연결 후 `snapshotsCdn` 에 입력. 숨김과 삭제 후에도 CDN과 브라우저 캐시(immutable 1년)에 이미지가 남을 수 있어 급하면 Cloudflare 캐시 퍼지 필요
+- 스냅샷 이미지는 R2 공개 주소(`PUBLIC_SNAPSHOTS_CDN`)에서 직접 로드. 숨김과 삭제 후에도 CDN과 브라우저 캐시(immutable 1년)에 이미지가 남을 수 있어 급하면 Cloudflare 캐시 퍼지 필요
 - 관리자 토큰(`ADMIN_TOKEN`)은 macOS 키체인 서비스 `wedding-admin-token` 에만 보관. 저장소 기록 금지
 
 ### 카카오 콘솔 체크리스트

@@ -30,6 +30,12 @@ export interface Account {
 // TODO: 혼주 성함 "ㅇㅇㅇ" 은 템플릿 자리. 실제 성함으로 교체 필요. 부모 이름이 모두 비면 해당 쪽 혼주 줄 숨김.
 const groom: Person = { name: "고민혁", relation: "장남", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
 const bride: Person = { name: "김은정", relation: "장녀", father: { name: "ㅇㅇㅇ", deceased: false }, mother: { name: "ㅇㅇㅇ", deceased: false } };
+/** 빌드 시 주입 필수 공개 설정값, 누락 시 빌드 실패 */
+const env = (name: "PUBLIC_API_URL" | "PUBLIC_KAKAO_JS_KEY"): string => {
+  const v = import.meta.env[name];
+  if (!v) throw new Error(`${name} 미설정 — apps/web/.env 또는 GitHub Actions Variables 확인`);
+  return v;
+};
 const empty = (role: Account["role"]): Account => ({ role, bank: "", number: "", holder: "" });
 
 export interface Transit {
@@ -80,14 +86,14 @@ export const wedding = {
   // 구글폼 URL. 비어 있으면 참석 여부 섹션 숨김.
   rsvpUrl: "",
   // 방명록 Worker URL. 비어 있으면 축하 글 섹션 숨김.
-  guestbookApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
+  guestbookApi: env("PUBLIC_API_URL"),
   // 하객 스냅샷 업로드 Worker URL(방명록과 같은 Worker). 비어 있으면 스냅샷 섹션 숨김.
-  snapshotsApi: "https://wedding-guestbook.tddy-ko-83e.workers.dev",
-  // 스냅샷 이미지를 서빙할 R2 공개 커스텀 도메인(끝 슬래시 없이). 비우면 Worker 의 /p/:uuid/:kind 사용.
-  snapshotsCdn: "https://pub-b468d9d36c224565a5c0d567a016d737.r2.dev",
+  snapshotsApi: env("PUBLIC_API_URL"),
+  // 스냅샷 이미지 R2 공개 주소(끝 슬래시 없이). 미설정 시 Worker 의 /p/:uuid/:kind 사용.
+  snapshotsCdn: import.meta.env.PUBLIC_SNAPSHOTS_CDN ?? "",
   // 하객 투표(방명록과 같은 Worker 사용). question 이 비면 섹션 숨김. 항목은 하객이 직접 추가.
   poll: { question: "하객 중 코스튬을 가장 잘한 사람은?" },
-  kakaoJsKey: "baa9a1762803ebc22b84409d4d68d7f1",
+  kakaoJsKey: env("PUBLIC_KAKAO_JS_KEY"),
   share: {
     title: `${groom.name} & ${bride.name} 결혼합니다`,
     description: `2027년 10월 31일 일요일 오전 10시 30분\n${venue.name} ${venue.hall}`,

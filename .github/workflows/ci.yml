@@ -27,4 +27,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm -F @wedding/api test
       - run: pnpm -F @wedding/web build
+        env:
+          PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+          PUBLIC_KAKAO_JS_KEY: ${{ vars.PUBLIC_KAKAO_JS_KEY }}
+          PUBLIC_SNAPSHOTS_CDN: ${{ vars.PUBLIC_SNAPSHOTS_CDN }}
       - run: pnpm audit --audit-level high

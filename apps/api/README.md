@@ -38,7 +38,7 @@ Cloudflare Worker + D1 + R2 백엔드 (방명록, 하객 스냅샷, 투표). 주
 | `uploads` / `pw_fails` | 업로드 진행 기록, 삭제 비밀번호 실패 기록 | 0004 |
 
 - R2 `BUCKET` = `wedding-snapshots`. 객체 키는 `full/<uuid>.<ext>`, `thumb/<uuid>.<ext>`, 업로드 시 `Cache-Control: public, max-age=31536000, immutable`
-- 커스텀 도메인을 연결하면 프런트 `snapshotsCdn` 설정으로 직접 로드. 숨김과 삭제는 R2 객체를 지우지만 CDN과 브라우저 캐시에는 퍼지 전까지 남을 수 있음
+- 프런트는 R2 공개 주소(빌드 변수 `PUBLIC_SNAPSHOTS_CDN`)에서 직접 로드. 숨김과 삭제는 R2 객체를 지우지만 CDN과 브라우저 캐시에는 퍼지 전까지 남을 수 있음
 
 ## 제한
 
