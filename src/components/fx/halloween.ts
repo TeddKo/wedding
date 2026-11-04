@@ -320,7 +320,34 @@ export function start(ctx: { first: boolean }): () => void {
     el.querySelector(".hw-dew")!.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], 700);
     return 900;
   };
-  const TOYS: Record<string, (el: HTMLElement) => number> = { spider, cat, bat, potion, web };
+  const say = (el: HTMLElement, text: string) => {
+    const b = document.createElement("span");
+    b.className = "hw-say";
+    b.textContent = text;
+    b.setAttribute("aria-hidden", "true");
+    el.append(b);
+    b.addEventListener("animationend", () => b.remove(), { once: true });
+  };
+  const owl = (el: HTMLElement) => {
+    el.querySelector(".hw-owl-head")!.animate([0, -25, 25, -8, 0].map((d, i) => ({ offset: [0, 0.3, 0.62, 0.84, 1][i], easing: "ease-in-out", transform: `rotate(${d}deg)` })), 1100);
+    el.querySelector(".hw-owl-eyes")!.animate([{ transform: "scale(1)" }, { transform: "scale(1.3)", offset: 0.25 }, { transform: "scale(1.3)", offset: 0.8 }, { transform: "scale(1)" }], 1400);
+    say(el, "Hoo?");
+    return 1600;
+  };
+  const hat = (el: HTMLElement) => {
+    el.querySelector(".hw-hat-sway svg")!.animate([{ transform: "none", easing: "cubic-bezier(.2,.7,.3,1)" }, { transform: "translateY(-26px) scale(.96, 1.06)", offset: 0.35, easing: "cubic-bezier(.5,0,.75,0)" }, { transform: "none", offset: 0.55 }, { transform: "scale(1.14, .8)", offset: 0.64, easing: "ease-out" }, { transform: "scale(.97, 1.04)", offset: 0.8 }, { transform: "none" }], 1400);
+    el.querySelectorAll(".hw-spk").forEach((s, i) => {
+      const a = ((i - 1.5) * 38 * Math.PI) / 180;
+      s.animate([{ opacity: 0, transform: "translate(0,0) scale(.4)" }, { opacity: 1, offset: 0.3 }, { opacity: 0, transform: `translate(${Math.sin(a) * 30}px,${-Math.cos(a) * 26 - 8}px) scale(1) rotate(60deg)` }], { duration: 800, delay: 560 + i * 70, easing: "cubic-bezier(.2,.7,.3,1)" });
+    });
+    return 1400;
+  };
+  const lantern = (el: HTMLElement) => {
+    el.querySelector(".hw-lan-swing")!.animate([0, 16, -11, 7, -3, 0].map((d) => ({ transform: `rotate(${d}deg)` })), { duration: 1800, easing: "ease-out" });
+    el.querySelector(".hw-lan-glow")!.animate([{ opacity: 0.45, transform: "scale(1)" }, { opacity: 1, transform: "scale(1.2)", offset: 0.25 }, { opacity: 0.9, transform: "scale(1.15)", offset: 0.55 }, { opacity: 0.45, transform: "scale(1)" }], 1800);
+    return 1800;
+  };
+  const TOYS: Record<string, (el: HTMLElement) => number> = { spider, cat, bat, potion, web, owl, hat, lantern };
   document.querySelectorAll<HTMLElement>("[data-hw]").forEach((el) => {
     let until = 0;
     const on = () => {

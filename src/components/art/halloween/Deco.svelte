@@ -1,7 +1,7 @@
 <script lang="ts">
   import { BAT } from "./bat";
-  /** 섹션 장난감 5종. 탭 연출은 fx/halloween.ts 의 TOYS 가 data-hw 로 연결 */
-  let { kind }: { kind: "spider" | "cat" | "bat" | "potion" | "web" } = $props();
+  /** 섹션 장난감 8종. 탭 연출은 fx/halloween.ts 의 TOYS 가 data-hw 로 연결 */
+  let { kind }: { kind: "spider" | "cat" | "bat" | "potion" | "web" | "owl" | "hat" | "lantern" } = $props();
 </script>
 
 {#if kind === "spider"}
@@ -38,6 +38,29 @@
     ><svg viewBox="0 0 32 44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
       ><rect class="hw-cork" x="12" y="2" width="8" height="7" rx="1.5" fill="#c8a56a" fill-opacity=".5" /><path d="M13 9V15C7 17 4 22 4 28C4 36 9 41 16 41S28 36 28 28C28 22 25 17 19 15V9M12 9H20" /><path d="M5.2 26C9 24 13 28 16 26S23 24 26.8 26C27.4 33 23 39 16 39S4.6 33 5.2 26Z" fill="currentColor" fill-opacity=".3" stroke="none" /><circle class="hw-in" cx="13" cy="33" r="1.4" stroke-width="1" /><path d="M9 24C8 27 8 31 10 34" stroke-opacity=".4" stroke-width="1.2" /></svg
     ><i class="hw-bub" aria-hidden="true"></i><i class="hw-bub" aria-hidden="true"></i><i class="hw-bub" aria-hidden="true"></i></button>
+{:else if kind === "owl"}
+  <button type="button" class="hw-deco hw-owl hw-idle" data-th="halloween" data-hw="owl" data-rv="fade" style="--d:900ms" aria-label="부엉이 깨우기"
+    ><svg viewBox="0 0 44 56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+      ><path d="M2 51C12 49 28 52 42 49M30 50.5C33 53.5 36 54 39 53.5" stroke-opacity=".6" /><path d="M12 28C10 36 11 44 16 48H28C33 44 34 36 32 28" fill="currentColor" fill-opacity=".14" /><path d="M16 48 14.5 51M28 48 29.5 51" /><path d="M22 34V44M18 37 22 39 26 37M18 41 22 43 26 41" stroke-opacity=".45" stroke-width="1" /><g class="hw-owl-head"
+        ><path d="M9 21C9 12 14 8 22 8S35 12 35 21C35 28 29 32 22 32S9 28 9 21Z" fill="currentColor" fill-opacity=".1" /><path d="M10.5 13 8.5 5 16 9.5M33.5 13 35.5 5 28 9.5" /><g class="hw-owl-eyes"
+          ><circle cx="16.5" cy="20" r="4.6" /><circle cx="27.5" cy="20" r="4.6" /><circle class="hw-owl-pup" cx="16.5" cy="20" r="2" fill="#c8a56a" stroke="none" /><circle class="hw-owl-pup" cx="27.5" cy="20" r="2" fill="#c8a56a" stroke="none" /></g
+        ><path d="M20.5 24.5 22 28 23.5 24.5Z" fill="currentColor" /></g
+      ></svg
+    ></button>
+{:else if kind === "hat"}
+  <button type="button" class="hw-deco hw-hat hw-idle" data-th="halloween" data-hw="hat" data-rv="fade" style="--d:900ms" aria-label="마녀 모자 건드리기"
+    ><span class="hw-hat-sway" aria-hidden="true"
+      ><svg viewBox="0 0 56 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"
+        ><path d="M20 30C23 20 25 12 31 4C36 3 40 6 41 9C37 8 35 10 34.5 13C36 18 37 24 38 30" fill="currentColor" fill-opacity=".16" /><path d="M20.5 26C26 28 33 28 37.5 26" stroke="#c8a56a" stroke-width="3" /><path d="M3 36C3 31 12 29 28 29S53 31 53 36C53 41 44 43 28 43S3 41 3 36Z" fill="currentColor" fill-opacity=".1" /></svg
+      ><i class="hw-spk"></i><i class="hw-spk"></i><i class="hw-spk"></i><i class="hw-spk"></i></span
+    ></button>
+{:else if kind === "lantern"}
+  <button type="button" class="hw-deco hw-lantern hw-idle" data-th="halloween" data-hw="lantern" data-rv="fade" style="--d:900ms" aria-label="호박 등불 흔들기"
+    ><span class="hw-lan-swing" aria-hidden="true"
+      ><svg viewBox="0 0 36 70" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" focusable="false"
+        ><path d="M18 0V30M16 6h4M16 12h4M16 18h4M16 24h4" stroke-opacity=".7" /><ellipse class="hw-lan-glow" cx="18" cy="48" rx="14" ry="17" fill="#e0904a" stroke="none" /><path d="M18 30C8 29 3 36 3 46S9 66 18 66 33 56 33 46 28 29 18 30ZM18 30C14 36 14 60 18 66M18 30C22 36 22 60 18 66" /><path d="M16 30 17 26 20 27" /><path d="M10 43 14 43 12 47ZM22 43 26 43 24 47ZM11 54C15 58 21 58 25 54" fill="currentColor" stroke-width="1.2" /></svg
+    ></span
+  ></button>
 {:else}
   <button type="button" class="hw-deco hw-web" data-th="halloween" data-hw="web" data-rv="fade" style="--d:900ms" aria-label="거미줄 건드리기"
     ><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width=".9" stroke-linecap="round" aria-hidden="true" focusable="false"

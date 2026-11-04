@@ -138,6 +138,31 @@ html[data-theme="halloween"] .gal-sets { position: relative; }
 @keyframes hw-in { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .7; } 100% { transform: translateY(-9px); opacity: 0; } }
 @media (max-width: 360px) { .hw-potion { left: 4px; } }
 
+/* 부엉이(스냅샷 좌측): 가지에 앉아 머리 기울임·눈 깜빡임, 말풍선은 우측 여백에 표시 */
+.hw-owl { left: 4px; top: 8px; width: 44px; height: 56px; color: var(--ink); }
+.hw-owl-head { transform-box: fill-box; transform-origin: 50% 100%; animation: hw-tilt 5.4s ease-in-out infinite alternate; }
+@keyframes hw-tilt { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.hw-owl-eyes, .hw-owl-pup { transform-box: fill-box; transform-origin: center; }
+.hw-owl-eyes { animation: hw-blink 5.2s infinite; }
+.hw-owl .hw-say, .hw-hat .hw-say { color: var(--ink); background: rgb(var(--accent-rgb) / 0.12); border-color: rgb(var(--accent-rgb) / 0.5); }
+.hw-owl .hw-say { left: calc(100% + 2px); bottom: 50%; }
+@media (max-width: 360px) { .hw-owl { left: 0; } }
+
+/* 마녀 모자(투표 우측): 살짝 흔들림, 탭하면 튀어올라 착지하며 별가루 */
+.hw-hat { right: 6px; top: 18px; width: 52px; height: 44px; color: var(--ink); }
+.hw-hat-sway { position: absolute; inset: 0; transform-origin: 50% 100%; animation: hw-hat-sway 4.6s ease-in-out infinite alternate; }
+@keyframes hw-hat-sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.hw-hat-sway svg { transform-origin: 50% 100%; }
+.hw-spk { position: absolute; left: 24px; top: 28px; width: 8px; height: 8px; background: #c8a56a; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; }
+@media (max-width: 360px) { .hw-hat { right: 0; } }
+
+/* 호박 등불(계좌 좌측): 사슬에 매달려 속불이 일렁임, 탭하면 흔들리며 밝아짐 */
+.hw-lantern { left: 10px; top: 0; width: 36px; height: 70px; color: var(--ink); }
+.hw-lan-swing { position: absolute; inset: 0; transform-origin: 50% 0; }
+.hw-lan-glow { transform-box: fill-box; transform-origin: center; opacity: .45; animation: hw-flick 2.3s ease-in-out infinite; }
+@keyframes hw-flick { 0%, 100% { opacity: .4; } 18% { opacity: .62; } 34% { opacity: .46; } 55% { opacity: .7; } 78% { opacity: .5; } }
+@media (max-width: 360px) { .hw-lantern { left: 2px; } }
+
 html[data-theme="halloween"] .footer.ending > .hw-web { position: absolute; top: 4px; right: 0; z-index: 2; width: 72px; height: 72px; color: var(--gold); }
 .hw-web svg { position: absolute; top: 0; right: 0; width: 64px; opacity: .6; transform-origin: 100% 0; }
 
