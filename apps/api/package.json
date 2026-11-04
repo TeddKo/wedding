@@ -1,14 +1,11 @@
 {
-  "name": "wedding-guestbook",
+  "name": "@wedding/api",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local --env dev",
     "test": "node test/run.mjs",
     "deploy": "wrangler deploy"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "workerd"]
   },
   "devDependencies": {
     "wrangler": "4.152.0"
