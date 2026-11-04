@@ -9,7 +9,7 @@ const TOO_LARGE = "이 사진은 너무 커서 처리할 수 없어요. 다른 �
 const HEIC_BRANDS = ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
 
 type Packed = { blob: Blob; type: string };
-type In = { id: number; file: File } | { id: number; bitmap: ImageBitmap; size: number };
+type In = { id: number; file: File; prev?: number } | { id: number; bitmap: ImageBitmap; size: number; prev?: number };
 const ctx = self as unknown as { postMessage(m: unknown, t?: Transferable[]): void; onmessage: ((e: MessageEvent<In>) => void) | null };
 
 let webpOk = true;
@@ -94,13 +94,26 @@ async function pack(bmp: ImageBitmap, origSize: number) {
   }
 }
 
+/** 중앙 정사각 크롭 JPEG 미리보기. */
+async function square(bmp: ImageBitmap, size: number) {
+  try {
+    const s = Math.min(bmp.width, bmp.height);
+    const c = new OffscreenCanvas(size, size);
+    c.getContext("2d")?.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
+    return await c.convertToBlob({ type: "image/jpeg", quality: 0.7 });
+  } finally {
+    bmp.close();
+  }
+}
+
 ctx.onmessage = async (e) => {
   const m = e.data;
+  const run = (b: ImageBitmap, n: number) => (m.prev ? square(b, m.prev).then((blob) => ({ blob })) : pack(b, n).then((ok) => ({ ok })));
   try {
-    if ("bitmap" in m) return ctx.postMessage({ id: m.id, ok: await pack(m.bitmap, m.size) });
+    if ("bitmap" in m) return ctx.postMessage({ id: m.id, ...(await run(m.bitmap, m.size)) });
     const bmp = await decode(m.file);
     if (!bmp) return ctx.postMessage({ id: m.id, needMain: true });
-    ctx.postMessage({ id: m.id, ok: await pack(bmp, m.file.size) });
+    ctx.postMessage({ id: m.id, ...(await run(bmp, m.file.size)) });
   } catch (err) {
     ctx.postMessage({ id: m.id, err: err instanceof Error ? err.message : String(err) });
   }

@@ -3,7 +3,7 @@
   import { reduced } from "../lib/motion";
   import Gallery from "./Gallery.svelte";
   import Toast from "./ui/Toast.svelte";
-  import { compress, type Compressed } from "../lib/compress";
+  import { compress, isHeicFile, preview, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
 
   type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string; locked?: boolean };
@@ -36,7 +36,9 @@
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
   let pending = $state<File[]>([]);
-  let previews = $state<string[]>([]);
+  type Tile = { url: string; ok: boolean; fell: boolean };
+  let tiles = $state<Tile[]>([]);
+  let previewGen = 0;
   let overPick = $state(false);
   let sheetPw = $state("");
   let sheetErr = $state("");
@@ -227,11 +229,31 @@
     if (!files.length) return;
     overPick = files.length > MAX_PICK;
     pending = files.slice(0, MAX_PICK);
-    previews = pending.slice(0, PREVIEW_N).map((f) => URL.createObjectURL(f));
+    const gen = ++previewGen;
+    tiles = pending.slice(0, PREVIEW_N).map(() => ({ url: "", ok: false, fell: false }));
+    pending.slice(0, PREVIEW_N).forEach((f, i) => void fill(f, tiles[i], gen));
     sheetPw = sheetErr = "";
     pickBtn?.focus();
     dlg?.showModal();
     dlgTitle?.focus();
+  }
+
+  /** 기본 object URL 을 먼저 시도하고, HEIC 이거나 <img> 가 실패하면 preview() 결과로 교체. 닫힌 뒤 도착한 결과는 무시. */
+  async function fill(f: File, t: Tile, gen: number) {
+    if (await isHeicFile(f).catch(() => false)) return swap(f, t, gen);
+    if (gen === previewGen) t.url = URL.createObjectURL(f);
+  }
+
+  async function swap(f: File, t: Tile, gen: number) {
+    if (t.fell) return;
+    t.fell = true;
+    try {
+      const b = await preview(f);
+      if (gen !== previewGen) return;
+      if (t.url) URL.revokeObjectURL(t.url);
+      t.ok = false;
+      t.url = URL.createObjectURL(b);
+    } catch {}
   }
 
   function submit() {
@@ -252,8 +274,9 @@
   }
 
   function onclose() {
-    previews.forEach((u) => URL.revokeObjectURL(u));
-    previews = [];
+    previewGen++;
+    tiles.forEach((t) => t.url && URL.revokeObjectURL(t.url));
+    tiles = [];
     pending = [];
     sheetPw = sheetErr = "";
   }
@@ -405,7 +428,9 @@
     <form method="dialog" onsubmit={(e) => (e.preventDefault(), submit())}>
       <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>사진 {pending.length}장을 올릴까요?</h2>
       <div class="pvs" aria-hidden="true">
-        {#each previews as u (u)}<img class="pvt" src={u} alt="" width="56" height="56" onerror={(e) => e.currentTarget.removeAttribute("src")} />{/each}
+        {#each tiles as t, i (i)}
+          <span class="pvt">{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</span>
+        {/each}
         {#if pending.length > PREVIEW_N}<span class="more">외 {pending.length - PREVIEW_N}장</span>{/if}
       </div>
       {#if overPick}<p class="hint">한 번에 {MAX_PICK}장까지라 앞의 {MAX_PICK}장만 올라가요</p>{/if}
@@ -501,7 +526,9 @@
   .sheet form { display: grid; gap: 10px; }
   .ttl { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; outline: none; }
   .pvs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .pvt { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; background: var(--track); }
+  .pvt { position: relative; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--track) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Ccircle cx='9' cy='11' r='1.6'/%3E%3Cpath d='m21 16-5-5-8 8'/%3E%3C/svg%3E") center / 22px no-repeat; }
+  .pvt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+  .pvt img.on { opacity: 1; }
   .more { font-size: 14px; color: var(--ink-2); padding-left: 4px; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
   .sheet input:focus { outline: 2px solid var(--accent); outline-offset: 0; }

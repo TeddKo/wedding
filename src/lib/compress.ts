@@ -60,7 +60,7 @@ function resize(bmp: ImageBitmap, long: number) {
 
 const HEIC_BRANDS = ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
 
-async function isHeicFile(f: File) {
+export async function isHeicFile(f: File) {
   if (/^image\/hei[cf]/i.test(f.type)) return true;
   const b = new Uint8Array(await f.slice(4, 12).arrayBuffer());
   const t = String.fromCharCode(...b);
@@ -99,9 +99,40 @@ async function decode(f: File): Promise<ImageBitmap> {
   throw new Error(UNSUPPORTED);
 }
 
-/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거됨. 호출은 순차 처리(호출자가 직렬화). */
+/** 압축·미리보기가 한 번에 하나씩만 디코드하도록 잇는 직렬 큐(메모리 보호). */
+let lock: Promise<unknown> = Promise.resolve();
+const serial = <T>(fn: () => Promise<T>): Promise<T> => {
+  const p = lock.then(fn, fn);
+  lock = p.catch(() => {});
+  return p;
+};
+
+/** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거됨. */
 export function compress(file: File): Promise<Compressed> {
-  return workerOk() ? viaWorker(file) : compressMain(file);
+  return serial(async () => {
+    if (workerOk()) {
+      const m = await viaWorker(file);
+      if (m) {
+        if (m.err !== undefined) throw new Error(m.err);
+        return m.ok!;
+      }
+    }
+    return compressMain(file);
+  });
+}
+
+/** 긴 변 size 의 중앙 정사각 JPEG 미리보기. HEIC 도 compress 와 같은 디코드 체인으로 처리. */
+export function preview(file: File, size = 112): Promise<Blob> {
+  return serial(async () => {
+    if (workerOk()) {
+      const m = await viaWorker(file, size);
+      if (m) {
+        if (m.err !== undefined) throw new Error(m.err);
+        return m.blob!;
+      }
+    }
+    return previewMain(file, size);
+  });
 }
 
 const workerOk = () =>
@@ -110,7 +141,7 @@ const workerOk = () =>
 let worker: Worker | undefined;
 let workerDead = false;
 let seq = 0;
-type Msg = { id: number; ok?: Compressed; err?: string; needMain?: true };
+type Msg = { id: number; ok?: Compressed; blob?: Blob; err?: string; needMain?: true };
 let pending: { id: number; res: (m: Msg) => void; rej: (e: Error) => void } | null = null;
 
 function getWorker() {
@@ -131,11 +162,11 @@ const call = (msg: object, id: number, transfer: Transferable[] = []) =>
     getWorker().postMessage({ id, ...msg }, transfer);
   });
 
-async function viaWorker(file: File): Promise<Compressed> {
+/** prev 가 있으면 미리보기 모드. 워커가 죽으면 null(호출자가 메인 스레드로 대체). */
+async function viaWorker(file: File, prev?: number): Promise<Msg | null> {
   const id = ++seq;
-  let m: Msg;
   try {
-    m = await call({ file }, id);
+    let m = await call({ file, prev }, id);
     if (m.needMain) {
       let bmp: ImageBitmap;
       try {
@@ -143,16 +174,31 @@ async function viaWorker(file: File): Promise<Compressed> {
       } catch {
         throw new Error(UNSUPPORTED);
       }
-      m = await call({ bitmap: bmp, size: file.size }, id, [bmp]);
+      m = await call({ bitmap: bmp, size: file.size, prev }, id, [bmp]);
     }
+    return m;
   } catch (e) {
-    if (e instanceof Error && e.message === "worker") return compressMain(file);
+    if (e instanceof Error && e.message === "worker") return null;
     throw e;
   } finally {
     pending = null;
   }
-  if (m.err !== undefined) throw new Error(m.err);
-  return m.ok!;
+}
+
+async function previewMain(file: File, size: number): Promise<Blob> {
+  const bmp = await decode(file);
+  try {
+    const s = Math.min(bmp.width, bmp.height);
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    c.getContext("2d")?.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
+    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", 0.7));
+    c.width = c.height = 0;
+    if (!blob) throw new Error("encode");
+    return blob;
+  } finally {
+    bmp.close();
+  }
 }
 
 async function compressMain(file: File): Promise<Compressed> {
