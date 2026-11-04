@@ -3,6 +3,7 @@ export interface Env {
   BUCKET: R2Bucket;
   ADMIN_TOKEN?: string;
   IP_PEPPER: string;
+  PW_PEPPER?: string;
   ALLOW_LOCAL?: string;
   VOTE_MODE?: string;
   VOTER_PEPPER?: string;

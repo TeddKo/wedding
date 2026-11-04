@@ -1,6 +1,8 @@
+import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
+import { b64 } from "../src/domain/crypto";
 import { ENTRY_IP_N } from "../src/limits";
-import { call, OK } from "./helpers";
+import { call, callWith, OK } from "./helpers";
 
 const post = (b: unknown, ip?: string) => call("/entries", { method: "POST", body: b, ip });
 const good = { name: " 홍길동 ", message: " 축하해요 ", password: "pw1234" };
@@ -80,5 +82,31 @@ describe("entries", () => {
     for (let i = 0; i <= ENTRY_IP_N; i++) v6.push((await post(good, i < forms.length ? forms[i] : `2001:db8:1:2::${(i + 16).toString(16)}`)).status);
     expect(v6).toEqual([...Array(ENTRY_IP_N).fill(201), 429]);
     expect((await post(good, "2001:db8:1:3::1")).status).toBe(201);
+  });
+});
+
+describe("entries 비밀번호 해시", () => {
+  it("신규 salt 는 p1$10000$ 접두", async () => {
+    const id = ((await (await post(good, "10.0.0.1")).json()) as { id: number }).id;
+    const row = await env.DB.prepare("SELECT salt FROM entries WHERE id = ?").bind(id).first<{ salt: string }>();
+    expect(row?.salt).toMatch(/^p1\$10000\$[A-Za-z0-9+/=]+$/);
+  });
+
+  it("레거시 행(100k, pepper 없음) 삭제 호환", async () => {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("pw1234"), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256);
+    const { meta } = await env.DB.prepare("INSERT INTO entries (name, message, pw_hash, salt, created_at) VALUES ('a','b',?,?,1)")
+      .bind(b64(bits), b64(salt))
+      .run();
+    const del = (pw: string) => call(`/entries/${meta.last_row_id}`, { method: "DELETE", body: { password: pw }, ip: "10.0.0.2" });
+    expect((await del("nope")).status).toBe(403);
+    expect((await del("pw1234")).status).toBe(204);
+  });
+
+  it("pepper 누락 시 500", async () => {
+    const r = await callWith({ PW_PEPPER: "" }, "/entries", { method: "POST", body: good });
+    expect(r.status).toBe(500);
+    expect(await r.json()).toEqual({ error: "server error" });
   });
 });

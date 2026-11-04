@@ -2,6 +2,7 @@ declare namespace Cloudflare {
   interface Env {
     TEST_MIGRATIONS: D1Migration[];
     IP_PEPPER: string;
+    PW_PEPPER: string;
     ADMIN_TOKEN: string;
     VOTE_MODE: string;
     VOTER_PEPPER: string;

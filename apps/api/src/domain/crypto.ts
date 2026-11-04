@@ -1,3 +1,5 @@
+import { PW_ITER } from "../limits";
+
 const enc = new TextEncoder();
 
 export const b64 = (b: Uint8Array | ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b)));
@@ -5,9 +7,35 @@ export const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt
 export const b64u = (b: Uint8Array) => b64(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 export const unb64u = (s: string) => unb64(s.replace(/-/g, "+").replace(/_/g, "/"));
 
-export async function pbkdf2(pw: string, salt: Uint8Array): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256));
+async function pbkdf2(pw: Uint8Array, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey("raw", pw, "PBKDF2", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256));
+}
+
+const LEGACY_ITER = 100_000;
+const PW_TAG = "p1$";
+
+/** pepper HMAC 선처리 후 PBKDF2, 저장 형식은 salt 열의 `p1$<반복>$<b64salt>` */
+export async function hashPassword(pepper: string | undefined, pw: string) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const pre = await hmacSign(pepper, pw);
+  return { pwHash: b64(await pbkdf2(pre, salt, PW_ITER)), salt: `${PW_TAG}${PW_ITER}$${b64(salt)}` };
+}
+
+/** `p1$` 접두 salt 는 pepper 경로, 그 외는 기존 100k 무 pepper 경로 */
+export async function verifyPassword(pepper: string | undefined, pw: string, salt: string, pwHash: string) {
+  let pre = enc.encode(pw);
+  let iter = LEGACY_ITER;
+  let raw = salt;
+  if (salt.startsWith(PW_TAG)) {
+    const [it, s, ...rest] = salt.slice(PW_TAG.length).split("$");
+    if (!it || !s || rest.length || !/^\d+$/.test(it)) return false;
+    iter = Number(it);
+    if (iter < 1 || iter > 1_000_000) return false;
+    raw = s;
+    pre = await hmacSign(pepper, pw);
+  }
+  return safeEqBytes(await pbkdf2(pre, unb64(raw), iter), unb64(pwHash));
 }
 
 export async function sha256(s: string) {

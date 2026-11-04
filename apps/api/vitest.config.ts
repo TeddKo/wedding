@@ -9,6 +9,7 @@ export default defineConfig(async () => ({
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations("./migrations"),
           IP_PEPPER: "test-pepper",
+          PW_PEPPER: "test-pw-pepper",
           ADMIN_TOKEN: "test-admin",
           VOTE_MODE: "device",
           VOTER_PEPPER: "test-voter",

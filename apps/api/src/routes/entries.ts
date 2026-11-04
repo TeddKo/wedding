@@ -2,7 +2,7 @@ import { ENTRY } from "@wedding/shared";
 import { entryCreate, entryDelete } from "@wedding/shared/schemas";
 import { Hono } from "hono";
 import { db } from "../db/client";
-import { b64, pbkdf2, safeEqBytes, unb64 } from "../domain/crypto";
+import { hashPassword, verifyPassword } from "../domain/crypto";
 import type { AppEnv } from "../env";
 import { fail, notAllowed } from "../errors";
 import { ipHash, json, noContent, page, pageParams, parseBody, readJsonObject } from "../http";
@@ -25,9 +25,8 @@ export const entries = new Hono<AppEnv>()
     const ip = await ipHash(c);
     const now = Date.now();
     if ((await countRecentEntries(d, ip, now - LIMIT_MS)) >= ENTRY_IP_N) fail(429, "too many posts");
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const hash = await pbkdf2(v.password, salt);
-    const row = await insertEntry(d, { name: v.name, message: v.message, pwHash: b64(hash), salt: b64(salt), ipHash: ip, createdAt: now });
+    const { pwHash, salt } = await hashPassword(c.env.PW_PEPPER, v.password);
+    const row = await insertEntry(d, { name: v.name, message: v.message, pwHash, salt, ipHash: ip, createdAt: now });
     return json(c, { id: row.id, name: v.name, message: v.message, created_at: now }, 201);
   })
   .all("/entries", notAllowed)
@@ -42,7 +41,7 @@ export const entries = new Hono<AppEnv>()
     if (!row) fail(404, "not found");
     const ip = await ipHash(c);
     const release = await takeAttempt(d, ip, PW_FAIL_N);
-    if (!safeEqBytes(await pbkdf2(password, unb64(row.salt)), unb64(row.pwHash))) fail(403, "wrong password");
+    if (!(await verifyPassword(c.env.PW_PEPPER, password, row.salt, row.pwHash))) fail(403, "wrong password");
     await release();
     await deleteEntry(d, id);
     return noContent(c);

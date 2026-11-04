@@ -1,7 +1,7 @@
 import { PHOTO, PHOTO_EXTS, type PhotoKind } from "@wedding/shared";
 import { db } from "../db/client";
 import { dims, sniff } from "../domain/image";
-import { b64, pbkdf2, safeEqStr } from "../domain/crypto";
+import { hashPassword, safeEqStr } from "../domain/crypto";
 import type { Env } from "../env";
 import { fail } from "../errors";
 import { DIM_TOLERANCE, IMMUTABLE, LIMIT_MS, PHOTO_DEVICE_MAX, PHOTO_IP_N, PHOTO_TOTAL_N } from "../limits";
@@ -42,16 +42,15 @@ export async function commitPhoto(env: Env, a: { uuid: string; device: string; p
   if (!up || !full || !(await env.BUCKET.head(`thumb/${uuid}.${up.ext}`))) fail(409, "upload incomplete");
 
   const now = Date.now();
-  const salt = a.pw ? crypto.getRandomValues(new Uint8Array(16)) : null;
-  const hash = a.pw && salt ? b64(await pbkdf2(a.pw, salt)) : null;
+  const cred = a.pw ? await hashPassword(env.PW_PEPPER, a.pw) : null;
   const row = await insertPhoto(d, {
     uuid,
     ext: up.ext,
     w: up.fw,
     h: up.fh,
     size: full.size,
-    pwHash: hash,
-    salt: salt && b64(salt),
+    pwHash: cred?.pwHash ?? null,
+    salt: cred?.salt ?? null,
     ipHash: up.ipHash,
     deviceId: up.deviceId ?? a.device,
     createdAt: now,
@@ -60,7 +59,7 @@ export async function commitPhoto(env: Env, a: { uuid: string; device: string; p
     const again = await findPhoto(d, uuid);
     return again ? { row: again, status: 200 } : fail(409, "upload incomplete");
   }
-  return { row: { id: row.id, uuid, ext: up.ext, w: up.fw, h: up.fh, created_at: now, locked: hash ? 1 : 0 }, status: 201 };
+  return { row: { id: row.id, uuid, ext: up.ext, w: up.fw, h: up.fh, created_at: now, locked: cred ? 1 : 0 }, status: 201 };
 }
 
 /** R2 객체와 행 제거. hide 면 사진 행은 숨김 처리만 */

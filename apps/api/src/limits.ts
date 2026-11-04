@@ -4,6 +4,7 @@ export const PHOTO_IP_N = 400;
 export const PHOTO_DEVICE_MAX = 30;
 export const PHOTO_TOTAL_N = 2500;
 export const PW_FAIL_N = 10;
+export const PW_ITER = 10_000;
 export const KAKAO_IP_N = 60;
 export const ORPHAN_MS = 24 * 3600 * 1000;
 export const FAIL_TTL_MS = 3600 * 1000;

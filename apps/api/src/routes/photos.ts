@@ -3,7 +3,7 @@ import { photoCommit, photoDelete } from "@wedding/shared/schemas";
 import { Hono } from "hono";
 import { isAdmin } from "../auth";
 import { db } from "../db/client";
-import { pbkdf2, safeEqBytes, safeEqStr, unb64 } from "../domain/crypto";
+import { safeEqStr, verifyPassword } from "../domain/crypto";
 import type { AppEnv } from "../env";
 import { fail } from "../errors";
 import { ipHash, json, noContent, page, pageParams, parseBody, readCapped, readJsonObject } from "../http";
@@ -76,7 +76,7 @@ export const photos = new Hono<AppEnv>()
           if (!pw) fail(400, "invalid password");
           const ip = await ipHash(c);
           const release = await takeAttempt(d, ip, PW_FAIL_N);
-          if (!safeEqBytes(await pbkdf2(pw, unb64(row.salt)), unb64(row.pwHash))) fail(403, "wrong password");
+          if (!(await verifyPassword(c.env.PW_PEPPER, pw, row.salt, row.pwHash))) fail(403, "wrong password");
           await release();
         } else if (!(row.deviceId && device && (await safeEqStr(device, row.deviceId)))) fail(403, "no password");
       }
