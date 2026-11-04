@@ -121,10 +121,10 @@ try {
       headers: { "content-type": "application/json", "CF-Connecting-IP": ip, Origin: OK, ...dev(d) },
       body: JSON.stringify(b),
     });
-  const del = (u, { pw, token, q = "", ip = "5.5.5.5" } = {}) =>
+  const del = (u, { pw, token, q = "", ip = "5.5.5.5", d } = {}) =>
     fetch(`${BASE}/photos/${u}${q}`, {
       method: "DELETE",
-      headers: { "content-type": "application/json", Origin: OK, "CF-Connecting-IP": ip, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { "content-type": "application/json", Origin: OK, "CF-Connecting-IP": ip, ...(d ? dev(d) : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: pw === undefined ? undefined : JSON.stringify({ pw }),
     });
   const upload = async (b = {}, o = {}) => {
@@ -187,7 +187,7 @@ try {
   assert.equal(e1.ext, "jpg");
   assert.equal((await del(u1, { pw: "pw1234" })).status, 404);
   assert.equal((await del(u2, { pw: "whatever" })).status, 403);
-  assert.equal((await del(u2, { token: "wrong" })).status, 400);
+  assert.equal((await del(u2, { token: "wrong" })).status, 403);
 
   const [u3] = await upload();
   const lst = await (await call("/photos?limit=30")).json();
@@ -212,6 +212,27 @@ try {
   const [u4] = await upload();
   assert.equal((await del(u4, { token: "test-admin" })).status, 204);
   assert.ok(!(await list()).includes(u4));
+
+  /* 기기 소유 증명 삭제 */
+  const [d1, rd1] = await upload({ pw: "pw1234" });
+  assert.equal(rd1.status, 201);
+  assert.equal((await del(d1, { d: "device-bbbbbbbb" })).status, 400, "other device without pw");
+  assert.equal((await del(d1, { d: "device-bbbbbbbb", pw: "bad-pw" })).status, 403);
+  assert.ok((await list()).includes(d1));
+  assert.equal((await del(d1, { d: "device-aaaaaaaa" })).status, 204, "owner device");
+  assert.ok(!(await list()).includes(d1));
+  assert.ok(!r2keys().some((k) => k.includes(d1)));
+  const [d2] = await upload({ pw: "pw1234" });
+  assert.equal((await del(d2, { d: "device-bbbbbbbb", pw: "pw1234" })).status, 204, "password path from other device");
+  const [d3] = await upload();
+  const nopw = await del(d3, { d: "device-bbbbbbbb", pw: "whatever" });
+  assert.equal(nopw.status, 403);
+  assert.equal((await nopw.json()).error, "no password");
+  assert.equal((await del(d3)).status, 403);
+  assert.ok((await list()).includes(d3));
+  assert.equal((await del(d3, { d: "device-aaaaaaaa" })).status, 204, "owner can delete photo without pw");
+  const [d4] = await upload();
+  assert.equal((await del(d4, { token: "test-admin", d: "device-bbbbbbbb" })).status, 204, "admin still works");
 
   /* PUT 시점 한도: IP 10분 200건, 기기 30건 */
   const s2 = [];

@@ -408,20 +408,23 @@ async function photos(req: Request, env: Env, ctx: ExecutionContext, url: URL, c
   }
 
   if (req.method === "DELETE" && !sub) {
-    const row = await env.DB.prepare("SELECT ext,pw_hash,salt FROM photos WHERE uuid = ?")
+    const row = await env.DB.prepare("SELECT ext,pw_hash,salt,device_id FROM photos WHERE uuid = ?")
       .bind(uuid)
-      .first<{ ext: string; pw_hash: string | null; salt: string | null }>();
+      .first<{ ext: string; pw_hash: string | null; salt: string | null; device_id: string | null }>();
     if (!row) return bad(cors, "not found", 404);
     const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer /, "");
     const admin = !!env.ADMIN_TOKEN && !!token && eq(enc.encode(token), enc.encode(env.ADMIN_TOKEN));
-    if (!admin) {
+    const dev = req.headers.get("X-Device") ?? "";
+    const owner = !!row.device_id && !!dev && eq(enc.encode(dev), enc.encode(row.device_id));
+    if (!admin && !owner) {
+      if (!row.pw_hash || !row.salt) return bad(cors, "no password", 403);
       const body = await readJson(req);
       const pw = body && typeof body.pw === "string" ? body.pw.trim() : "";
       if (!pw) return bad(cors, "invalid password");
       const ip = await ipHash(req, env);
       const fails = await env.DB.prepare("SELECT COUNT(*) AS n FROM pw_fails WHERE ip_hash = ? AND created_at > ?").bind(ip, Date.now() - LIMIT_MS).first<{ n: number }>();
       if ((fails?.n ?? 0) >= PW_FAIL_N) return bad(cors, "too many attempts", 429);
-      if (!row.pw_hash || !row.salt || !eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
+      if (!eq(await pbkdf2(pw, unb64(row.salt)), unb64(row.pw_hash))) {
         await env.DB.prepare("INSERT INTO pw_fails (ip_hash,created_at) VALUES (?,?)").bind(ip, Date.now()).run();
         return bad(cors, "wrong password", 403);
       }

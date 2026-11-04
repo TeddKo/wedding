@@ -19,8 +19,12 @@
     onindex?: (i: number) => void;
     /** 카운터에 표시할 전체 장수 (없으면 items 길이) */
     total?: number;
+    /** 있으면 라이트박스에 삭제 버튼을 보인다. 성공하면 null, 실패하면 보여 줄 메시지를 돌려준다 */
+    remove?: (i: number, pw?: string) => Promise<string | null>;
+    /** i 번째 사진을 이 기기에서 올렸는지 (true 면 비밀번호 없이 확인만 받는다) */
+    mine?: (i: number) => boolean;
   };
-  let { items, bare = false, thumbAt, more = false, onindex, total }: Props = $props();
+  let { items, bare = false, thumbAt, more = false, onindex, total, remove, mine }: Props = $props();
 
   const n = $derived(items.length);
 
@@ -118,6 +122,60 @@
     open = false;
     setInert(false);
     (bare ? thumbAt?.(back) : btns[back])?.focus({ preventScroll: true });
+  }
+
+  let delOpen = $state(false);
+  let delPw = $state("");
+  let delErr = $state("");
+  let delBusy = $state(false);
+  let delBtn = $state<HTMLElement>();
+  let delInput = $state<HTMLElement>();
+  let delNo = $state<HTMLElement>();
+  const isMine = $derived(!!mine?.(idx));
+
+  async function askDel() {
+    delPw = "";
+    delErr = "";
+    delOpen = true;
+    await tick();
+    (isMine ? delNo : delInput)?.focus();
+  }
+
+  async function closeDel() {
+    delOpen = false;
+    await tick();
+    (delBtn ?? lb)?.focus();
+  }
+
+  async function doDel(e: SubmitEvent) {
+    e.preventDefault();
+    if (delBusy || !remove) return;
+    const pw = delPw.trim();
+    if (!isMine && !pw) {
+      delErr = "비밀번호를 입력해 주세요";
+      return;
+    }
+    delBusy = true;
+    delErr = "";
+    try {
+      const err = await remove(idx, isMine ? undefined : pw);
+      if (err) return void (delErr = err);
+      delOpen = false;
+      if (n === 0) {
+        open = false;
+        setInert(false);
+        return;
+      }
+      idx = Math.min(idx, n - 1);
+      onindex?.(idx);
+      view.set({ x: 0, y: 0, s: 1 }, instant);
+      p.set(1, instant);
+      preload();
+      await tick();
+      lb?.focus({ preventScroll: true });
+    } finally {
+      delBusy = false;
+    }
   }
 
   let waiting = $state(false);
@@ -258,11 +316,12 @@
   }
 
   function key(e: KeyboardEvent) {
-    if (e.key === "Escape") return void (e.preventDefault(), close());
+    if (e.key === "Escape") return void (e.preventDefault(), delOpen ? closeDel() : close());
+    if ((e.target as HTMLElement).closest?.("input")) return;
     if (e.key === "ArrowRight") return void (e.preventDefault(), go(1));
     if (e.key === "ArrowLeft") return void (e.preventDefault(), go(-1));
     if (e.key === "Tab" && lb) {
-      const f = [...lb.querySelectorAll<HTMLElement>("button")];
+      const f = [...lb.querySelectorAll<HTMLElement>("button:not(:disabled), input")];
       const i = f.indexOf(document.activeElement as HTMLElement);
       const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : i === f.length - 1 ? 0 : i + 1;
       e.preventDefault();
@@ -330,9 +389,28 @@
     <div class="ui" style:opacity={dim}>
       <span class="count latin" aria-live="polite">{idx + 1} / {Math.max(total ?? 0, n)}</span>
       <button type="button" class="b close" aria-label="닫기" onclick={close}>×</button>
+      {#if remove}
+        <button type="button" class="del-btn" bind:this={delBtn} aria-haspopup="dialog" aria-expanded={delOpen} onclick={askDel}>삭제</button>
+      {/if}
       {#if n > 1}
         <button type="button" class="b prev" aria-label="이전 사진" onclick={() => go(-1)}>‹</button>
         <button type="button" class="b next" aria-label="다음 사진" onclick={() => go(1)}>›</button>
+      {/if}
+      {#if delOpen}
+        <form class="del" role="group" aria-label="사진 삭제" onsubmit={doDel}>
+          {#if isMine}
+            <p class="del-q" id="gdel-q">이 사진을 삭제할까요?</p>
+          {:else}
+            <label class="del-q" for="gdel-pw">올릴 때 정한 비밀번호를 입력해 주세요</label>
+            <input id="gdel-pw" type="password" bind:this={delInput} bind:value={delPw} maxlength="64" autocomplete="current-password" aria-invalid={!!delErr} />
+          {/if}
+          <div class="del-row">
+            <button type="submit" class="del-go" disabled={delBusy}>{delBusy ? "삭제 중…" : "삭제"}</button>
+            <button type="button" class="del-no" bind:this={delNo} onclick={closeDel}>취소</button>
+          </div>
+          <p class="del-note">삭제한 사진은 반영까지 시간이 걸릴 수 있어요.</p>
+          {#if delErr}<p class="del-err" role="alert">{delErr}</p>{/if}
+        </form>
       {/if}
     </div>
   </div>
@@ -358,6 +436,26 @@
   .b:hover { background: #fff; color: #111; }
   .b:active { transform: scale(0.92); }
   .close { top: max(14px, env(safe-area-inset-top)); right: 14px; }
+  .del-btn {
+    position: absolute; pointer-events: auto; top: max(14px, env(safe-area-inset-top)); left: 14px; min-width: 56px; height: 48px; padding: 0 16px; border-radius: 24px;
+    border: 1px solid rgb(255 255 255 / 0.4); background: rgb(0 0 0 / 0.4); color: #fff; font: inherit; font-size: 15px; font-weight: 500; line-height: 1; cursor: pointer;
+  }
+  .del-btn:hover { background: #fff; color: #111; }
+  .del-btn:focus-visible, .b:focus-visible, .del button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .del {
+    position: absolute; pointer-events: auto; left: 16px; right: 16px; bottom: max(64px, calc(env(safe-area-inset-bottom) + 44px)); margin: 0 auto; max-width: 360px;
+    display: grid; gap: 10px; padding: 16px; border-radius: 14px; background: rgb(24 22 28 / 0.96); border: 1px solid rgb(255 255 255 / 0.25);
+  }
+  .del-q { margin: 0; font-size: 14px; line-height: 1.5; color: #fff; }
+  .del input { width: 100%; min-height: 48px; padding: 12px 14px; box-sizing: border-box; border-radius: 10px; border: 1px solid rgb(255 255 255 / 0.4); background: #fff; color: #111; font: inherit; font-size: 16px; }
+  .del input[aria-invalid="true"] { border-color: #ff8a7a; }
+  .del-row { display: flex; gap: 8px; }
+  .del-go, .del-no { flex: 1; min-height: 48px; border-radius: 10px; font: inherit; font-size: 15px; font-weight: 500; line-height: 1; cursor: pointer; border: 1px solid rgb(255 255 255 / 0.4); }
+  .del-go { background: #c0392b; border-color: #c0392b; color: #fff; }
+  .del-go:disabled { opacity: 0.6; cursor: progress; }
+  .del-no { background: transparent; color: #fff; }
+  .del-note { margin: 0; font-size: 12.5px; line-height: 1.5; color: rgb(255 255 255 / 0.7); }
+  .del-err { margin: 0; font-size: 14px; line-height: 1.5; color: #ffb4a8; }
   .prev { left: 10px; top: 50%; margin-top: -24px; }
   .next { right: 10px; top: 50%; margin-top: -24px; }
   .count { position: absolute; left: 0; right: 0; bottom: max(22px, env(safe-area-inset-bottom)); text-align: center; color: rgb(255 255 255 / 0.8); font: 400 14px/1.4 var(--f-latin); }

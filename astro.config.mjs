@@ -7,4 +7,5 @@ export default defineConfig({
   base: "/wedding",
   trailingSlash: "always",
   integrations: [svelte()],
+  vite: { build: { chunkSizeWarningLimit: 3300 } },
 });

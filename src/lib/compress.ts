@@ -58,14 +58,50 @@ function resize(bmp: ImageBitmap, long: number) {
   return out;
 }
 
+const HEIC_BRANDS = ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
+
+async function isHeicFile(f: File) {
+  if (/^image\/hei[cf]/i.test(f.type)) return true;
+  const b = new Uint8Array(await f.slice(4, 12).arrayBuffer());
+  const t = String.fromCharCode(...b);
+  return t.startsWith("ftyp") && HEIC_BRANDS.includes(t.slice(4));
+}
+
+const viaBitmap = (f: Blob) => createImageBitmap(f, { imageOrientation: "from-image" });
+
+/** Safari 등은 <img> 로는 HEIC 를 그릴 수 있다. <img> 는 EXIF 회전을 자동 적용한다. */
+async function viaImg(f: Blob) {
+  const url = URL.createObjectURL(f);
+  try {
+    const im = new Image();
+    im.src = url;
+    await im.decode();
+    return await createImageBitmap(im);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** createImageBitmap → <img> → (HEIC 만) heic-to 지연 로드 순으로 디코드한다. 디코더 청크는 HEIC 일 때만 내려받는다. */
+async function decode(f: File): Promise<ImageBitmap> {
+  try {
+    return await viaBitmap(f);
+  } catch {}
+  try {
+    return await viaImg(f);
+  } catch {}
+  if (await isHeicFile(f)) {
+    try {
+      const { heicTo } = await import("heic-to");
+      return await viaBitmap(await heicTo({ blob: f, type: "image/jpeg", quality: 0.95 }));
+    } catch {}
+  }
+  throw new Error(UNSUPPORTED);
+}
+
 /** EXIF 회전을 적용해 다시 인코딩하므로 EXIF/GPS 는 제거된다. 호출은 순차적으로 한다(호출자가 직렬화). */
 export async function compress(file: File): Promise<Compressed> {
-  let bmp: ImageBitmap;
-  try {
-    bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    throw new Error(UNSUPPORTED);
-  }
+  const bmp = await decode(file);
   try {
     const big = resize(bmp, MAX);
     const w = big.width;

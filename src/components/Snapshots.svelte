@@ -38,10 +38,6 @@
   let pwErr = $state("");
   let announce = $state("");
   let toast = $state<{ id: number; msg: string; warn: boolean } | null>(null);
-  let delId = $state<number | null>(null);
-  let delPw = $state("");
-  let delErr = $state("");
-  let delBusy = $state(false);
   let input = $state<HTMLInputElement>();
   let seq = 0;
   let running = 0;
@@ -76,6 +72,22 @@
   }
   let deviceMem = "";
 
+  /* 이 브라우저에서 올린 사진 uuid. 기기 ID 와 함께 서버에 보내 소유를 증명한다 */
+  const mineSet = (): string[] => {
+    try {
+      const v = JSON.parse(localStorage.getItem("snap-mine") ?? "[]");
+      return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  };
+  const rememberMine = (u: string, on = true) => {
+    try {
+      const v = mineSet().filter((x) => x !== u);
+      localStorage.setItem("snap-mine", JSON.stringify(on ? [...v, u] : v));
+    } catch {}
+  };
+
   class HttpErr extends Error {
     status: number;
     constructor(status: number) {
@@ -92,6 +104,8 @@
   });
   const items = $derived(photos.map((p) => ({ thumb: p.thumb, srcset: `${p.thumb} 480w`, full: p.full, w: p.w, h: p.h })));
   const count = $derived(Math.max(overall, photos.length));
+  let mineIds = $state<string[]>([]);
+  const isMine = (i: number) => !!photos[i] && mineIds.includes(photos[i].uuid);
 
   async function load(first: boolean) {
     if (!first) {
@@ -166,6 +180,7 @@
 
   onMount(() => {
     mounted = true;
+    mineIds = mineSet();
     void load(true);
     const warn = (e: BeforeUnloadEvent) => busy && e.preventDefault();
     addEventListener("beforeunload", warn);
@@ -286,6 +301,8 @@
       await withRetry(() => putXhr(j, "thumb", c.thumb.blob, (l) => (j.pct = Math.round(((fullN + l) / total) * 100))));
       const p = await withRetry(() => commit(j, c));
       if (!photos.some((x) => x.uuid === p.uuid)) overall++;
+      rememberMine(p.uuid);
+      mineIds = [...mineIds, p.uuid];
       photos = [p, ...photos.filter((x) => x.uuid !== p.uuid)];
       j.pct = 100;
       j.state = "done";
@@ -307,39 +324,30 @@
     jobs = jobs.filter((j) => j.state !== "done");
   }
 
-  function askDelete(j: Job) {
-    delId = j.id;
-    delPw = "";
-    delErr = "";
-    void Promise.resolve().then(() => document.getElementById(`snap-dp-${j.id}`)?.focus());
-  }
-
-  async function remove(e: SubmitEvent, j: Job) {
-    e.preventDefault();
-    if (delBusy) return;
-    const v = delPw.trim();
-    if (!v) {
-      delErr = "비밀번호를 입력해 주세요";
-      return;
-    }
-    delBusy = true;
-    delErr = "";
+  async function removeAt(i: number, pw?: string): Promise<string | null> {
+    const uuid = photos[i]?.uuid;
+    if (!uuid) return null;
     try {
-      const r = await fetch(`${api}/photos/${j.uuid}`, { method: "DELETE", headers: JSON_HEADERS, body: JSON.stringify({ pw: v }) });
-      if (r.status === 204 || r.status === 404) {
-        if (photos.some((p) => p.uuid === j.uuid)) overall = Math.max(0, overall - 1);
-        photos = photos.filter((p) => p.uuid !== j.uuid);
-        URL.revokeObjectURL(j.url);
-        jobs = jobs.filter((x) => x.id !== j.id);
-        delId = null;
-        notify("삭제했어요");
-      } else if (r.status === 403) delErr = "비밀번호가 맞지 않아요";
-      else delErr = "잠시 후 다시 시도해 주세요";
+      const r = await fetch(`${api}/photos/${uuid}`, {
+        method: "DELETE",
+        headers: { ...JSON_HEADERS, "X-Device": deviceId() },
+        ...(pw ? { body: JSON.stringify({ pw }) } : {}),
+      });
+      if (r.status === 429) return "시도 횟수가 많아요. 잠시 후 다시 시도해 주세요";
+      if (r.status === 403) {
+        const code = ((await r.json().catch(() => null)) as { error?: string } | null)?.error;
+        return code === "no password" ? "이 기기에서 올린 사진만 지울 수 있어요" : pw ? "비밀번호가 맞지 않아요" : "이 기기에서는 지울 수 없는 사진이에요";
+      }
+      if (r.status !== 204 && r.status !== 404) return "잠시 후 다시 시도해 주세요";
     } catch {
-      delErr = "잠시 후 다시 시도해 주세요";
-    } finally {
-      delBusy = false;
+      return "잠시 후 다시 시도해 주세요";
     }
+    if (photos.some((p) => p.uuid === uuid)) overall = Math.max(0, overall - 1);
+    photos = photos.filter((p) => p.uuid !== uuid);
+    mineIds = mineIds.filter((x) => x !== uuid);
+    rememberMine(uuid, false);
+    notify("삭제했어요");
+    return null;
   }
 </script>
 
@@ -351,10 +359,10 @@
       <div class="field">
         <label for="snap-pw">삭제 비밀번호 (선택)</label>
         <input id="snap-pw" type="password" bind:value={pw} maxlength="64" autocomplete="new-password" aria-invalid={!!pwErr} aria-describedby={pwErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
-        <p class="hint" id="snap-pw-h">정하면 올린 사진을 나중에 직접 지울 수 있어요 (4~64자)</p>
+        <p class="hint" id="snap-pw-h">다른 기기에서도 지우고 싶다면 비밀번호를 정해 주세요 (선택, 4~64자). 이 기기에서는 비밀번호 없이 지울 수 있어요</p>
         {#if pwErr}<p class="err" id="snap-pw-e" role="alert">{pwErr}</p>{/if}
       </div>
-      <input bind:this={input} class="file" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
+      <input bind:this={input} class="file" type="file" accept="image/*,.heic,.heif" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
       <button type="button" class="btn-outline pick" data-press onclick={openPicker}>사진 올리기</button>
       <p class="hint">한 번에 {MAX_PICK}장까지 올릴 수 있어요</p>
     </div>
@@ -380,20 +388,6 @@
             </div>
             {#if j.state === "fail"}
               <button type="button" class="act" onclick={() => retry(j)}>다시 시도</button>
-            {:else if j.state === "done" && j.pw}
-              <button type="button" class="act" onclick={() => askDelete(j)}>삭제</button>
-            {/if}
-            {#if delId === j.id}
-              <form class="del" onsubmit={(ev) => remove(ev, j)} aria-label="사진 삭제 확인">
-                <label for="snap-dp-{j.id}">사진을 올릴 때 정한 비밀번호</label>
-                <div class="del-row">
-                  <input id="snap-dp-{j.id}" type="password" bind:value={delPw} maxlength="64" autocomplete="current-password" aria-invalid={!!delErr} onkeydown={(ev) => ev.key === "Escape" && (delId = null)} />
-                  <button type="submit" class="act" disabled={delBusy}>{delBusy ? "확인 중…" : "삭제"}</button>
-                  <button type="button" class="act" onclick={() => (delId = null)}>취소</button>
-                </div>
-                <p class="hint">삭제한 사진은 반영까지 시간이 걸릴 수 있어요.</p>
-                {#if delErr}<p class="err" role="alert">{delErr}</p>{/if}
-              </form>
             {/if}
           </li>
         {/each}
@@ -433,7 +427,7 @@
           <p class="cap err-line" role="alert">사진을 더 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((moreFailed = false), load(false))}>다시 시도</button></p>
         {/if}
       </div>
-      <Gallery bind:this={gal} bare {items} more={cursor !== null} total={count} {thumbAt} onindex={follow} />
+      <Gallery bind:this={gal} bare {items} remove={removeAt} mine={isMine} more={cursor !== null} total={count} {thumbAt} onindex={follow} />
     {/if}
   </div>
 </div>
@@ -484,9 +478,6 @@
   .act { all: unset; box-sizing: border-box; min-height: 44px; min-width: 44px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
   .act:disabled { opacity: 0.6; cursor: progress; }
   .clear { display: flex; margin: 6px auto 0; }
-  .del { grid-column: 1 / -1; display: grid; gap: 6px; }
-  .del-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .del-row input { flex: 1 1 140px; width: auto; min-width: 0; }
 
   .car { min-width: 0; }
   .track {
@@ -515,5 +506,5 @@
   @keyframes snap-pulse { from { opacity: 0.5; } to { opacity: 0.8; } }
   @media (prefers-reduced-motion: reduce) { .sk, .sent.busy { animation: none; } }
 
-  .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 150; pointer-events: none; }
+  .toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-bottom, 24px); display: grid; justify-items: center; z-index: 260; pointer-events: none; }
 </style>
