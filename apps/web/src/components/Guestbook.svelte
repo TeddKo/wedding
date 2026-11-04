@@ -6,14 +6,15 @@
   import Toast from "./ui/Toast.svelte";
   import { reduced } from "../lib/motion";
   import { portal } from "../lib/portal";
+  import { ENTRY } from "@wedding/shared";
+  import type { Entry, EntryList } from "@wedding/shared/schemas";
+  import { request } from "../lib/api";
 
-  type Entry = { id: number; name: string; message: string; created_at: number };
   let { api }: { api: string } = $props();
 
   const HEAD = 5;
-  const PAGE = 10;
+  const PAGE = ENTRY.defaultLimit;
   const CTRL = /[\u0000-\u001f\u007f-\u009f]/;
-  const JSON_HEADERS = { "Content-Type": "application/json" };
 
   let mounted = $state(false);
   let status = $state<"loading" | "ready" | "error">("loading");
@@ -74,9 +75,9 @@
   }
   function check(v: { name: string; message: string; password: string }) {
     const e: typeof errs = {};
-    if (bad(v.name, 1, 20)) e.name = "이름을 20자 이내로 입력해 주세요";
-    if (bad(v.message, 1, 300, true)) e.message = CTRL.test(v.message.replace(/\r?\n/g, "")) ? "제어 문자는 사용할 수 없어요" : "메시지를 300자 이내로 입력해 주세요";
-    if (bad(v.password, 4, 64)) e.password = "비밀번호는 4~64자로 입력해 주세요";
+    if (bad(v.name, ENTRY.name.min, ENTRY.name.max)) e.name = "이름을 20자 이내로 입력해 주세요";
+    if (bad(v.message, ENTRY.message.min, ENTRY.message.max, true)) e.message = CTRL.test(v.message.replace(/\r?\n/g, "")) ? "제어 문자는 사용할 수 없어요" : "메시지를 300자 이내로 입력해 주세요";
+    if (bad(v.password, ENTRY.password.min, ENTRY.password.max)) e.password = "비밀번호는 4~64자로 입력해 주세요";
     return e;
   }
   const SERVER_MSG: Record<string, [keyof typeof errs, string]> = {
@@ -96,9 +97,8 @@
     try {
       const q = new URLSearchParams({ limit: String(PAGE) });
       if (!first && cursor !== null) q.set("cursor", String(cursor));
-      const r = await fetch(`${api}/entries?${q}`);
-      if (!r.ok) throw new Error(String(r.status));
-      const d = (await r.json()) as { items: Entry[]; nextCursor: number | null };
+      const { status: st, body: d } = await request<EntryList>(api, `/entries?${q}`);
+      if (st < 200 || st >= 300) throw new Error(String(st));
       if (!Array.isArray(d.items)) throw new Error("shape");
       batchFrom = first ? 0 : items.length;
       items = first ? d.items : [...items, ...d.items];
@@ -170,9 +170,9 @@
     }
     busy = true;
     try {
-      const r = await fetch(`${api}/entries`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(v) });
+      const r = await request<Entry & { error?: string }>(api, "/entries", { method: "POST", body: JSON.stringify(v) });
       if (r.status === 201) {
-        const entry = (await r.json()) as Entry;
+        const entry = r.body;
         deleting = false;
         batchFrom = 0;
         freshId = entry.id;
@@ -186,8 +186,7 @@
       } else if (r.status === 429) {
         notify("잠시 후 다시 작성해 주세요", true);
       } else if (r.status === 400) {
-        const d = (await r.json().catch(() => ({}))) as { error?: string };
-        const k = SERVER_MSG[d.error ?? ""];
+        const k = SERVER_MSG[r.body.error ?? ""];
         errs = k ? { [k[0]]: k[1] } : { form: "입력 내용을 다시 확인해 주세요" };
       } else {
         notify("잠시 후 다시 시도해 주세요", true);
@@ -208,6 +207,7 @@
   function cancelDelete() {
     const id = confirmId;
     confirmId = null;
+    delPw = "";
     void tick().then(() => document.getElementById(`gb-del-${id}`)?.focus());
   }
 
@@ -216,6 +216,7 @@
     const near = visible[idx + 1] ?? visible[idx - 1];
     deleting = true;
     confirmId = null;
+    delPw = "";
     items = items.filter((x) => x.id !== id);
     say("축하 글을 삭제했어요");
     setTimeout(() => (deleting = false), 500);
@@ -235,7 +236,7 @@
     delBusy = true;
     delErr = "";
     try {
-      const r = await fetch(`${api}/entries/${id}`, { method: "DELETE", headers: JSON_HEADERS, body: JSON.stringify({ password: pw }) });
+      const r = await request(api, `/entries/${id}`, { method: "DELETE", body: JSON.stringify({ password: pw }) });
       if (r.status === 204 || r.status === 404) {
         delBusy = false;
         await drop(id);

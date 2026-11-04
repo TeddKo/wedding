@@ -169,6 +169,7 @@
 
   async function closeDel() {
     delOpen = false;
+    delPw = "";
     await tick();
     (delBtn ?? lb)?.focus();
   }
@@ -186,6 +187,7 @@
     try {
       const err = await remove(idx, ask === "pw" ? pw : undefined);
       if (err) return void (delErr = err);
+      delPw = "";
       delOpen = false;
       open = false;
       closing = false;

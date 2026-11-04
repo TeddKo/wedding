@@ -5,8 +5,10 @@
   import Toast from "./ui/Toast.svelte";
   import { compress, isHeicFile, preview, warm, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
+  import { PHOTO } from "@wedding/shared";
+  import type { Photo, PhotoList } from "@wedding/shared/schemas";
+  import { request } from "../lib/api";
 
-  type Photo = { id: number; uuid: string; w: number; h: number; ext: string; thumb: string; full: string; locked?: boolean };
   type State = "wait" | "compress" | "upload" | "done" | "fail";
   type Job = { id: number; file: File; uuid: string; state: State; pct: number; err: string; url: string; pw: string };
   let { api, cdn = "" }: { api: string; cdn?: string } = $props();
@@ -14,11 +16,10 @@
   const MAX_PICK = 20;
   const CONCURRENCY = 2;
   const RETRIES = 3;
-  const PAGE = 30;
+  const PAGE = PHOTO.defaultLimit;
   const PREFETCH = 6;
   const DONE_MS = 1200;
   const GENERIC = "업로드에 실패했어요. 다시 시도해 주세요.";
-  const JSON_HEADERS = { "Content-Type": "application/json" };
 
   let mounted = $state(false);
   let status = $state<"loading" | "ready" | "error">("loading");
@@ -129,9 +130,8 @@
     try {
       const q = new URLSearchParams({ limit: String(PAGE) });
       if (!first && cursor !== null) q.set("cursor", String(cursor));
-      const r = await fetch(`${api}/photos?${q}`);
-      if (!r.ok) throw new Error(String(r.status));
-      const d = (await r.json()) as { items: Photo[]; nextCursor: number | null; total?: number };
+      const { status: st, body: d } = await request<PhotoList>(api, `/photos?${q}`);
+      if (st < 200 || st >= 300) throw new Error(String(st));
       if (!Array.isArray(d.items)) throw new Error("shape");
       const have = new Set(photos.map((p) => p.uuid));
       photos = first ? d.items.map(toPhoto) : [...photos, ...d.items.filter((p) => !have.has(p.uuid)).map(toPhoto)];
@@ -339,14 +339,15 @@
   }
 
   async function commit(j: Job, c: Compressed) {
-    const r = await fetch(`${api}/photos/${j.uuid}/commit`, {
+    const r = await request<Photo>(api, `/photos/${j.uuid}/commit`, {
       method: "POST",
-      headers: { ...JSON_HEADERS, "X-Device": deviceId() },
+      headers: { "X-Device": deviceId() },
       body: JSON.stringify({ w: c.w, h: c.h, size: c.full.blob.size, ...(j.pw ? { pw: j.pw } : {}) }),
     }).catch(() => new HttpErr(0));
     if (r instanceof HttpErr) throw r;
     if (r.status !== 200 && r.status !== 201) throw new HttpErr(r.status);
-    return toPhoto((await r.json()) as Photo);
+    j.pw = "";
+    return toPhoto(r.body);
   }
 
   async function run(j: Job) {
@@ -394,15 +395,14 @@
     const uuid = photos[i]?.uuid;
     if (!uuid) return null;
     try {
-      const r = await fetch(`${api}/photos/${uuid}`, {
+      const r = await request<{ error?: string }>(api, `/photos/${uuid}`, {
         method: "DELETE",
-        headers: { ...JSON_HEADERS, "X-Device": deviceId() },
+        headers: { "X-Device": deviceId() },
         ...(pw ? { body: JSON.stringify({ pw }) } : {}),
       });
       if (r.status === 429) return "시도 횟수가 많아요. 잠시 후 다시 시도해 주세요";
       if (r.status === 403) {
-        const code = ((await r.json().catch(() => null)) as { error?: string } | null)?.error;
-        return code === "no password" ? "이 휴대폰에서 올린 사진만 지울 수 있어요" : "비밀번호가 맞지 않아요";
+        return r.body.error === "no password" ? "이 휴대폰에서 올린 사진만 지울 수 있어요" : "비밀번호가 맞지 않아요";
       }
       if (r.status !== 204 && r.status !== 404) return "잠시 후 다시 시도해 주세요";
     } catch {

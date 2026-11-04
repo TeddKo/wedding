@@ -1,12 +1,15 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  
-  type Opt = { id: number; text: string; votes: number; mine: boolean };
-  type Data = { mode: "kakao" | "device"; options: Opt[]; total: number; myVote: number | null };
+  import { POLL } from "@wedding/shared";
+  import type { PollState } from "@wedding/shared/schemas";
+  import { request } from "../lib/api";
+
+  type Opt = PollState["options"][number];
+  type Data = PollState;
   let { api, question, kakaoKey }: { api: string; question: string; kakaoKey: string } = $props();
 
-  const MAX_LEN = 30;
-  const MAX_OPTS = 20;
+  const MAX_LEN = POLL.len;
+  const MAX_OPTS = POLL.max;
   const REFRESH_MS = 20000;
   const SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.8.4/kakao.min.js";
   const SDK_SRI = "sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w";
@@ -42,13 +45,7 @@
   };
   const say = (m: string, err = false) => ((note = ""), (noteErr = err), requestAnimationFrame(() => (note = m)));
 
-  async function call(path: string, init: RequestInit = {}): Promise<{ status: number; body: any }> {
-    const r = await fetch(api + path, {
-      ...init,
-      headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    });
-    return { status: r.status, body: await r.json().catch(() => ({})) };
-  }
+  const call = (path: string, init: { method?: string; body?: string } = {}) => request<any>(api, path, { ...init, token });
 
   /* 상태를 바꿀 때마다 gen 을 올려, 그 전에 시작한 조회 응답은 폐기 */
   const apply = (b: Data) => (gen++, (data = { mode: b.mode, options: b.options, total: b.total, myVote: b.myVote }), (status = "ready"));
@@ -66,7 +63,7 @@
 
   function expire() {
     token = "";
-    store.set("poll-token", "");
+    store.set("poll-token", "", sessionStorage);
     data.myVote = null;
     explain = true;
     say("로그인이 만료됐어요. 다시 로그인해 주세요.", true);
@@ -79,7 +76,7 @@
       const { status: s, body } = await call("/auth/device", { method: "POST" });
       if (s !== 200 || !body.token) throw new Error("device");
       token = body.token;
-      store.set("poll-token", token);
+      store.set("poll-token", token, sessionStorage);
       return true;
     }
     explain = true;
@@ -197,7 +194,7 @@
       const { status: s, body } = await call("/auth/kakao", { method: "POST", body: JSON.stringify({ code, redirectUri: redirectUri() }) });
       if (s !== 200 || !body.token) throw new Error(String(s));
       token = body.token;
-      store.set("poll-token", token);
+      store.set("poll-token", token, sessionStorage);
       if (typeof draft.sel === "number") sel = draft.sel;
       if (typeof draft.text === "string") text = draft.text.slice(0, MAX_LEN);
       await load(true);
@@ -208,7 +205,8 @@
   }
 
   onMount(() => {
-    token = store.get("poll-token");
+    store.set("poll-token", "");
+    token = store.get("poll-token", sessionStorage);
     const ret = takeReturn();
     const first = load();
     if (ret) void first.then(() => finishLogin(ret));
