@@ -6,10 +6,10 @@
 
 
 <p align="center">
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/01-intro.jpg" width="200" alt="인트로 게이트"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/02-cover.jpg" width="200" alt="커버"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/04-location.jpg" width="200" alt="오시는 길"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/05-poll.jpg" width="200" alt="하객 투표와 방명록"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/01-intro.jpg?v=20261105" width="200" alt="인트로 게이트"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/02-cover.jpg?v=20261105" width="200" alt="커버"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/04-location.jpg?v=20261105" width="200" alt="오시는 길"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/05-poll.jpg?v=20261105" width="200" alt="하객 투표와 방명록"></a>
 </p>
 <p align="center">인트로 · 커버 · 오시는 길 · 투표와 방명록 (모바일 390px, 이미지 클릭 시 데모 사이트 이동)</p>
 
