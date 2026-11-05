@@ -39,14 +39,16 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
   isolation: isolate; color: #2b2420; cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 .hw-ghost svg > path:first-child { fill: #fffaf0; }
-.hw-ghost .hw-float { filter: drop-shadow(0 0 3px rgb(255 236 200 / 0.95)) drop-shadow(0 0 10px rgb(255 196 120 / 0.8)); }
-.hw-ghost::before { content: ""; position: absolute; inset: -6px; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgb(255 214 150 / 0.55), rgb(224 144 74 / 0.18) 60%, transparent); animation: hw-glow 2.4s ease-in-out infinite; }
-.hw-ghost::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid rgb(255 214 150 / 0.7); opacity: 0; animation: hw-ring 2.4s ease-out 1.2s infinite; pointer-events: none; }
+/* 유령 본체 묶음: 확대·이동 시 몸체·후광·파동 링이 함께 변형 */
+.hw-body { position: relative; z-index: 0; display: block; }
+.hw-ghost .hw-body > svg { filter: drop-shadow(0 0 3px rgb(255 236 200 / 0.95)) drop-shadow(0 0 10px rgb(255 196 120 / 0.8)); }
+.hw-glow { position: absolute; inset: -14px; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgb(255 214 150 / 0.55), rgb(224 144 74 / 0.18) 60%, transparent); animation: hw-glow 2.4s ease-in-out infinite; }
+.hw-ring { position: absolute; inset: -2px; border-radius: 50%; border: 1px solid rgb(255 214 150 / 0.7); opacity: 0; animation: hw-ring 2.4s ease-out 1.2s infinite; pointer-events: none; }
 .hw-ghost:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .hw-ghost:active .hw-float { transform: scale(0.92); }
 @keyframes hw-glow { 0%, 100% { opacity: 0.55; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.12); } }
 @keyframes hw-ring { 0% { opacity: 0.8; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.7); } }
-@media (prefers-reduced-motion: reduce) { .hw-ghost::before, .hw-ghost::after { animation: none; } .hw-ghost::before { opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) { .hw-glow, .hw-ring { animation: none; } .hw-glow { opacity: 0.8; } }
 .hw-pumpkin {
   position: absolute; z-index: 2; left: -26px; top: calc(100% - 40px); width: 72px; color: var(--gold);
   transform-origin: 50% 100%; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
@@ -62,17 +64,17 @@ html[data-theme="halloween"] .hero::before { content: ""; position: absolute; in
 
 /* 촛불 = 커버 광원. 켜짐(기본) 전환은 재점화용, :has(.out) 전환은 소등용 */
 html[data-theme="halloween"] .hero::before { transition: opacity 520ms cubic-bezier(.2,.7,.3,1) 200ms; }
-.hw-ghost .hw-float { transition: opacity 520ms cubic-bezier(.2,.7,.3,1) 260ms, filter 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
-.hw-ghost::before, .hw-ghost::after { transition: filter 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
+.hw-ghost .hw-float { transition: opacity 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
+.hw-ghost .hw-body > svg, .hw-glow, .hw-ring { transition: filter 520ms cubic-bezier(.2,.7,.3,1) 260ms; }
 :is(.hw-pumpkin, .hw-basket) > svg, .hw-pumpkin::before, .hw-basket::before { transition: opacity 560ms cubic-bezier(.2,.7,.3,1) 320ms; }
 
 html[data-theme="halloween"] .cover:has(.flame.out) .hero::before { transition: opacity 700ms cubic-bezier(.4,0,.2,1) 60ms; }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-float {
-  opacity: .55; filter: drop-shadow(0 0 2px rgb(255 236 200 / .22)) drop-shadow(0 0 10px rgb(255 196 120 / 0));
-  transition: opacity 700ms cubic-bezier(.4,0,.2,1) 120ms, filter 700ms cubic-bezier(.4,0,.2,1) 120ms;
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-float { opacity: .55; transition: opacity 700ms cubic-bezier(.4,0,.2,1) 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-body > svg {
+  filter: drop-shadow(0 0 2px rgb(255 236 200 / .22)) drop-shadow(0 0 10px rgb(255 196 120 / 0)); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms;
 }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow)::before { filter: opacity(.12); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms; }
-html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow)::after { filter: opacity(0); transition: filter 400ms ease-in 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-glow { filter: opacity(.22); transition: filter 700ms cubic-bezier(.4,0,.2,1) 120ms; }
+html[data-theme="halloween"] .cover:has(.flame.out) .hw-ghost:not(.is-follow) .hw-ring { filter: opacity(0); transition: filter 400ms ease-in 120ms; }
 html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket) > svg { opacity: .42; transition: opacity 700ms cubic-bezier(.4,0,.2,1) 220ms; }
 html[data-theme="halloween"] .cover:has(.flame.out) :is(.hw-pumpkin, .hw-basket)::before { opacity: 0; transition: opacity 600ms cubic-bezier(.4,0,.2,1) 220ms; }
 
@@ -175,7 +177,7 @@ html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-
   bottom: calc(12px + env(safe-area-inset-bottom));
   translate: none !important;
 }
-.hw-ghost.is-follow .hw-float > svg { transform-origin: 50% 60%; animation: hw-near 12s 4s infinite; }
+.hw-ghost.is-follow .hw-body { transform-origin: 50% 60%; animation: hw-near 12s 4s infinite; }
 /* 주기적으로 화면 쪽으로 크게 다가왔다가(0.7초) 천천히 물러남(약 2초) */
 @keyframes hw-near {
   0%, 72% { transform: none; animation-timing-function: cubic-bezier(.2,.7,.3,1); }
