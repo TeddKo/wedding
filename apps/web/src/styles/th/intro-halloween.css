@@ -1,40 +1,79 @@
-/* th/intro-halloween: 왁스 씰 CTA, 고딕 칩, 두 짝 문 진입 */
+/* th/intro-halloween: 밤빛 봉투 뒷면 + 왁스 씰(박쥐 날개 하트) CTA, 씰이 통째로 떼어져 떠오르며 덮개가 열리고 유령이 커버로 이동 */
 html[data-theme="halloween"] { --ig-gold: #b08d57; --ig-gold-rgb: 176 141 87; --ig-press: 0.975; }
+html[data-theme="halloween"] .gate { --ink: var(--on-night); --ink-2: var(--on-night); --ink-3: var(--on-night-2); --accent: var(--gold); --accent-text: var(--gold); --accent-rgb: var(--gold-rgb); --line: rgb(var(--gold-rgb) / 0.32); --bg: var(--night); color: var(--on-night); }
 
-.ig-halloween { position: absolute; inset: 0; }
-.ig-door { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--paper), var(--bg); will-change: transform; }
-.ig-door-l { left: 0; }
-.ig-door-r { right: 0; background-position: calc(-1 * 50cqw) 0, 0 0; }
-.ig-door svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; }
-.ig-door path { stroke: rgb(var(--ig-gold-rgb) / 0.26); stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.ig-door-r svg { transform: scaleX(-1); }
-.ig-seam { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; background: linear-gradient(transparent, var(--ig-gold) 16%, var(--ig-gold) 84%, transparent); transform: scaleY(0); opacity: 0; }
-.ig-ember { position: absolute; left: 50%; top: var(--y); width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: #e0904a; opacity: 0; }
-.ig-ember:nth-of-type(odd) { --dx: -5px; }
-.ig-ember:nth-of-type(even) { --dx: 5px; }
-
-html[data-theme="halloween"] .gate.leaving .ig-door { transition: transform calc(var(--ig-total) - 500ms) var(--e-ink) 300ms; }
-html[data-theme="halloween"] .gate.leaving .ig-door-l { transform: translateX(-101%); }
-html[data-theme="halloween"] .gate.leaving .ig-door-r { transform: translateX(101%); }
-html[data-theme="halloween"] .gate.leaving .ig-seam { animation: ig-seam-in 300ms var(--e-io) 200ms both, ig-seam-out 400ms linear 700ms both; }
-html[data-theme="halloween"] .gate.leaving .ig-ember { animation: ig-ember 600ms var(--e-out) calc(var(--ig-lift) + var(--d)) both; }
-@keyframes ig-seam-in { from { opacity: 0; transform: scaleY(0); } 20% { opacity: 1; } to { opacity: 1; transform: scaleY(1); } }
-@keyframes ig-seam-out { to { opacity: 0; } }
-@keyframes ig-ember { 0% { opacity: 0; transform: translate(0, 0); } 35% { opacity: 0.7; } 100% { opacity: 0; transform: translate(var(--dx), -26px); } }
-
-/* CTA: 왁스 씰 라벨 */
-.ig-face-h { width: 168px; height: 52px; color: #fbf3e8; filter: drop-shadow(0 8px 9px rgb(80 30 10 / 0.26)) drop-shadow(0 0 0.5px rgb(60 25 10 / 0.6)); transition: filter 120ms var(--e-out); }
-.ig-face-h > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ig-face-h > svg path { fill: url(#ig-wax); stroke: rgb(255 255 255 / 0.16); stroke-width: 1px; }
-.ig-face-h .ig-lbl { padding-top: 6px; font: 600 14px/1 var(--f-name); letter-spacing: 0.12em; padding-left: 0.12em; text-shadow: 0 -1px 0 rgb(60 20 5 / 0.4); }
-.ig-flame { width: 8px; height: 12px; margin: -2px 9px 0 0; fill: #f0b36a; transform-origin: 50% 100%; }
-@media (hover: hover) { .ig-cta:hover .ig-face-h { filter: brightness(1.05) drop-shadow(0 8px 9px rgb(80 30 10 / 0.26)) drop-shadow(0 0 0.5px rgb(60 25 10 / 0.6)); } .ig-cta:hover .ig-flame { transform: scale(1.15); } }
-@media (prefers-reduced-motion: no-preference) {
-  .ig-flame { animation: ig-flick 3s ease-in-out infinite; transition: transform 120ms var(--e-out); }
-  html[data-theme="halloween"] .gate.leaving .ig-flame { animation: ig-ignite 120ms var(--e-out) both; }
+/* 봉투 */
+.ig-halloween {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 70% at 50% 40%, rgb(224 144 74 / 0.12), transparent 70%), var(--paper), linear-gradient(var(--night), var(--night-2));
 }
-@keyframes ig-flick { 0%, 100% { opacity: 0.85; transform: scaleY(0.94); } 40% { opacity: 1; transform: scaleY(1.04); } 70% { opacity: 0.9; transform: scaleY(0.97); } }
-@keyframes ig-ignite { from { opacity: 0.6; transform: scale(1); } to { opacity: 1; transform: scale(1.2); } }
+.ig-halloween > * { position: absolute; }
+.ig-in { inset: 0; background: radial-gradient(70% 55% at 50% 45%, rgb(255 206 140 / 0.55), rgb(224 144 74 / 0.18) 55%, transparent); opacity: 0; }
+.ig-sides, .ig-hflapw { inset: 0; }
+.ig-sides { filter: drop-shadow(0 0 0.5px rgb(var(--gold-rgb) / 0.5)); }
+.ig-side, .ig-hflap { position: absolute; inset: 0; }
+.ig-side { background: var(--paper), linear-gradient(#251d18, #211a15); }
+.ig-side-l { clip-path: polygon(0 0, 50% var(--seal-y, 72%), 0 100%); }
+.ig-side-r { clip-path: polygon(100% 0, 50% var(--seal-y, 72%), 100% 100%); }
+.ig-hflapw { transform-origin: 50% 0; filter: drop-shadow(0 0 0.5px rgb(var(--gold-rgb) / 0.6)) drop-shadow(0 6px 8px rgb(0 0 0 / 0.5)); }
+.ig-hflap { clip-path: polygon(0 0, 100% 0, 50% var(--seal-y, 72%)); background: var(--paper), linear-gradient(#2a211b, #241c17); }
+.ig-frame { inset: 14px; border: 1px solid rgb(var(--gold-rgb) / 0.3); }
+.ig-frame::after { content: ""; position: absolute; inset: 4px; border: 1px solid rgb(var(--gold-rgb) / 0.15); }
+.ig-moon { top: 56px; left: 30px; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset -7px -3px 0 0 #e8d9b0, 0 0 14px rgb(232 217 176 / 0.35); transform: rotate(-20deg); }
+.ig-bat { fill: rgb(var(--gold-rgb) / 0.55); transform-box: fill-box; transform-origin: center; }
+.ig-bat-1 { top: 70px; right: 40px; width: 26px; }
+.ig-bat-2 { top: 108px; right: 76px; width: 18px; fill: rgb(0 0 0 / 0.5); }
+@media (prefers-reduced-motion: no-preference) {
+  .ig-bat-1 { animation: ig-bat-flap 0.9s ease-in-out infinite, ig-bat-drift 7s ease-in-out infinite; }
+  .ig-bat-2 { animation: ig-bat-flap 1.1s ease-in-out 0.3s infinite, ig-bat-drift 9s ease-in-out 1s infinite reverse; }
+}
+@keyframes ig-bat-flap { 0%, 100% { scale: 1 1; } 50% { scale: 1 0.55; } }
+@keyframes ig-bat-drift { 0%, 100% { translate: 0 0; } 50% { translate: -10px 6px; } }
+
+/* 유령 엠블럼: 커버 유령과 동일 그림 */
+.ig-ghost, .ig-fly { display: block; width: 40px; color: #2b2420; }
+.ig-ghost svg, .ig-fly svg { display: block; width: 100%; height: auto; }
+.ig-ghost svg > path:first-child, .ig-fly svg > path:first-child { fill: #fffaf0; }
+.ig-ghost .hw-body > svg, .ig-fly .hw-body > svg { filter: drop-shadow(0 0 3px rgb(255 236 200 / 0.95)) drop-shadow(0 0 10px rgb(255 196 120 / 0.8)); }
+.ig-fly { position: fixed; z-index: 101; pointer-events: none; }
+html.js.hw-handoff .hw-ghost.fx-ghost { animation: none; transform: none; }
+@media (prefers-reduced-motion: no-preference) { .ig-ghost { animation: hw-float 6s ease-in-out infinite; } }
+
+/* CTA: 왁스 씰 */
+.ig-face-h { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ig-seal { position: relative; width: 96px; height: 96px; overflow: visible; filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.55)); transition: filter 120ms var(--e-out); }
+.ig-face-h .ig-lbl { font: 600 13px/1 var(--f-name); letter-spacing: 0.2em; padding-left: 0.2em; color: var(--gold); }
+.ig-seal-glow { position: absolute; top: -22px; left: 50%; width: 140px; height: 140px; margin-left: -70px; border-radius: 50%; background: radial-gradient(closest-side, rgb(224 120 74 / 0.4), transparent); }
+@media (hover: hover) { .ig-cta:hover .ig-seal { filter: brightness(1.12) drop-shadow(0 8px 10px rgb(0 0 0 / 0.55)); transform: translateY(-1px); } }
+@media (prefers-reduced-motion: no-preference) {
+  .ig-seal-glow { animation: ig-seal-pulse 2.6s ease-in-out infinite; }
+}
+@keyframes ig-seal-pulse { 0%, 100% { opacity: 0.45; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* 열림 시퀀스: 씰 유지, 라벨·칩만 빠르게 사라짐 */
+html[data-theme="halloween"] .gate.leaving > .bottom { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme="halloween"] .gate.leaving .ig-face-h .ig-lbl, html[data-theme="halloween"] .gate.leaving .ig-pick { opacity: 0; transition: opacity 200ms var(--e-out); }
+  html[data-theme="halloween"] .gate.leaving .ig-seal { transform-origin: center; animation: ig-peel 900ms cubic-bezier(.4, 0, .6, 1) both; }
+  html[data-theme="halloween"] .gate.leaving .ig-motif { transform-box: fill-box; transform-origin: center; animation: ig-beat 480ms ease-in-out 100ms both; }
+  html[data-theme="halloween"] .gate.leaving .ig-seal-glow { animation: ig-seal-beat 900ms ease-out both; }
+  html[data-theme="halloween"] .gate.leaving .ig-hflapw { animation: ig-flap-open 620ms cubic-bezier(.4, 0, .2, 1) 480ms both; }
+  html[data-theme="halloween"] .gate.leaving .ig-in { animation: ig-in 320ms linear 640ms both; }
+  html[data-theme="halloween"] .gate.leaving :is(.ig-frame, .ig-moon, .ig-bat) { animation: ig-fade-out 300ms linear both; }
+  html[data-theme="halloween"] .gate.leaving .ig-halloween { animation: ig-fade-out 500ms linear var(--ig-lift) both; }
+}
+@keyframes ig-peel {
+  0% { transform: scale(1); }
+  10% { transform: scale(0.94); }
+  18%, 55% { transform: scale(1); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.55)); }
+  75% { transform: translateY(-10px) scale(1.12) rotate(-6deg); filter: drop-shadow(0 16px 14px rgb(0 0 0 / 0.5)); opacity: 1; }
+  100% { transform: translateY(-46px) scale(1.18) rotate(-10deg); filter: drop-shadow(0 22px 18px rgb(0 0 0 / 0.4)); opacity: 0; }
+}
+@keyframes ig-beat { 0% { transform: scale(1); } 18% { transform: scale(1.14); } 36% { transform: scale(1); } 54% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes ig-seal-beat { 0% { opacity: 0.5; transform: scale(0.9); } 11% { opacity: 0.6; transform: scale(0.9); } 29% { opacity: 1; transform: scale(1.3); } 47% { opacity: 0.6; transform: scale(0.95); } 65% { opacity: 1; transform: scale(1.25); } 100% { opacity: 0; transform: scale(1.1); } }
+@keyframes ig-flap-open { 0% { transform: perspective(1200px) rotateX(0); opacity: 1; } 75% { opacity: 1; } 100% { transform: perspective(1200px) rotateX(-178deg); opacity: 0; } }
+@keyframes ig-in { to { opacity: 1; } }
+@keyframes ig-fade-out { to { opacity: 0; } }
 
 /* 칩: 이중 금빛 링 */
 html[data-theme="halloween"] .ig-sw { border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.3); }

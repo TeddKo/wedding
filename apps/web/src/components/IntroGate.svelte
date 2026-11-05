@@ -5,7 +5,10 @@
   import { playBgm } from "../scripts/audio";
   import { reduced } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
-  import { ENTRY, loadDev } from "./intro/entry";
+  import { ENTRY, loadDev, loadHalloween } from "./intro/entry";
+  import Seal from "./intro/Seal.svelte";
+  import { BAT } from "./art/halloween/bat";
+  import ghost from "../assets/illus/halloween/ghost-peek.svg?raw";
   import Picker from "./intro/Picker.svelte";
 
   let { groom, bride, date }: { groom: string; bride: string; date: string } = $props();
@@ -33,7 +36,20 @@
     openBtn?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
     /* dev 연출 모듈은 마운트 즉시 미리 받아 클릭 직후 지연 방지 */
     void loadDev();
-    return () => timers.forEach(clearTimeout);
+    void loadHalloween();
+    /* 접이 선이 인장 중심에서 만나도록 인장 중심 y 를 게이트 변수로 전달 */
+    const seal = gate?.querySelector(".ig-seal");
+    const place = () => {
+      const r = seal?.getBoundingClientRect();
+      if (r?.height) gate?.style.setProperty("--seal-y", `${(r.top + r.height / 2).toFixed(1)}px`);
+    };
+    const ro = new ResizeObserver(place);
+    if (gate) ro.observe(gate);
+    if (seal) ro.observe(seal);
+    return () => {
+      timers.forEach(clearTimeout);
+      ro.disconnect();
+    };
   });
 
   /**
@@ -75,10 +91,13 @@
   <div bind:this={gate} class="gate" class:leaving role="dialog" aria-modal="true" aria-label="청첩장 인트로">
     <div class="ig-bg" aria-hidden="true">
       <div class="ig-halloween" data-th="halloween">
-        <i class="ig-door ig-door-l"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 100V56C0 30 52 14 100 3" /><path pathLength="1" d="M16 100V62C16 42 58 28 100 15" /></svg></i>
-        <i class="ig-door ig-door-r"><svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><path pathLength="1" d="M0 100V56C0 30 52 14 100 3" /><path pathLength="1" d="M16 100V62C16 42 58 28 100 15" /></svg></i>
-        <i class="ig-seam"></i>
-        <i class="ig-ember" style:--y="38%" style:--d="0ms"></i><i class="ig-ember" style:--y="46%" style:--d="70ms"></i><i class="ig-ember" style:--y="52%" style:--d="140ms"></i><i class="ig-ember" style:--y="58%" style:--d="210ms"></i><i class="ig-ember" style:--y="66%" style:--d="280ms"></i>
+        <i class="ig-in"></i>
+        <i class="ig-sides"><i class="ig-side ig-side-l"></i><i class="ig-side ig-side-r"></i></i>
+        <i class="ig-hflapw"><i class="ig-hflap"></i></i>
+        <i class="ig-frame"></i>
+        <i class="ig-moon"></i>
+        <svg class="ig-bat ig-bat-1" viewBox="0 0 40 14" focusable="false"><path d={BAT} /></svg>
+        <svg class="ig-bat ig-bat-2" viewBox="0 0 40 14" focusable="false"><path d={BAT} /></svg>
       </div>
       <div class="ig-puppy" data-th="puppy">
         <i class="ig-body"></i>
@@ -91,7 +110,7 @@
       <i class="ig-scan" data-th="dev"></i>
     </div>
     <div class="mid">
-      <div class="intro-emblem" data-th="halloween" aria-hidden="true"><svg viewBox="0 0 40 46" width="40" height="46" focusable="false"><path d="M6 43V19C6 9 12 4 20 4s14 5 14 15v24l-5-4-4 4-5-4-5 4-4-4Z" fill="#fbf8f3" stroke="#2b2420" stroke-width="1.400" stroke-linejoin="round"/><ellipse cx="15" cy="20" rx="1.600" ry="2.200" fill="#2b2420"/><ellipse cx="25" cy="20" rx="1.600" ry="2.200" fill="#2b2420"/></svg></div>
+      <div class="intro-emblem" data-th="halloween" aria-hidden="true"><span class="ig-ghost"><span class="hw-body"><i class="hw-glow"></i>{@html ghost}</span></span></div>
       <div class="intro-emblem" data-th="puppy" aria-hidden="true"><svg viewBox="0 0 52 30" width="52" height="30" focusable="false"><g transform="translate(4 8) rotate(-14 8 8) scale(0.667)"><g class="e1" fill="#b27085" opacity="0.55"><ellipse cx="12" cy="16.500" rx="5.800" ry="4.600"/><ellipse cx="4.800" cy="11" rx="2.200" ry="2.900" transform="rotate(-22 4.800 11)"/><ellipse cx="9.200" cy="5.800" rx="2.300" ry="3"/><ellipse cx="14.800" cy="5.800" rx="2.300" ry="3"/><ellipse cx="19.200" cy="11" rx="2.200" ry="2.900" transform="rotate(22 19.200 11)"/></g></g><g transform="translate(30 0) rotate(12 8 8) scale(0.667)"><g class="e2" fill="#b27085" opacity="0.55"><ellipse cx="12" cy="16.500" rx="5.800" ry="4.600"/><ellipse cx="4.800" cy="11" rx="2.200" ry="2.900" transform="rotate(-22 4.800 11)"/><ellipse cx="9.200" cy="5.800" rx="2.300" ry="3"/><ellipse cx="14.800" cy="5.800" rx="2.300" ry="3"/><ellipse cx="19.200" cy="11" rx="2.200" ry="2.900" transform="rotate(22 19.200 11)"/></g></g></svg></div>
       <div class="intro-emblem" data-th="dev" aria-hidden="true"><i class="ie-node"></i><span class="ie-label">HEAD -> main</span></div>
       <p class="eyebrow"><span class="mi">Wedding Invitation</span></p>
@@ -104,10 +123,7 @@
     </div>
     <div class="bottom">
       <button bind:this={openBtn} type="button" class="ig-cta" onclick={openGate} aria-label="초대장 열기">
-        <span class="ig-face ig-face-h" data-th="halloween" aria-hidden="true">
-          <svg viewBox="0 0 168 52" focusable="false"><defs><linearGradient id="ig-wax" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a95b34" /><stop offset="1" stop-color="#86391a" /></linearGradient></defs><path d="M8 9H62L84 1L106 9H160Q168 9 168 17V44Q168 52 160 52H8Q0 52 0 44V17Q0 9 8 9Z" /></svg>
-          <span class="ig-lbl"><svg class="ig-flame" viewBox="0 0 8 12" focusable="false"><path d="M4 0C5 3.500 8 5.500 8 8.200 8 10.400 6.200 12 4 12S0 10.400 0 8.200C0 6.300 1.200 5.400 2 4c.4 1 .8 1.400 1.300 1.600C3.100 3.800 3.400 1.800 4 0Z" /></svg>초대장 열기</span>
-        </span>
+        <span class="ig-face ig-face-h" data-th="halloween" aria-hidden="true"><i class="ig-seal-glow"></i><Seal /><span class="ig-lbl">초대장 열기</span></span>
         <span class="ig-face ig-face-p" data-th="puppy" aria-hidden="true">
           <i class="ig-str ig-str-l"></i><i class="ig-str ig-str-r"></i>
           <span class="ig-tag"><svg viewBox="0 0 172 54" focusable="false"><path d="M27 1H171L157 27L171 53H27A26 26 0 0 1 27 1Z" /></svg><span class="ig-lbl"><i class="ig-dot"></i>초대장 열기</span></span>
