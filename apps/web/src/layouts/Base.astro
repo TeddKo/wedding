@@ -72,7 +72,9 @@ const colors = Object.fromEntries(THEME_NAMES.map((k) => [k, THEMES[k].color]));
     <div class="fabs" id="dock">
       {THEME_NAMES.length > 1 && <ThemeSwitch client:idle />}
       <button type="button" class="fab bgm-toggle" id="bgm-toggle" aria-label="배경음악 켜기" aria-pressed="false" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS.music} /></svg>
+        <svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5Z" /></svg>
+        <span class="ic-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="bgm-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d={ICONS.music} /></svg></span>
       </button>
     </div>
     <button type="button" class="to-top" id="to-top" aria-label="맨 위로" tabindex="-1">
