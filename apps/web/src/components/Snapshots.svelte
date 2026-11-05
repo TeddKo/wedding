@@ -126,6 +126,16 @@
   const GRID_PAGE = 18;
   const pages = $derived(Array.from({ length: Math.ceil(photos.length / GRID_PAGE) }, (_, k) => photos.slice(k * GRID_PAGE, (k + 1) * GRID_PAGE)));
   const pageN = $derived(Math.ceil(count / GRID_PAGE));
+  /** 하단 인디케이터: 최대 7개 점 창, 현재 위치는 캡슐. 창 밖으로 이어지는 쪽 끝 점은 작게 */
+  const DOT_VIS = 7;
+  const DOT_W = 16;
+  const dotN = $derived(grid ? pageN : count);
+  const dotStart = $derived(Math.max(0, Math.min(cur - 3, dotN - DOT_VIS)));
+  const dotKind = (i: number) =>
+    i === cur ? "on"
+    : i < dotStart || i >= dotStart + DOT_VIS ? "out"
+    : (i === dotStart && i > 0) || (i === dotStart + DOT_VIS - 1 && i < dotN - 1) ? "edge"
+    : "";
   let mineIds = $state<string[]>([]);
   const need = (i: number) => {
     const p = photos[i];
@@ -526,10 +536,12 @@
           {/if}
           {#if cursor !== null}<li class="sent" class:busy={moreBusy} bind:this={sentinel} aria-hidden="true"></li>{/if}
         </ul>
-        {#if grid && pageN <= 1}
-          <p class="count latin" aria-hidden="true">{count}장</p>
-        {:else}
-          <p class="count latin" aria-hidden="true">{cur + 1} / {grid ? pageN : count}</p>
+        {#if dotN > 1}
+          <div class="dots" aria-hidden="true">
+            <span class="dots-strip" style:transform="translateX({dotN <= DOT_VIS ? ((DOT_VIS - dotN) * DOT_W) / 2 : -dotStart * DOT_W}px)">
+              {#each { length: dotN } as _, i (i)}<i class="dot {dotKind(i)}"></i>{/each}
+            </span>
+          </div>
           <p class="sr" role="status" aria-live="polite">{live}</p>
         {/if}
         {#if moreFailed}
@@ -619,7 +631,17 @@
   .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .sent { flex: 0 0 1px; }
   .sent.busy { border-radius: 10px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
-  .count { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .dots { width: 112px; height: 6px; margin: 18px auto 0; overflow: hidden; }
+  .dots-strip { display: flex; transition: transform 360ms cubic-bezier(0.2, 0.7, 0.3, 1); }
+  .dot { position: relative; flex: 0 0 16px; height: 6px; }
+  .dot::before {
+    content: ""; position: absolute; top: 0; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 3px; background: var(--ink-3); opacity: 0.4;
+    transition: width 360ms cubic-bezier(0.2, 0.7, 0.3, 1), margin-left 360ms cubic-bezier(0.2, 0.7, 0.3, 1), background-color 240ms ease, opacity 240ms ease, transform 240ms ease;
+  }
+  .dot.on::before { width: 16px; margin-left: -8px; background: var(--accent); opacity: 1; }
+  .dot.edge::before { transform: scale(0.6); }
+  .dot.out::before { transform: scale(0.3); opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .dots-strip, .dot::before { transition: none; } }
   /* 그리드: 페이지(최대 6열 × 3행) 단위 가로 스와이프, 컨테이너 너비 그대로 */
   .track.grid { align-items: start; border-radius: 0; }
   .pg { flex: 0 0 100%; scroll-snap-align: start; }
