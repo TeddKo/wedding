@@ -47,7 +47,7 @@ const timeText = `${H < 12 ? "AM" : "PM"} ${H % 12 || 12}:${String(MIN).padStart
   </div>
   <p class="credits">
     <span>© Made by TeddKo</span>
-    {hasMusic && <span>{wedding.musicCredit}</span>}
+    {hasMusic && wedding.musicCredit && <span>{wedding.musicCredit}</span>}
   </p>
 </footer>
 

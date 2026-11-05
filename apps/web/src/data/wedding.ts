@@ -100,6 +100,6 @@ export const wedding = {
     /** "링크 복사" 버튼이 복사하는 주소(단축 URL). 비우면 페이지 주소 */
     copyUrl: "https://url.kr/1hud9d",
   },
-  // public/audio/bgm.mp3 가 있을 때만 푸터에 표시
-  musicCredit: "Music: Candlelit Vows (generated with Suno)",
+  // public/audio/bgm.mp3 가 있고 값이 있을 때만 푸터 표시, 비우면 미표시
+  musicCredit: "",
 };

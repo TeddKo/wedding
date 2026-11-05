@@ -78,7 +78,7 @@ corepack pnpm build      # astro check + astro build -> apps/web/dist/
 | `poll.question` | 투표 질문. 비면 섹션 숨김. 항목은 하객이 직접 추가 |
 | `kakaoJsKey` | `PUBLIC_KAKAO_JS_KEY` 주입값. REST 키와 네이티브 키는 프런트 사용 금지 |
 | `share` | 카카오 공유 제목과 설명, `copyUrl`(링크 복사 버튼이 복사하는 단축 주소, 비면 페이지 주소) |
-| `musicCredit` | 배경음악 출처. 트랙이 있을 때만 푸터 표시 |
+| `musicCredit` | 배경음악 출처 문구. 트랙이 있고 값이 있을 때만 푸터 표시, 출처 표기 의무가 없으면 빈 값 |
 
 ### 사진
 
@@ -90,7 +90,7 @@ corepack pnpm build      # astro check + astro build -> apps/web/dist/
 
 1. `public/audio/bgm.mp3` 배치 (없으면 음소거 버튼도 숨김)
 2. 같은 폴더 `LICENSE.txt` 에 출처 기록
-3. `musicCredit` 값 맞춤
+3. 출처 표기가 필요한 음원이면 `musicCredit` 값 입력, 아니면 빈 값 유지
 
 ## 테마 정책
 
