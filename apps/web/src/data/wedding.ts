@@ -101,5 +101,5 @@ export const wedding = {
     copyUrl: "https://url.kr/1hud9d",
   },
   // public/audio/bgm.mp3 가 있을 때만 푸터에 표시
-  musicCredit: "Music: generated with Suno",
+  musicCredit: "Music: Candlelit Vows (generated with Suno)",
 };
