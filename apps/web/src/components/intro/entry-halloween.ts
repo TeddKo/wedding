@@ -1,8 +1,5 @@
 import type { EntryCtx } from "./entry";
 
-const IN = "cubic-bezier(0.5, 0, 0.75, 0)";
-const OUT = "cubic-bezier(0.2, 0.7, 0.3, 1)";
-
 /**
  * halloween 진입: 인트로 유령이 봉투 안쪽으로 들어갔다가 커버 유령 자리(아치 우상단)로 날아가 실제 유령과 교체됨.
  * 날아가는 복제본은 body 에 두어 게이트 제거와 무관하게 끝까지 진행.
@@ -32,15 +29,17 @@ export default async function run({ gate }: EntryCtx): Promise<void> {
   const iy = (env ? env.top + env.height * 0.35 : innerHeight * 0.6) - acy;
   const inner = `translate(${ix}px, ${iy}px) scale(0.22) rotate(8deg)`;
   try {
+    /* 들어가기: 살짝 떠올랐다가 봉투 안으로 감속하며 사라짐(속도 0 에 가깝게 도착해 방향 전환이 보이지 않음) */
     await fly.animate(
       [
-        { transform: "none", opacity: 1 },
-        { transform: "translateY(-10px) scale(1.08)", opacity: 1, offset: 0.2 },
-        { transform: inner, opacity: 0.25 },
+        { transform: "none", opacity: 1, easing: "cubic-bezier(0.3, 0, 0.3, 1)" },
+        { transform: "translateY(-10px) scale(1.08)", opacity: 1, offset: 0.2, easing: "cubic-bezier(0.55, 0, 0.35, 1)" },
+        { transform: inner, opacity: 0 },
       ],
-      { delay: 1300, duration: 1000, easing: IN, fill: "forwards" },
+      { delay: 1300, duration: 1000, fill: "forwards" },
     ).finished;
 
+    /* 나오기: 봉투 안에서 천천히 출발해 호를 그리며 커버 유령 자리에 감속 착지 */
     const b = dst.getBoundingClientRect();
     const s = b.width / a.width;
     const ex = b.left + b.width / 2 - acx;
@@ -49,14 +48,20 @@ export default async function run({ gate }: EntryCtx): Promise<void> {
     const my = iy + (ey - iy) * 0.6 - 56;
     await fly.animate(
       [
-        { transform: inner, opacity: 0.25 },
-        { transform: `translate(${mx}px, ${my}px) scale(${s * 1.25}) rotate(-6deg)`, opacity: 1, offset: 0.6 },
+        { transform: inner, opacity: 0, easing: "cubic-bezier(0.45, 0, 0.3, 1)" },
+        { transform: `translate(${mx}px, ${my}px) scale(${s * 1.25}) rotate(-6deg)`, opacity: 1, offset: 0.6, easing: "cubic-bezier(0.3, 0.4, 0.3, 1)" },
         { transform: `translate(${ex}px, ${ey}px) scale(${s}) rotate(0deg)`, opacity: 1 },
       ],
-      { duration: 1400, easing: OUT, fill: "forwards" },
+      { delay: 120, duration: 1300, fill: "forwards" },
     ).finished;
+
+    /* 교대: 실제 유령(떠다니는 위상·후광 차이 포함)과 짧게 교차 페이드해 순간 교체 티 제거 */
+    real.style.transition = "opacity 280ms ease";
+    real.style.opacity = "";
+    await fly.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, fill: "forwards" }).finished;
   } finally {
     real.style.opacity = "";
+    real.style.transition = "";
     fly.remove();
   }
 }
