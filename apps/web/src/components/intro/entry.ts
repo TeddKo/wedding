@@ -15,7 +15,7 @@ export const loadHalloween = () => import("./entry-halloween");
 
 /** 테마별 진입 타이밍의 단일 출처. lift/total 은 게이트에 --ig-lift/--ig-total 로도 내려가 CSS 지속시간 생성 */
 export const ENTRY: Record<ThemeName, Entry> = {
-  halloween: { lift: 1000, total: 2100, run: async (ctx) => (await loadHalloween()).default(ctx) },
+  halloween: { lift: 2500, total: 3900, run: async (ctx) => (await loadHalloween()).default(ctx) },
   puppy: { lift: 380, total: 1250 },
   dev: { lift: 900, total: 1600, run: async (ctx) => (await loadDev()).default(ctx) },
 };

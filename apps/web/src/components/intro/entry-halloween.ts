@@ -37,7 +37,7 @@ export default async function run({ gate }: EntryCtx): Promise<void> {
         { transform: "translateY(-10px) scale(1.08)", opacity: 1, offset: 0.2 },
         { transform: inner, opacity: 0.25 },
       ],
-      { delay: 420, duration: 620, easing: IN, fill: "forwards" },
+      { delay: 1300, duration: 1000, easing: IN, fill: "forwards" },
     ).finished;
 
     const b = dst.getBoundingClientRect();
@@ -52,7 +52,7 @@ export default async function run({ gate }: EntryCtx): Promise<void> {
         { transform: `translate(${mx}px, ${my}px) scale(${s * 1.25}) rotate(-6deg)`, opacity: 1, offset: 0.6 },
         { transform: `translate(${ex}px, ${ey}px) scale(${s}) rotate(0deg)`, opacity: 1 },
       ],
-      { duration: 900, easing: OUT, fill: "forwards" },
+      { duration: 1400, easing: OUT, fill: "forwards" },
     ).finished;
   } finally {
     real.style.opacity = "";
