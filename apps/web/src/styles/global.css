@@ -225,7 +225,10 @@ html.gated .to-top, html:not(.has-js) .to-top { display: none; }
 .fab svg { width: 22px; height: 22px; display: block; }
 /* 배경음악 버튼: 정지 시 재생 삼각형, 재생 중 이퀄라이저 막대와 회전 링, 좌상단 음표 배지로 용도 표시 */
 .bgm-toggle::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1px dashed var(--accent); opacity: 0.7; animation: bgm-spin 9s linear infinite; }
-.bgm-toggle .ic-play { display: none; width: 18px; height: 18px; margin-left: 2px; fill: currentColor; }
+.bgm-toggle { transition: transform 180ms var(--e-out, ease-out); }
+.bgm-toggle:active { transform: scale(0.88); }
+.bgm-toggle .ic-play, .bgm-toggle .ic-eq { grid-area: 1 / 1; transition: opacity 240ms ease, transform 320ms cubic-bezier(.34,1.56,.64,1); }
+.bgm-toggle .ic-play { width: 18px; height: 18px; margin-left: 2px; fill: currentColor; opacity: 0; transform: scale(0.4) rotate(-90deg); }
 .bgm-toggle .ic-eq { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
 .bgm-toggle .ic-eq i { width: 3px; height: 100%; border-radius: 2px; background: var(--accent); transform-origin: 50% 100%; animation: bgm-eq 1s ease-in-out infinite; }
 .bgm-toggle .ic-eq i:nth-child(2) { animation-delay: -0.35s; animation-duration: 0.8s; }
@@ -233,14 +236,20 @@ html.gated .to-top, html:not(.has-js) .to-top { display: none; }
 .bgm-toggle .ic-eq i:nth-child(4) { animation-delay: -0.2s; animation-duration: 0.9s; }
 .bgm-badge { position: absolute; left: -5px; top: -5px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--bg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.2); }
 .bgm-badge svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.bgm-toggle.is-off .ic-play { display: block; }
-.bgm-toggle.is-off .ic-eq { display: none; }
+.bgm-toggle::before { transition: opacity 400ms ease; }
+.bgm-badge { transition: transform 240ms ease; }
+.bgm-toggle:not(.is-off) .bgm-badge { animation: bgm-pop 520ms cubic-bezier(.34,1.56,.64,1); }
+.bgm-toggle.is-off .ic-play { opacity: 1; transform: none; }
+.bgm-toggle.is-off .ic-eq { opacity: 0; transform: scale(0.4) rotate(90deg); }
+.bgm-toggle.is-off .ic-eq i { animation-play-state: paused; }
 .bgm-toggle.is-off::before { animation-play-state: paused; opacity: 0.35; }
+@keyframes bgm-pop { 0% { transform: scale(0.5); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
 @keyframes bgm-eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
 @keyframes bgm-spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .bgm-toggle::before, .bgm-toggle .ic-eq i { animation: none; }
+  .bgm-toggle::before, .bgm-toggle .ic-eq i, .bgm-toggle .bgm-badge { animation: none !important; }
+  .bgm-toggle, .bgm-toggle .ic-play, .bgm-toggle .ic-eq { transition: opacity 120ms; transform: none !important; }
   [class*="fx-"], [class*="fx-"] * { animation: none !important; transition: none !important; }
 }

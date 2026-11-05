@@ -69,6 +69,7 @@ export function initAudio(button: HTMLButtonElement | null, src: string) {
   render();
   toggle.addEventListener("click", () => {
     if (!audio) return;
+    toggle?.classList.toggle("is-off", !audio.paused);
     if (audio.paused) void start();
     else {
       store("off");

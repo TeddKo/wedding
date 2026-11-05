@@ -185,8 +185,9 @@ html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-
 }
 html:has(#dock .fab:not([hidden])) .hw-ghost.is-follow { bottom: calc(70px + env(safe-area-inset-bottom)); }
 html:has(:is(input, textarea, select):focus) .hw-ghost.is-follow { opacity: 0; pointer-events: none; }
-.hw-hint {
-  position: absolute; right: 70%; bottom: 88%; padding: 4px 10px; border-radius: 12px 12px 2px 12px; white-space: nowrap; pointer-events: none;
+.hw-hint { position: fixed; left: 0; top: 0; z-index: 70; max-width: calc(100vw - 16px); pointer-events: none; will-change: transform; }
+.hw-hint > span {
+  display: block; padding: 4px 10px; border-radius: 12px 12px 2px 12px; white-space: nowrap;
   background: rgb(28 23 20 / .92); border: 1px solid rgb(var(--gold-rgb) / .55); color: var(--on-night); font: 400 13px/1.4 var(--f-body);
   transform-origin: 100% 100%; animation: hw-hint 3.2s var(--e-out) forwards;
 }

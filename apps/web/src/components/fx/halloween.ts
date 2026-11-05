@@ -59,10 +59,18 @@ export function start(ctx: { first: boolean }): () => void {
     let an: Animation | undefined;
     let roam: Animation | undefined;
     const ht: number[] = [];
+    let raf = 0;
+    let bubble: HTMLElement | undefined;
     const clearHints = () => {
       ht.splice(0).forEach(clearTimeout);
-      ghost.querySelector(".hw-hint")?.remove();
+      dropBubble();
     };
+    const dropBubble = () => {
+      cancelAnimationFrame(raf);
+      bubble?.remove();
+      bubble = undefined;
+    };
+    /* 말풍선은 body 직속 fixed: 유령 버튼의 transform(확대·이동)을 상속하지 않고 매 프레임 유령 시각 위치(.hw-float svg 의 rect)만 추적. 표시 중에만 rAF 구동 */
     const hint = (delay: number) => {
       ht.push(
         window.setTimeout(() => {
@@ -70,11 +78,26 @@ export function start(ctx: { first: boolean }): () => void {
           const b = document.createElement("span");
           b.className = "hw-hint";
           b.setAttribute("aria-hidden", "true");
-          b.textContent = HINTS[hinted++ % HINTS.length];
-          ghost.append(b);
+          const inner = document.createElement("span");
+          inner.textContent = HINTS[hinted++ % HINTS.length];
+          b.append(inner);
+          document.body.append(b);
+          bubble = b;
+          const art = ghost.querySelector(".hw-float svg") ?? ghost;
+          const w = b.offsetWidth;
+          const h = b.offsetHeight;
+          const track = () => {
+            const r = art.getBoundingClientRect();
+            const vw = document.documentElement.clientWidth;
+            const x = Math.min(Math.max(8, r.left + r.width * 0.4 - w), vw - w - 8);
+            const y = Math.max(8, r.top + r.height * 0.12 - h);
+            b.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+            raf = requestAnimationFrame(track);
+          };
+          track();
           ht.push(
             window.setTimeout(() => {
-              b.remove();
+              dropBubble();
               hint(tapped ? 30000 : 14000);
             }, 3200),
           );
@@ -91,7 +114,7 @@ export function start(ctx: { first: boolean }): () => void {
       const from = getComputedStyle(ghost).transform;
       an?.cancel();
       roam?.cancel();
-      ghost.querySelector(".hw-hint")?.remove();
+      dropBubble();
       if (on) {
         ghost.classList.add("is-follow");
         const now = performance.now();
