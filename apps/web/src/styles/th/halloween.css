@@ -183,7 +183,7 @@ html[data-theme="halloween"] { scroll-padding-bottom: calc(84px + env(safe-area-
   94% { transform: scale(.95); animation-timing-function: ease-out; }
   100% { transform: none; }
 }
-html.dock-on:has(#dock .fab:not([hidden])) .hw-ghost.is-follow { bottom: calc(70px + env(safe-area-inset-bottom)); }
+html:has(#dock .fab:not([hidden])) .hw-ghost.is-follow { bottom: calc(70px + env(safe-area-inset-bottom)); }
 html:has(:is(input, textarea, select):focus) .hw-ghost.is-follow { opacity: 0; pointer-events: none; }
 .hw-hint {
   position: absolute; right: 70%; bottom: 88%; padding: 4px 10px; border-radius: 12px 12px 2px 12px; white-space: nowrap; pointer-events: none;
