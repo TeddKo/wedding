@@ -119,10 +119,10 @@
   /** CDN 이미지 로드 실패(r2.dev 429 등) 시 Worker URL 로 1회 재시도 */
   const fallback = (el: HTMLImageElement, url?: string) => url && el.getAttribute("src") !== url && (el.src = url);
   const count = $derived(Math.max(overall, photos.length));
-  /** GRID_MIN 장 이상이면 3열 그리드, 미만이면 한 장씩 가로 스와이프 */
+  /** GRID_MIN 장 이상이면 6열 그리드, 미만이면 한 장씩 가로 스와이프 */
   const GRID_MIN = 9;
   const grid = $derived(count >= GRID_MIN);
-  /** 그리드 한 페이지 최대 3열 × 6행. 18장 이하는 장수만큼 행이 늘고, 넘으면 페이지 단위 가로 스와이프 + 끝 근처에서 다음 묶음 로드 */
+  /** 그리드 한 페이지 최대 6열 × 3행. 18장 이하는 장수만큼 행이 늘고, 넘으면 페이지 단위 가로 스와이프 + 끝 근처에서 다음 묶음 로드 */
   const GRID_PAGE = 18;
   const pages = $derived(Array.from({ length: Math.ceil(photos.length / GRID_PAGE) }, (_, k) => photos.slice(k * GRID_PAGE, (k + 1) * GRID_PAGE)));
   const pageN = $derived(Math.ceil(count / GRID_PAGE));
@@ -620,10 +620,10 @@
   .sent { flex: 0 0 1px; }
   .sent.busy { border-radius: 10px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
   .count { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  /* 그리드: 페이지(최대 3열 × 6행) 단위 가로 스와이프, 컨테이너 너비 그대로 */
+  /* 그리드: 페이지(최대 6열 × 3행) 단위 가로 스와이프, 컨테이너 너비 그대로 */
   .track.grid { align-items: start; border-radius: 0; }
   .pg { flex: 0 0 100%; scroll-snap-align: start; }
-  .pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
   .pgrid .it { aspect-ratio: 4 / 5; scroll-snap-align: none; }
   .pgrid .card { border-radius: 4px; }
   /* 페이지 높이만큼 늘려 감시 영역 확보(높이 0 이면 교차 감지 누락) */
