@@ -119,6 +119,9 @@
   /** CDN 이미지 로드 실패(r2.dev 429 등) 시 Worker URL 로 1회 재시도 */
   const fallback = (el: HTMLImageElement, url?: string) => url && el.getAttribute("src") !== url && (el.src = url);
   const count = $derived(Math.max(overall, photos.length));
+  /** GRID_MIN 장 이상이면 3열 그리드, 미만이면 한 장씩 가로 스와이프 */
+  const GRID_MIN = 9;
+  const grid = $derived(count >= GRID_MIN);
   let mineIds = $state<string[]>([]);
   const need = (i: number) => {
     const p = photos[i];
@@ -155,7 +158,7 @@
     void photos.length;
     void moreBusy;
     if (!sentinel || !track || cursor === null || moreFailed) return;
-    const io = new IntersectionObserver((e) => e[0]?.isIntersecting && void load(false), { root: track, rootMargin: "0px 1500px 0px 0px" });
+    const io = new IntersectionObserver((e) => e[0]?.isIntersecting && void load(false), grid ? { rootMargin: "0px 0px 800px 0px" } : { root: track, rootMargin: "0px 1500px 0px 0px" });
     io.observe(sentinel);
     return () => io.disconnect();
   });
@@ -183,7 +186,7 @@
   }
 
   function onkey(e: KeyboardEvent) {
-    if ((e.key !== "ArrowRight" && e.key !== "ArrowLeft") || (e.target as HTMLElement).closest("input")) return;
+    if (grid || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || (e.target as HTMLElement).closest("input")) return;
     e.preventDefault();
     slide(e.key === "ArrowRight" ? 1 : -1);
   }
@@ -491,8 +494,8 @@
     {:else if photos.length === 0}
       <p class="cap empty">아직 올라온 스냅샷이 없어요. 첫 사진을 남겨 주세요.</p>
     {:else}
-      <div class="car" role="region" aria-roledescription="carousel" aria-label="하객 스냅샷" onkeydown={onkey}>
-        <ul class="track" bind:this={track} {onscroll} tabindex="0" aria-label="스냅샷 목록 (좌우 방향키로 넘기기)">
+      <div class="car" role="region" aria-roledescription={grid ? undefined : "carousel"} aria-label="하객 스냅샷" onkeydown={onkey}>
+        <ul class="track" class:grid bind:this={track} {onscroll} tabindex={grid ? undefined : 0} aria-label={grid ? "스냅샷 목록" : "스냅샷 목록 (좌우 방향키로 넘기기)"}>
           {#each photos as p, i (p.uuid)}
             <li class="it">
               <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
@@ -502,12 +505,12 @@
           {/each}
           {#if cursor !== null}<li class="sent" class:busy={moreBusy} bind:this={sentinel} aria-hidden="true"></li>{/if}
         </ul>
-        <div class="nav">
-          <button type="button" class="arrow" aria-label="이전 사진" disabled={cur <= 0} onclick={() => slide(-1)}>‹</button>
+        {#if grid}
+          <p class="count latin" aria-hidden="true">{count}장</p>
+        {:else}
           <p class="count latin" aria-hidden="true">{cur + 1} / {count}</p>
-          <button type="button" class="arrow" aria-label="다음 사진" disabled={cur >= photos.length - 1 && cursor === null} onclick={() => slide(1)}>›</button>
-        </div>
-        <p class="sr" role="status" aria-live="polite">{live}</p>
+          <p class="sr" role="status" aria-live="polite">{live}</p>
+        {/if}
         {#if moreFailed}
           <p class="cap err-line" role="alert">사진을 더 불러오지 못했어요 · <button type="button" class="act" onclick={() => ((moreFailed = false), load(false))}>다시 시도</button></p>
         {/if}
@@ -592,16 +595,16 @@
   .it, .sent.busy { flex: 0 0 min(68%, 240px); aspect-ratio: 4 / 5; scroll-snap-align: start; }
   .card { display: block; width: 100%; height: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--track); cursor: zoom-in; }
   .card img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .card:focus-visible, .arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .sent { flex: 0 0 1px; }
   .sent.busy { border-radius: 10px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
-  .nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; }
-  .count { margin: 0; min-width: 7ch; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  .arrow {
-    width: 44px; height: 44px; padding: 0 0 3px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
-    font-size: 26px; line-height: 1; cursor: pointer;
-  }
-  .arrow:disabled { opacity: 0.35; cursor: default; }
+  .count { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  /* 그리드: 3열, 컨테이너 너비 그대로 */
+  .track.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; scroll-snap-type: none; border-radius: 0; }
+  .track.grid .it { aspect-ratio: 4 / 5; }
+  .track.grid .card { border-radius: 4px; }
+  .track.grid .sent { grid-column: 1 / -1; height: 1px; }
+  .track.grid .sent.busy { height: 24px; aspect-ratio: auto; border-radius: 4px; }
   .empty { margin: 8px 0; text-align: center; }
   .err-line { margin: 20px 0 0; text-align: center; }
   .skel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
