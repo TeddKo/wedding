@@ -6,10 +6,10 @@
 
 
 <p align="center">
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/01-intro.jpg?v=20261105" width="200" alt="인트로 게이트"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/02-cover.jpg?v=20261105" width="200" alt="커버"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/04-location.jpg?v=20261105" width="200" alt="오시는 길"></a>
-  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/05-poll.jpg?v=20261105" width="200" alt="하객 투표와 방명록"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/01-intro.jpg?v=20261105b" width="200" alt="인트로 게이트"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/02-cover.jpg?v=20261105b" width="200" alt="커버"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/04-location.jpg?v=20261105b" width="200" alt="오시는 길"></a>
+  <a href="https://teddko.github.io/wedding/"><img src="docs/screenshots/05-poll.jpg?v=20261105b" width="200" alt="하객 투표와 방명록"></a>
 </p>
 <p align="center">인트로 · 커버 · 오시는 길 · 투표와 방명록 (모바일 390px, 이미지 클릭 시 데모 사이트 이동)</p>
 
@@ -94,22 +94,23 @@ corepack pnpm build      # astro check + astro build -> apps/web/dist/
 
 ## 테마 정책
 
-- 방문자에게 열린 테마는 `apps/web/src/lib/themes.ts` 의 `THEME_NAMES` 에 있는 키만 해당. 현재 `["halloween"]` 하나라서 테마 전환 버튼과 인트로 선택지는 숨김
+- 방문자에게 열린 테마는 `apps/web/src/lib/themes.ts` 의 `THEME_NAMES` 에 있는 키만 해당. 현재 `["halloween"]` 하나라서 테마 전환 버튼은 숨김(인트로 테마 선택지는 제거)
 - `dev` (프로그래머), `puppy` (강아지) 코드와 토큰은 유지 중
-- 다시 열기: `THEME_NAMES` 에 키 추가(예: `["halloween", "dev", "puppy"]`). 2개 이상이면 전환 버튼과 인트로 선택지 자동 표시, `?theme=dev` 쿼리와 localStorage 선택도 다시 동작
+- 다시 열기: `THEME_NAMES` 에 키 추가(예: `["halloween", "dev", "puppy"]`). 2개 이상이면 전환 버튼 자동 표시, `?theme=dev` 쿼리와 localStorage 선택도 다시 동작
 - 새 테마 추가: `THEMES` 에 키 추가 + `apps/web/src/styles/global.css` 의 `[data-theme]` 토큰 블록 추가
 - 모션 감소(`prefers-reduced-motion`) 환경에서는 모든 연출이 정적 상태로 표시
 
 ## 기능
 
-- 인트로 게이트: 이름과 날짜 타이포 + 초대장 열기. 탭 시 페이드아웃, 배경음악 시작. JS 가 꺼져 있거나 4.5초 안에 로드 실패 시 자동 해제
+- 인트로 게이트: 이름과 날짜 타이포 + 밤빛 봉투(10:7)와 박쥐 날개 하트 밀랍인장. 탭 시 인장이 떼어지고 덮개가 열리며 상단 유령이 봉투 안으로 들어갔다가 커버 아치 우상단 유령 자리로 착지. 배경음악은 연출 종료 후 본문 진입 시점에 시작. 모바일 가로는 2열 배치. JS 가 꺼져 있거나 4.5초 안에 로드 실패 시 자동 해제
 - 커버(Halloween): 촛불, 바구니, 유령이 포인터를 따라다니는 연출 + 드레스코드 팝업
 - 섹션 장난감: 거미, 고양이, 부엉이, 박쥐, 랜턴, 모자, 물약, 거미줄(탭 연출)
 - 갤러리: FLIP 라이트박스(스와이프, 핀치, 관성, 방향키, Esc), 모바일 뒤로가기 버튼으로 라이트박스 닫기
 - 스냅샷(하객 사진 업로드)
   - 클라이언트 압축은 Web Worker 에서 처리, HEIC 는 `heic-to` 지연 로드 청크로 대체 디코드
   - 업로드 전 확인 다이얼로그에서 삭제 비밀번호 입력(선택)
-  - 캐러셀은 30장 단위 페이징
+  - 8장 이하는 한 장씩 스와이프, 9~18장은 6열 그리드(장수만큼 행 증가), 19장 이상은 6열 × 3행 페이지 단위 가로 스와이프
+  - 하단 점·캡슐 인디케이터(최대 7개 창), 끝 근처 도달 시 다음 30장 자동 로드
   - 라이트박스 삭제: 비밀번호를 정한 사진은 어느 기기든 비밀번호 필요, 비밀번호 없는 사진은 올린 기기에서만 가능
   - 삭제 비밀번호 입력값은 업로드·삭제 완료나 취소 시 즉시 비움
   - 이미지는 R2 공개 주소에서 직접 로드(Worker 요청 절감), 실패 시 Worker 로 재시도
