@@ -626,7 +626,8 @@
   .track::-webkit-scrollbar { display: none; }
   .track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .it, .sent.busy { flex: 0 0 min(68%, 240px); aspect-ratio: 4 / 5; scroll-snap-align: start; }
-  .card { display: block; width: 100%; height: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--track); cursor: zoom-in; }
+  /* 사진만 둥글게 잘라 표시: 테두리·테마 카드 링(global .card) 제거 */
+  .track .card { display: block; width: 100%; height: 100%; padding: 0; border: 0; box-shadow: none; border-radius: 10px; overflow: hidden; clip-path: inset(0 round 10px); background: var(--track); cursor: zoom-in; }
   .card img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .sent { flex: 0 0 1px; }
@@ -647,7 +648,7 @@
   .pg { flex: 0 0 100%; scroll-snap-align: start; }
   .pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
   .pgrid .it { aspect-ratio: 4 / 5; scroll-snap-align: none; }
-  .pgrid .card { border-radius: 4px; }
+  .track .pgrid .card { border-radius: 6px; clip-path: inset(0 round 6px); }
   /* 페이지 높이만큼 늘려 감시 영역 확보(높이 0 이면 교차 감지 누락) */
   .track.grid .sent { align-self: stretch; }
   .empty { margin: 8px 0; text-align: center; }
