@@ -26,9 +26,10 @@ export default async function run({ gate }: EntryCtx): Promise<void> {
 
   const acx = a.left + a.width / 2;
   const acy = a.top + a.height / 2;
-  const sealY = Number.parseFloat(gate.style.getPropertyValue("--seal-y")) || innerHeight * 0.7;
-  const ix = innerWidth / 2 - acx;
-  const iy = sealY * 0.55 - acy;
+  /* 봉투 입구 안쪽(덮개가 젖혀진 자리 아래) */
+  const env = gate.querySelector(".ig-env")?.getBoundingClientRect();
+  const ix = (env ? env.left + env.width / 2 : innerWidth / 2) - acx;
+  const iy = (env ? env.top + env.height * 0.35 : innerHeight * 0.6) - acy;
   const inner = `translate(${ix}px, ${iy}px) scale(0.22) rotate(8deg)`;
   try {
     await fly.animate(

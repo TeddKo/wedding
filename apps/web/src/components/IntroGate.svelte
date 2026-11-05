@@ -36,19 +36,7 @@
     /* dev 연출 모듈은 마운트 즉시 미리 받아 클릭 직후 지연 방지 */
     void loadDev();
     void loadHalloween();
-    /* 접이 선이 인장 중심에서 만나도록 인장 중심 y 를 게이트 변수로 전달 */
-    const seal = gate?.querySelector(".ig-seal");
-    const place = () => {
-      const r = seal?.getBoundingClientRect();
-      if (r?.height) gate?.style.setProperty("--seal-y", `${(r.top + r.height / 2).toFixed(1)}px`);
-    };
-    const ro = new ResizeObserver(place);
-    if (gate) ro.observe(gate);
-    if (seal) ro.observe(seal);
-    return () => {
-      timers.forEach(clearTimeout);
-      ro.disconnect();
-    };
+    return () => timers.forEach(clearTimeout);
   });
 
   /**
@@ -96,9 +84,6 @@
   <div bind:this={gate} class="gate" class:leaving role="dialog" aria-modal="true" aria-label="청첩장 인트로">
     <div class="ig-bg" aria-hidden="true">
       <div class="ig-halloween" data-th="halloween">
-        <i class="ig-in"></i>
-        <i class="ig-sides"><i class="ig-side ig-side-l"></i><i class="ig-side ig-side-r"></i></i>
-        <i class="ig-hflapw"><i class="ig-hflap"></i></i>
         <i class="ig-frame"></i>
         <i class="ig-moon"></i>
         <svg class="ig-bat ig-bat-1" viewBox="0 0 40 14" focusable="false"><path d={BAT} /></svg>
@@ -128,7 +113,15 @@
     </div>
     <div class="bottom">
       <button bind:this={openBtn} type="button" class="ig-cta" onclick={openGate} aria-label="초대장 열기">
-        <span class="ig-face ig-face-h" data-th="halloween" aria-hidden="true"><i class="ig-seal-glow"></i><Seal /><span class="ig-lbl">초대장 열기</span></span>
+        <span class="ig-face ig-face-h" data-th="halloween" aria-hidden="true">
+          <span class="ig-env">
+            <i class="ig-env-back"></i><i class="ig-in"></i>
+            <i class="ig-sides"><i class="ig-side ig-side-l"></i><i class="ig-side ig-side-r"></i><i class="ig-side ig-side-b"></i></i>
+            <i class="ig-hflapw"><i class="ig-hflap"></i></i>
+            <i class="ig-seal-glow"></i><Seal />
+          </span>
+          <span class="ig-lbl">초대장 열기</span>
+        </span>
         <span class="ig-face ig-face-p" data-th="puppy" aria-hidden="true">
           <i class="ig-str ig-str-l"></i><i class="ig-str ig-str-r"></i>
           <span class="ig-tag"><svg viewBox="0 0 172 54" focusable="false"><path d="M27 1H171L157 27L171 53H27A26 26 0 0 1 27 1Z" /></svg><span class="ig-lbl"><i class="ig-dot"></i>초대장 열기</span></span>
@@ -149,6 +142,8 @@
     box-shadow: 0 1px 0 var(--line);
   }
   :global(html.js) .gate { display: flex; }
+  /* 높이가 모자라는 화면에서도 봉투까지 스크롤로 도달 보장 */
+  .gate { overflow-y: auto; overscroll-behavior: contain; }
   .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 24px; }
   .intro-emblem { margin-bottom: 40px; }
   .intro-emblem:empty { margin-bottom: 0; }
@@ -160,6 +155,23 @@
   .date { margin: 0; font: 400 15px/1.7 var(--f-name); letter-spacing: 0.05em; color: var(--ink-2); }
 
   .bottom { display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 14px; }
+  /* 낮은 세로 화면: 간격 축소 */
+  @media (max-height: 720px) {
+    .gate { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+    .intro-emblem { margin-bottom: 20px; }
+    .eyebrow { margin-bottom: 18px; }
+    .hair { height: 28px; margin: 16px 0; }
+  }
+  /* 모바일 가로: 글귀 좌측 + 봉투 우측 2열 */
+  @media (orientation: landscape) and (max-height: 540px) {
+    .gate { flex-direction: row; justify-content: center; align-items: center; gap: clamp(28px, 7vw, 96px); padding: 16px max(32px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(32px, env(safe-area-inset-left)); }
+    .mid { flex: 0 1 auto; padding-top: 0; }
+    .intro-emblem { margin-bottom: 12px; }
+    .eyebrow { margin-bottom: 12px; }
+    .hair { height: 18px; margin: 10px 0; }
+    .date { white-space: nowrap; font-size: 14px; }
+    .bottom { padding-bottom: 0; }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .intro-emblem { animation: g-stamp 360ms var(--e-out) backwards; }
     .eyebrow .mi { animation: g-mask var(--rv-dur) var(--rv-ease) 180ms backwards; }
