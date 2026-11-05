@@ -122,14 +122,10 @@
   /** GRID_MIN 장 이상이면 3열 그리드, 미만이면 한 장씩 가로 스와이프 */
   const GRID_MIN = 9;
   const grid = $derived(count >= GRID_MIN);
-  /** 그리드는 3열 × 6행(18장)씩 노출, 더 보기로 18장씩 추가 */
+  /** 그리드 한 페이지 최대 3열 × 6행. 18장 이하는 장수만큼 행이 늘고, 넘으면 페이지 단위 가로 스와이프 + 끝 근처에서 다음 묶음 로드 */
   const GRID_PAGE = 18;
-  let shown = $state(GRID_PAGE);
-  const visible = $derived(grid ? photos.slice(0, shown) : photos);
-  function showMore() {
-    shown += GRID_PAGE;
-    if (photos.length < shown + PREFETCH) void load(false);
-  }
+  const pages = $derived(Array.from({ length: Math.ceil(photos.length / GRID_PAGE) }, (_, k) => photos.slice(k * GRID_PAGE, (k + 1) * GRID_PAGE)));
+  const pageN = $derived(Math.ceil(count / GRID_PAGE));
   let mineIds = $state<string[]>([]);
   const need = (i: number) => {
     const p = photos[i];
@@ -165,25 +161,25 @@
   $effect(() => {
     void photos.length;
     void moreBusy;
-    if (grid || !sentinel || !track || cursor === null || moreFailed) return;
-    const io = new IntersectionObserver((e) => e[0]?.isIntersecting && void load(false), grid ? { rootMargin: "0px 0px 800px 0px" } : { root: track, rootMargin: "0px 1500px 0px 0px" });
+    if (!sentinel || !track || cursor === null || moreFailed) return;
+    const io = new IntersectionObserver((e) => e[0]?.isIntersecting && void load(false), { root: track, rootMargin: "0px 1500px 0px 0px" });
     io.observe(sentinel);
     return () => io.disconnect();
   });
 
   const step = () => {
-    const li = track?.querySelectorAll<HTMLElement>("li.it");
+    const li = track?.querySelectorAll<HTMLElement>(grid ? "li.pg" : "li.it");
     return li && li.length > 1 ? li[1].offsetLeft - li[0].offsetLeft : (li?.[0]?.offsetWidth ?? 1);
   };
 
   function sync() {
     raf = 0;
     if (!track) return;
-    const last = photos.length - 1;
+    const last = (grid ? pages.length : photos.length) - 1;
     const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
     cur = Math.max(0, Math.min(last, atEnd && cursor === null ? last : Math.round(track.scrollLeft / step())));
     clearTimeout(liveTimer);
-    liveTimer = setTimeout(() => (live = `${cur + 1} / ${count}`), 250);
+    liveTimer = setTimeout(() => (live = grid ? `${cur + 1} / ${pageN} 페이지` : `${cur + 1} / ${count}`), 250);
   }
 
   const onscroll = () => (raf ||= requestAnimationFrame(sync));
@@ -194,7 +190,7 @@
   }
 
   function onkey(e: KeyboardEvent) {
-    if (grid || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || (e.target as HTMLElement).closest("input")) return;
+    if ((e.key !== "ArrowRight" && e.key !== "ArrowLeft") || (e.target as HTMLElement).closest("input")) return;
     e.preventDefault();
     slide(e.key === "ArrowRight" ? 1 : -1);
   }
@@ -202,7 +198,6 @@
   const thumbAt = (i: number) => track?.querySelectorAll<HTMLElement>("li.it .card")[i];
 
   function follow(i: number) {
-    if (grid && i >= shown) shown = Math.ceil((i + 1) / GRID_PAGE) * GRID_PAGE;
     thumbAt(i)?.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "instant" as ScrollBehavior });
     if (i >= photos.length - PREFETCH) void load(false);
   }
@@ -503,25 +498,38 @@
     {:else if photos.length === 0}
       <p class="cap empty">아직 올라온 스냅샷이 없어요. 첫 사진을 남겨 주세요.</p>
     {:else}
-      <div class="car" role="region" aria-roledescription={grid ? undefined : "carousel"} aria-label="하객 스냅샷" onkeydown={onkey}>
-        <ul class="track" class:grid bind:this={track} {onscroll} tabindex={grid ? undefined : 0} aria-label={grid ? "스냅샷 목록" : "스냅샷 목록 (좌우 방향키로 넘기기)"}>
-          {#each visible as p, i (p.uuid)}
-            <li class="it">
-              <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
-                <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" onerror={(e) => fallback(e.currentTarget, p.thumb0)} />
-              </button>
-            </li>
-          {/each}
-          {#if !grid && cursor !== null}<li class="sent" class:busy={moreBusy} bind:this={sentinel} aria-hidden="true"></li>{/if}
-        </ul>
-        {#if grid}
-          {#if shown < count}
-            <button type="button" class="btn-outline more-btn" disabled={moreBusy && photos.length <= shown} onclick={showMore}>더 보기 <span class="latin">{Math.min(shown, count)} / {count}</span></button>
+      <div class="car" role="region" aria-roledescription="carousel" aria-label="하객 스냅샷" onkeydown={onkey}>
+        <ul class="track" class:grid bind:this={track} {onscroll} tabindex="0" aria-label="스냅샷 목록 (좌우 방향키로 넘기기)">
+          {#if grid}
+            {#each pages as pg, k (k)}
+              <li class="pg">
+                <ul class="pgrid">
+                  {#each pg as p, n (p.uuid)}
+                    {@const i = k * GRID_PAGE + n}
+                    <li class="it">
+                      <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
+                        <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" onerror={(e) => fallback(e.currentTarget, p.thumb0)} />
+                      </button>
+                    </li>
+                  {/each}
+                </ul>
+              </li>
+            {/each}
           {:else}
-            <p class="count latin" aria-hidden="true">{count}장</p>
+            {#each photos as p, i (p.uuid)}
+              <li class="it">
+                <button type="button" class="card" aria-label="스냅샷 {i + 1} / {count} 크게 보기" onclick={() => gal?.openAt(i)}>
+                  <img src={p.thumb} width="480" height="600" alt="" loading="lazy" decoding="async" draggable="false" onerror={(e) => fallback(e.currentTarget, p.thumb0)} />
+                </button>
+              </li>
+            {/each}
           {/if}
+          {#if cursor !== null}<li class="sent" class:busy={moreBusy} bind:this={sentinel} aria-hidden="true"></li>{/if}
+        </ul>
+        {#if grid && pageN <= 1}
+          <p class="count latin" aria-hidden="true">{count}장</p>
         {:else}
-          <p class="count latin" aria-hidden="true">{cur + 1} / {count}</p>
+          <p class="count latin" aria-hidden="true">{cur + 1} / {grid ? pageN : count}</p>
           <p class="sr" role="status" aria-live="polite">{live}</p>
         {/if}
         {#if moreFailed}
@@ -612,13 +620,14 @@
   .sent { flex: 0 0 1px; }
   .sent.busy { border-radius: 10px; background: var(--track); opacity: 0.5; animation: snap-pulse 1.2s ease-in-out infinite alternate; }
   .count { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  /* 그리드: 3열, 컨테이너 너비 그대로 */
-  .track.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; scroll-snap-type: none; border-radius: 0; }
-  .track.grid .it { aspect-ratio: 4 / 5; }
-  .track.grid .card { border-radius: 4px; }
-  .more-btn { display: flex; gap: 8px; width: 100%; max-width: 280px; min-height: 48px; margin: 16px auto 0; border-radius: 9999px; }
-  .more-btn .latin { color: var(--ink-3); font-variant-numeric: tabular-nums; }
-  .more-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* 그리드: 페이지(최대 3열 × 6행) 단위 가로 스와이프, 컨테이너 너비 그대로 */
+  .track.grid { align-items: start; border-radius: 0; }
+  .pg { flex: 0 0 100%; scroll-snap-align: start; }
+  .pgrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .pgrid .it { aspect-ratio: 4 / 5; scroll-snap-align: none; }
+  .pgrid .card { border-radius: 4px; }
+  /* 페이지 높이만큼 늘려 감시 영역 확보(높이 0 이면 교차 감지 누락) */
+  .track.grid .sent { align-self: stretch; }
   .empty { margin: 8px 0; text-align: center; }
   .err-line { margin: 20px 0 0; text-align: center; }
   .skel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
