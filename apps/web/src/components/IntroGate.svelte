@@ -2,14 +2,13 @@
   import { onMount } from "svelte";
   import { theme } from "../lib/theme.svelte";
   import { isTheme } from "../lib/themes";
-  import { playBgm } from "../scripts/audio";
+  import { playBgm, primeBgm } from "../scripts/audio";
   import { reduced } from "../lib/motion";
   import { stage } from "../lib/stage.svelte";
   import { ENTRY, loadDev, loadHalloween } from "./intro/entry";
   import Seal from "./intro/Seal.svelte";
   import { BAT } from "./art/halloween/bat";
   import ghost from "../assets/illus/halloween/ghost-peek.svg?raw";
-  import Picker from "./intro/Picker.svelte";
 
   let { groom, bride, date }: { groom: string; bride: string; date: string } = $props();
 
@@ -59,7 +58,7 @@
   function openGate() {
     if (leaving) return;
     leaving = true;
-    playBgm();
+    primeBgm();
     const html = document.documentElement;
     const reveal = () => {
       html.classList.remove("gated");
@@ -73,6 +72,7 @@
     if (reduced()) {
       reveal();
       done = true;
+      playBgm();
       return;
     }
     const name = isTheme(html.dataset.theme) ? html.dataset.theme : theme.name;
@@ -80,7 +80,12 @@
     gate?.style.setProperty("--ig-lift", `${lift}ms`);
     gate?.style.setProperty("--ig-total", `${total}ms`);
     /* run 이 있으면 끝나는 즉시 제거, total 은 멈춤 방지용 최대 대기 */
-    const finish = () => (done = true);
+    /* 연출이 모두 끝나 본문에 진입한 시점부터 배경음악 재생 */
+    const finish = () => {
+      if (done) return;
+      done = true;
+      playBgm();
+    };
     if (gate) run?.({ gate }).catch(() => {}).then(finish);
     timers.push(window.setTimeout(reveal, lift));
     timers.push(window.setTimeout(finish, total));
@@ -132,7 +137,6 @@
           <span class="ig-lbl"><b>$</b> git checkout wedding<i class="ig-cur"></i></span><kbd>⏎</kbd>
         </span>
       </button>
-      <Picker />
     </div>
   </div>
 {/if}
@@ -166,8 +170,7 @@
     .hair { animation: g-draw 700ms var(--e-io) 700ms backwards; }
     .date { animation: g-rise var(--rv-dur) var(--rv-ease) 900ms backwards; }
     :global(.ig-cta) { animation: g-rise var(--rv-dur) var(--rv-ease) 1100ms backwards; }
-    :global(.ig-pick) { animation: g-rise var(--rv-dur) var(--rv-ease) 1250ms backwards; }
-    .leaving .intro-emblem, .leaving .eyebrow .mi, .leaving .ch, .leaving .hair, .leaving .date, .leaving :global(.ig-cta), .leaving :global(.ig-pick) { animation: none; }
+    .leaving .intro-emblem, .leaving .eyebrow .mi, .leaving .ch, .leaving .hair, .leaving .date, .leaving :global(.ig-cta) { animation: none; }
   }
   @keyframes g-stamp { from { opacity: 0; transform: scale(1.3); } }
   @keyframes g-mask { from { transform: translateY(105%); } }

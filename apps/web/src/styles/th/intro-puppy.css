@@ -1,4 +1,4 @@
-/* th/intro-puppy: 리본 태그 CTA, 소프트 칩, 리본 풀기 + 봉투 플랩 진입 */
+/* th/intro-puppy: 리본 태그 CTA, 리본 풀기 + 봉투 플랩 진입 */
 html[data-theme="puppy"] { --ig-press: 0.97; }
 
 .ig-puppy { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 0; }
@@ -38,7 +38,3 @@ html[data-theme="puppy"] .gate.leaving .ig-str-r { animation: ig-str-r 300ms var
   .ig-tag { animation: ig-sway 4s ease-in-out infinite; transform-origin: 16% 50%; }
 }
 @keyframes ig-sway { 0%, 100% { rotate: -0.6deg; } 50% { rotate: 0.6deg; } }
-
-/* 칩: 부드러운 크림 */
-html[data-theme="puppy"] .ig-sw { border-radius: 50%; border: 1px solid rgb(60 40 30 / 0.1); box-shadow: 0 1px 0 #fff inset, 0 6px 10px -7px rgb(90 60 40 / 0.35); }
-html[data-theme="puppy"] .ig-opt[aria-checked="true"] .ig-sw { transform: translateY(-1px); border-color: transparent; box-shadow: 0 0 0 3px var(--bg), 0 0 0 4.500px var(--accent); }

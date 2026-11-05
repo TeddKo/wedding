@@ -1,4 +1,4 @@
-/* th/intro-dev: 커맨드 프롬프트 CTA, 모노 칩, 터미널 타이핑 + 와이프 진입(entry-dev.ts) */
+/* th/intro-dev: 커맨드 프롬프트 CTA, 터미널 타이핑 + 와이프 진입(entry-dev.ts) */
 html[data-theme="dev"] .gate { --ig-mono: "Geist Mono", var(--f-mono); background: var(--paper), var(--bg); }
 
 .ig-term { position: absolute; left: 0; right: 0; top: 44%; padding-left: 52px; text-align: left; font: 400 12px/22px var(--ig-mono); color: var(--ink); opacity: 0; }
@@ -26,7 +26,3 @@ html[data-theme="dev"] { --ig-press: 1; }
   .ig-cur { animation: ig-blink 1.06s steps(1) infinite; }
   html[data-theme="dev"] .gate.leaving .ig-cur { animation: none; }
 }
-
-/* 칩: 각진 모노 */
-html[data-theme="dev"] .ig-sw { border-radius: 8px; box-shadow: 0 0 0 1px rgb(10 10 10 / 0.1); }
-html[data-theme="dev"] .ig-opt[aria-checked="true"] .ig-sw { box-shadow: 0 0 0 1px var(--ink), 0 1px 2px rgb(0 0 0 / 0.08); }

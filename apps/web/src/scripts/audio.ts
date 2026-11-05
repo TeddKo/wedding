@@ -8,6 +8,7 @@ let audio: HTMLAudioElement | null = null;
 let toggle: HTMLButtonElement | null = null;
 let fade = 0;
 let hiding = false;
+let priming = false;
 
 const stored = () => {
   try {
@@ -47,6 +48,13 @@ function render() {
   toggle.classList.toggle("is-off", !on);
 }
 
+function onPlay() {
+  store("on");
+  if (audio && audio.volume < MAX_VOLUME) fadeTo(MAX_VOLUME);
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+  render();
+}
+
 async function resume() {
   if (!audio) return;
   audio.volume = 0;
@@ -74,12 +82,14 @@ export function initAudio(button: HTMLButtonElement | null, src: string) {
   toggle.hidden = false;
   render();
   a.addEventListener("play", () => {
-    store("on");
-    if (a.volume < MAX_VOLUME) fadeTo(MAX_VOLUME);
-    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
-    render();
+    if (!priming) onPlay();
   });
   a.addEventListener("pause", () => {
+    if (priming) {
+      priming = false;
+      a.muted = false;
+      return;
+    }
     if (!hiding) store("off");
     hiding = false;
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
@@ -108,8 +118,35 @@ export function initAudio(button: HTMLButtonElement | null, src: string) {
   });
 }
 
-/** 인트로 탭 직후 호출. 트랙이 없거나 사용자가 이전에 껐다면 no-op. */
+/**
+ * 인장 탭(사용자 제스처) 순간 호출. 무음 재생 후 즉시 정지로 제스처 밖 재생 차단(iOS 등) 해제 + 버퍼링 선행.
+ * 트랙이 없거나 사용자가 이전에 껐다면 no-op.
+ */
+export function primeBgm() {
+  const a = audio;
+  if (!a || stored() === "off" || !a.paused) return;
+  priming = true;
+  a.muted = true;
+  a.play().then(
+    () => {
+      if (priming) a.pause();
+    },
+    () => {
+      priming = false;
+      a.muted = false;
+    },
+  );
+}
+
+/** 인트로 연출 종료 후 본문 진입 시점 호출. 준비 재생이 아직 진행 중이면 그대로 이어서 페이드인 */
 export function playBgm() {
   if (!audio || stored() === "off") return;
-  void resume();
+  if (priming) {
+    priming = false;
+    audio.muted = false;
+    audio.volume = 0;
+    onPlay();
+    return;
+  }
+  if (audio.paused) void resume();
 }
