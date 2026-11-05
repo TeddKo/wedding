@@ -26,7 +26,7 @@
   const mono = `${date} ${pad(H)}:${pad(MIN)} KST`;
   const iso = `${date}T${pad(H)}:${pad(MIN)}+09:00`;
   const uid = $props.id();
-  const arch = (i: number) => `M${i} 440V${190 + i * 0.3}C${i} ${105 + i * 0.7} ${84 + i * 0.6} ${36 + i * 1.4} 168 ${i * 2.4}C${252 - i * 0.6} ${36 + i * 1.4} ${336 - i} ${105 + i * 0.7} ${336 - i} ${190 + i * 0.3}V440`;
+  const arch = (i: number) => `M${i} 440V${158 + i * 0.3}C${i} ${84 + i * 0.7} ${91 + i * 0.6} ${20 + i * 1.4} 168 ${i * 2.4}C${245 - i * 0.6} ${20 + i * 1.4} ${336 - i} ${84 + i * 0.7} ${336 - i} ${158 + i * 0.3}V440`;
 
 </script>
 
@@ -66,11 +66,34 @@
 
   <div class="hero">
     <svg class="defs" data-th="halloween" width="0" height="0" aria-hidden="true" focusable="false">
-      <clipPath id="lancet-{uid}" clipPathUnits="objectBoundingBox"><path d="M0 1V.432C0 .238 .25 .082 .5 0C.75 .082 1 .238 1 .432V1Z" /></clipPath>
+      <clipPath id="lancet-{uid}" clipPathUnits="objectBoundingBox"><path d="M0 1V.36C0 .19 .27 .045 .5 0C.73 .045 1 .19 1 .36V1Z" /></clipPath>
     </svg>
     <button type="button" class="flame" data-th="halloween" data-rv="fade" data-candle aria-label="촛불 끄기" aria-pressed="false" style="--d:1300ms">
-      <svg viewBox="0 0 12 22" width="12" height="22" aria-hidden="true" focusable="false"><path d="M6 1C9 6 11 10 11 14a5 5 0 0 1-10 0C1 10 4 8 6 1Z" fill="#e0904a" /><path d="M6 9c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 2-3 3-7Z" fill="#f6d79a" /></svg>
-      <i class="smoke" aria-hidden="true"></i>
+      <span class="halo" aria-hidden="true"></span>
+      <svg class="fl" viewBox="0 0 16 30" width="18" height="34" aria-hidden="true" focusable="false">
+        <path class="fl-o" d="M8 0C11 7 15 12 15 19.500a7 7 0 0 1-14 0C1 13 5 9.500 8 0Z" fill="#e0783a" />
+        <path class="fl-m" d="M8 7c2.200 4.200 4.600 7.400 4.600 12a4.600 4.600 0 0 1-9.200 0c0-3.800 2.500-6.300 4.600-12Z" fill="#f2a654" />
+        <path class="fl-i" d="M8 14c1.300 2.400 2.600 4.200 2.600 6.300a2.600 2.600 0 0 1-5.200 0c0-2 1.400-3.600 2.600-6.300Z" fill="#fff1c9" />
+        <ellipse cx="8" cy="25.500" rx="2" ry="1.300" fill="#7fa6d8" opacity="0.75" />
+      </svg>
+      <svg class="stick" viewBox="0 0 32 46" width="32" height="46" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="wax-{uid}" x1="0" x2="1"><stop offset="0" stop-color="#fff8ea" /><stop offset=".55" stop-color="#f0e0c0" /><stop offset="1" stop-color="#c9b089" /></linearGradient>
+          <linearGradient id="iron-{uid}" x1="0" x2="1"><stop offset="0" stop-color="#4a3628" /><stop offset=".5" stop-color="#2a1d16" /><stop offset="1" stop-color="#1a120d" /></linearGradient>
+        </defs>
+        <path d="M16 2.500v5.500" stroke="#2a1d16" stroke-width="1.200" stroke-linecap="round" />
+        <circle class="wick" cx="16" cy="2.600" r="1.200" fill="#ff8a3d" />
+        <path d="M10 9c0-1.400 2.700-2.200 6-2.200s6 .8 6 2.200v29H10Z" fill="url(#wax-{uid})" />
+        <path class="pool" d="M10.600 9c0-.9 2.400-1.500 5.400-1.500s5.400.6 5.400 1.500-2.400 1.400-5.400 1.400-5.400-.5-5.400-1.400Z" fill="#f6cf8c" />
+        <path d="M10 9.200c0 3.400.2 6.200 1.100 7.400.8 1 1.700.4 1.700-1.200v-4.700M14.200 10.300v3.200c0 1.100.5 1.700 1 1.700.6 0 1-.6 1-1.700v-3.100" fill="#fff6e4" stroke="#d8c29d" stroke-width="0.500" />
+        <path class="drip" d="M19.600 10.200v9.400c0 1.200.7 2 1.300 2s1.100-.8 1.100-2V9.400" fill="#efdcb8" stroke="#ccb289" stroke-width="0.500" />
+        <path d="M4 38.200h24l-2.600 3.700H6.600Z" fill="url(#iron-{uid})" />
+        <path d="M4 38.200h24" stroke="var(--gold, #c8a56a)" stroke-width="1" stroke-linecap="round" />
+        <path d="M12.500 41.900h7l-.8 2.300h-5.400Z" fill="#2a1d16" />
+        <path d="M10.500 44.200h11" stroke="var(--gold, #c8a56a)" stroke-width="0.800" stroke-linecap="round" opacity="0.8" />
+      </svg>
+      <i class="ember" aria-hidden="true"></i><i class="ember" aria-hidden="true"></i><i class="ember" aria-hidden="true"></i>
+      <i class="smoke" aria-hidden="true"></i><i class="smoke" aria-hidden="true"></i>
     </button>
     <div class="frame" data-rv="curtain">
       {#if hasPhoto}
@@ -168,19 +191,44 @@
   :global([data-theme="halloween"]) .wm { align-self: stretch; padding: 0 16px 52px; text-align: center; white-space: nowrap; color: var(--wordmark, var(--line)); pointer-events: none; user-select: none; }
   .wm { --st-ln: 140ms; }
   .wm span { display: block; font: italic 300 min(40px, calc((100vw - 40px) / 8.6)) / 1.1 var(--f-latin); letter-spacing: 0.04em; }
-  :global([data-theme="halloween"]) .hero { width: min(300px, calc(100% - 64px)); margin-top: 0; aspect-ratio: 336 / 440; }
+  :global([data-theme="halloween"]) .hero { width: min(340px, calc(100% - 40px)); margin-top: 56px; aspect-ratio: 336 / 440; }
   :global([data-theme="halloween"]) .frame { clip-path: var(--clip); }
   .rules { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   /* 촛불: 탭으로 끄고 켬(fx/halloween 이 .out 토글). 끄면 커버 빛이 함께 어두워짐 */
-  .flame { position: absolute; z-index: 3; left: 50%; top: -44px; width: 44px; height: 44px; margin-left: -22px; padding: 11px 16px; border: 0; background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  .flame:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
-  .flame svg { display: block; transform-origin: 50% 100%; animation: flick 3s linear infinite; transition: transform 420ms cubic-bezier(0.5, 0, 0.75, 0), opacity 360ms ease-in; }
-  .flame:global(.out) svg { transform: scale(0.1, 0.05) skewX(-24deg); opacity: 0; animation: none; }
-  .flame:global(.lit) svg { animation: relight 620ms cubic-bezier(0.34, 1.56, 0.64, 1), flick 3s linear 620ms infinite; }
-  .smoke { position: absolute; left: 50%; bottom: 12px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: rgb(200 190 180 / 0.6); opacity: 0; filter: blur(2px); pointer-events: none; }
-  .flame:global(.out) .smoke { animation: smoke 1.6s ease-out forwards; }
-  @keyframes smoke { 0% { opacity: 0.8; transform: translate(0, 0) scale(1); } 40% { opacity: 0.5; transform: translate(-4px, -16px) scale(2.2); } 100% { opacity: 0; transform: translate(5px, -38px) scale(4); } }
+  .flame { position: absolute; z-index: 3; left: 50%; bottom: calc(100% - 6px); width: 56px; height: 80px; margin-left: -28px; padding: 0; border: 0; background: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .flame:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 24px; }
+  .flame .stick { position: absolute; left: 12px; bottom: 0; display: block; }
+  .flame .fl { position: absolute; left: 19px; bottom: 40px; display: block; transform-origin: 50% 88%; animation: sway 3.4s ease-in-out infinite; transition: transform 420ms cubic-bezier(0.5, 0, 0.75, 0), opacity 360ms ease-in; }
+  .fl-o, .fl-m, .fl-i { transform-box: fill-box; }
+  .fl-o { transform-origin: 50% 88%; animation: flick 2.6s linear infinite; }
+  .fl-m { transform-origin: 50% 85%; animation: flick 1.9s linear -0.7s infinite; }
+  .fl-i { transform-origin: 50% 80%; animation: flick 1.3s linear -0.3s infinite; }
+  .halo { position: absolute; left: 50%; bottom: 6px; width: 104px; height: 104px; margin-left: -52px; border-radius: 50%; background: radial-gradient(closest-side, rgb(255 200 120 / 0.55), rgb(240 140 60 / 0.22) 45%, transparent 72%); pointer-events: none; animation: halo 2.8s ease-in-out infinite; transition: opacity 500ms ease-in; }
+  .wick { opacity: 0; }
+  .pool { transition: fill 600ms ease; }
+  .flame:global(.out) .pool { fill: #e9dcc4; }
+  .drip { transform-origin: 50% 0; transform-box: fill-box; animation: drip 7s ease-in-out infinite alternate; }
+  .ember { position: absolute; left: 50%; bottom: 66px; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: #ffc27a; box-shadow: 0 0 3px #ff9a4a; opacity: 0; pointer-events: none; animation: ember 3.6s ease-out infinite; }
+  .ember:nth-of-type(2) { --x: -7px; animation-delay: 1.2s; animation-duration: 4.2s; }
+  .ember:nth-of-type(3) { --x: 6px; animation-delay: 2.5s; animation-duration: 3.2s; }
+  .flame:global(.out) .fl { transform: scale(0.1, 0.05) skewX(-24deg); opacity: 0; animation: none; }
+  .flame:global(.out) :is(.halo, .ember) { opacity: 0; animation: none; }
+  .flame:global(.out) .wick { animation: wick 1.4s ease-out forwards; }
+  .flame:global(.lit) .fl { animation: relight 620ms cubic-bezier(0.34, 1.56, 0.64, 1), sway 3.4s ease-in-out 620ms infinite; }
+  .flame:global(.lit) .halo { animation: relight-halo 700ms ease-out, halo 2.8s ease-in-out 700ms infinite; }
+  .smoke { position: absolute; left: 50%; bottom: 44px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: rgb(200 190 180 / 0.6); opacity: 0; filter: blur(2px); pointer-events: none; }
+  .smoke + .smoke { margin-left: 0; }
+  .flame:global(.out) .smoke { animation: smoke 1.8s ease-out forwards; }
+  .flame:global(.out) .smoke + .smoke { animation: smoke2 2.2s ease-out 0.25s forwards; }
+  @keyframes smoke { 0% { opacity: 0.8; transform: translate(0, 0) scale(1); } 40% { opacity: 0.5; transform: translate(-5px, -18px) scale(2.2); } 100% { opacity: 0; transform: translate(4px, -44px) scale(4); } }
+  @keyframes smoke2 { 0% { opacity: 0.6; transform: translate(0, 0) scale(0.8); } 45% { opacity: 0.4; transform: translate(5px, -20px) scale(2); } 100% { opacity: 0; transform: translate(-3px, -50px) scale(3.6); } }
   @keyframes relight { 0% { opacity: 0; transform: scale(0.1); } 45% { opacity: 1; transform: scale(1.35, 1.5); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes relight-halo { 0% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1.25); } 100% { opacity: 0.85; transform: scale(1); } }
+  @keyframes sway { 0%, 100% { transform: rotate(-2deg) skewX(1deg); } 30% { transform: rotate(2.5deg) skewX(-2deg); } 55% { transform: rotate(-1deg) skewX(1.5deg); } 80% { transform: rotate(1.5deg) skewX(-1deg); } }
+  @keyframes halo { 0%, 100% { opacity: 0.85; transform: scale(1); } 35% { opacity: 1; transform: scale(1.08); } 60% { opacity: 0.75; transform: scale(0.96); } }
+  @keyframes ember { 0% { opacity: 0; transform: translate(0, 0) scale(1); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x, 2px), -34px) scale(0.4); } }
+  @keyframes drip { 0%, 40% { transform: scaleY(0.88); } 100% { transform: scaleY(1.12); } }
+  @keyframes wick { 0% { opacity: 1; } 100% { opacity: 0; } }
   :global([data-theme="halloween"] .cover:has(.flame.out)) .frame { filter: brightness(0.72) saturate(0.8); }
   :global([data-theme="halloween"] .cover:has(.flame.out) .hero)::before { opacity: 0.15; }
   .frame { transition: filter 700ms cubic-bezier(.4,0,.2,1) 60ms; }
@@ -225,5 +273,5 @@
   .gl-meta .venue { margin-top: 2px; }
   .trunk { position: absolute; left: calc(-1 * (var(--rail-x, 28px) + 32px) + var(--rail-x, 28px)); top: -16px; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); }
 
-  @media (prefers-reduced-motion: reduce) { .flame svg, .kicker::after { animation: none !important; } .smoke { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flame :is(.fl, .fl-o, .fl-m, .fl-i, .halo, .drip), .kicker::after { animation: none !important; } .smoke, .ember { display: none; } }
 </style>
