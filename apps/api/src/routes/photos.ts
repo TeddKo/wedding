@@ -7,7 +7,7 @@ import { safeEqStr, verifyPassword } from "../domain/crypto";
 import type { AppEnv } from "../env";
 import { fail } from "../errors";
 import { ipHash, json, noContent, page, pageParams, parseBody, readCapped, readJsonObject } from "../http";
-import { PHOTO_DEVICE_MAX, PW_FAIL_N } from "../limits";
+import { LIMIT_MS, PHOTO_DEVICE_MAX, PW_FAIL_N } from "../limits";
 import { takeAttempt } from "../repo/fails";
 import { countUploadsByDevice } from "../repo/uploads";
 import { countVisiblePhotos, listPhotos, type PhotoRow, photoAuth } from "../repo/photos";
@@ -40,7 +40,7 @@ export const photos = new Hono<AppEnv>()
   .get("/photos/quota", async (c) => {
     const device = c.req.header("X-Device") ?? "";
     if (!DEVICE.test(device)) fail(400, "invalid device");
-    return json(c, { left: Math.max(0, PHOTO_DEVICE_MAX - (await countUploadsByDevice(db(c.env), device))) });
+    return json(c, { left: Math.max(0, PHOTO_DEVICE_MAX - (await countUploadsByDevice(db(c.env), device, Date.now() - LIMIT_MS))) });
   })
   .all("/photos", () => fail(400, "invalid uuid"))
   .all("/photos/:uuid/:sub?", async (c) => {

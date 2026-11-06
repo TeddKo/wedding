@@ -39,7 +39,7 @@ src/limits.ts     한도 상수
 | `PUT /photos/:uuid/:kind` | 업로드 (`kind` = `full`/`thumb`, 헤더 `X-Device`·`Content-Length` 필수) | `204` / `400` / `403 full` 총량 초과 / `409` / `413` / `415` / `422` / `429` |
 | `POST /photos/:uuid/commit` | `{pw?}` 업로드 확정 (업로드한 기기만) | `201 {id,uuid,w,h,created_at,ext,locked,thumb,full}` (재호출은 `200`) / `403` 다른 기기 / `409` 업로드 미완 |
 | `GET /photos?cursor=&limit=` | 숨김 제외 최신순, 항목에 `ext`, 첫 페이지만 `total` | `200` |
-| `GET /photos/quota` | `X-Device` 기준 남은 업로드 수 | `200 {left}`, 기기 헤더 없으면 `400` |
+| `GET /photos/quota` | `X-Device` 기준 최근 10분 남은 업로드 수 | `200 {left}`, 기기 헤더 없으면 `400` |
 | `GET /p/:uuid/:kind` | 이미지 (immutable 캐시, 정규 경로만 허용) | `200` / `404` |
 | `DELETE /photos/:uuid` | `{pw}` 또는 관리자 토큰, `?hide=1` 은 숨김 처리 | `204` / `400` / `403` / `404` / `429` |
 | `POST /auth/kakao` | `{code,redirectUri}` 카카오 로그인 | `200 {token}` / `400` / `401` / `429` / `502` |
@@ -79,7 +79,7 @@ src/limits.ts     한도 상수
 ## 레이트 리밋 (IP 는 해시, IPv6 는 /64 단위, 예식장 와이파이 공유 IP 고려)
 
 - 방명록 작성: IP당 10분 20건
-- 사진 업로드: IP당 10분 400건, 기기당 누적 20건(`PHOTO.perDevice`, 사진 삭제 시 회복; uuid 첫 PUT 시점에 `uploads` 행 기록 후 검사)
+- 사진 업로드: IP당 10분 400건, 기기당 10분 20건(`PHOTO.perBatch`, 한 번에 올리는 최대 장수와 동일; uuid 첫 PUT 시점에 `uploads` 행 기록 후 검사)
 - 비밀번호 오답(방명록·사진 삭제): IP당 10분 10회 초과 시 `429`. 시도 선기록 후 집계(동시 요청 우회 차단), 잠금 중에는 쓰기 없이 거부, 정답 시 시도 기록 해제
 - 카카오 로그인: IP당 10분 60회, 성공·카카오 장애(502) 시도는 미집계
 - 투표 항목 추가: IP당 10분 10건

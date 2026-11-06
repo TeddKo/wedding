@@ -180,7 +180,7 @@ describe("photos", () => {
     expect((await del(d5, { token: "test-admin" })).status, "admin deletes a password photo without pw").toBe(204);
   });
 
-  it("PUT 시점 한도: IP 10분 PHOTO_IP_N건, 기기 PHOTO_DEVICE_MAX건", async () => {
+  it("PUT 시점 한도: IP 10분 PHOTO_IP_N건, 기기 10분 PHOTO_DEVICE_MAX건", async () => {
     const s2: number[] = [];
     for (let i = 0; i <= PHOTO_IP_N; i++) s2.push((await put(crypto.randomUUID(), "full", webp(300), { d: `device-ip-${i}xxxx`, ip: "3.3.3.3" })).status);
     expect([...new Set(s2.slice(0, PHOTO_IP_N))]).toEqual([204]);
@@ -195,7 +195,7 @@ describe("photos", () => {
     expect((await put(uSame, "thumb", webp(300, 400, 300), { d: "device-limit-2", ip: "4.5.0.1" })).status, "known uuid is not re-counted").toBe(204);
   });
 
-  it("기기별 남은 업로드 수: 업로드·삭제 반영, 기기 헤더 필수", async () => {
+  it("기기별 10분 남은 업로드 수: 업로드·삭제 반영, 기기 헤더 필수", async () => {
     const quota = async (d?: string) => exports.default.fetch(new Request(`${BASE}/photos/quota`, { headers: { Origin: OK, ...(d ? dev(d) : {}) } }));
     expect((await quota()).status).toBe(400);
     const d = "device-quota-1";

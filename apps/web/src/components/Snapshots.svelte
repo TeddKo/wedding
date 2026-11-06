@@ -40,7 +40,7 @@
   type Tile = { url: string; ok: boolean; fell: boolean; bad: boolean };
   let tiles = $state<Tile[]>([]);
   let previewGen = 0;
-  let left = $state<number>(PHOTO.perDevice);
+  let left = $state<number>(PHOTO.perBatch);
   const allow = $derived(Math.max(0, left - jobs.filter((j) => j.state === "wait" || j.state === "compress").length));
   let sheetPw = $state("");
   let sheetShow = $state(false);
@@ -408,7 +408,7 @@
         e instanceof Error && s === -1 && e.message.startsWith("이 사진") ? e.message
         : s === 413 || s === 415 || s === 422 ? "이 사진은 올릴 수 없어요. 다른 사진을 선택해 주세요."
         : s === 403 ? "업로드 가능한 사진 수를 모두 채웠어요."
-        : s === 429 ? `한 휴대폰에서 ${PHOTO.perDevice}장까지 올릴 수 있어요.`
+        : s === 429 ? `한 번에 ${PHOTO.perBatch}장까지 올릴 수 있어요. 10분 뒤 다시 시도해 주세요.`
         : GENERIC;
       j.state = "fail";
       if (s === -1 || s === 413 || s === 415 || s === 422) packed.delete(j.id);
@@ -454,20 +454,20 @@
     <div class="up">
       <input bind:this={input} class="file" type="file" accept="image/*,.heic,.heif" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
       <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => (warm(), void refreshQuota(), input?.click())}>사진 올리기</button>
-      <p class="hint">한 휴대폰에서 {PHOTO.perDevice}장까지 올릴 수 있어요</p>
+      <p class="hint">한 번에 {PHOTO.perBatch}장까지 올릴 수 있어요</p>
     </div>
   {/if}
 
   <dialog bind:this={dlg} class="sheet" aria-labelledby="snap-t" {onclose} onkeydown={trap}>
     <form method="dialog" onsubmit={(e) => (e.preventDefault(), submit())}>
-      <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>{allow ? `사진 ${Math.min(pending.length, allow)}장을 올릴까요?` : "더 올릴 수 없어요"}</h2>
+      <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>{allow ? `사진 ${Math.min(pending.length, allow)}장을 올릴까요?` : "10분 뒤 다시 올려 주세요"}</h2>
       <div class="pvs" aria-hidden="true">
         {#each tiles as t, i (i)}
           <span class="pvt" class:ld={!t.ok && !t.bad} class:over={i >= allow}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}{#if i >= allow}<b class="x">!</b>{/if}</span>
         {/each}
       </div>
-      <p class="hint">한 휴대폰에서 {PHOTO.perDevice}장까지 올릴 수 있어요 · 남은 {allow}장</p>
-      {#if pending.length > allow}<p class="err">빨간 표시 {pending.length - allow}장은 한도를 넘어 올라가지 않아요</p>{/if}
+      <p class="hint">한 번에 {PHOTO.perBatch}장까지 올릴 수 있어요{#if allow < PHOTO.perBatch}{" · "}방금 올린 사진이 있어 지금은 {allow}장, 10분 뒤 다시 {PHOTO.perBatch}장{/if}</p>
+      {#if pending.length > allow}<p class="err">빨간 표시 {pending.length - allow}장은 올라가지 않아요</p>{/if}
       <label for="snap-pw">삭제 비밀번호 (선택)</label>
       <div class="pwbox">
         <input id="snap-pw" type={sheetShow ? "text" : "password"} bind:value={sheetPw} maxlength="64" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!sheetErr} aria-describedby={sheetErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
@@ -588,7 +588,6 @@
   .pvt img.on { opacity: 1; }
   @keyframes pv-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
   @media (prefers-reduced-motion: reduce) { .pvt.ld { animation: none; background-image: none; } .pvt img { transition: none; } }
-  .pvs { max-height: 188px; overflow-y: auto; }
   .pvt.over::after { content: ""; position: absolute; inset: 0; border: 2px solid #c0392b; border-radius: inherit; background: rgb(192 57 43 / 0.25); }
   .pvt .x { position: absolute; z-index: 1; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: #c0392b; color: #fff; font: 700 11px/16px system-ui, sans-serif; text-align: center; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }

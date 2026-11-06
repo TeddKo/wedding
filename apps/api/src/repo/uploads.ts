@@ -6,7 +6,7 @@ export const findUpload = (d: Db, uuid: string) => d.select().from(uploads).wher
 
 export const countUploadsByIp = (d: Db, ip: string, since: number) => d.$count(uploads, and(eq(uploads.ipHash, ip), gt(uploads.createdAt, since)));
 
-export const countUploadsByDevice = (d: Db, device: string) => d.$count(uploads, eq(uploads.deviceId, device));
+export const countUploadsByDevice = (d: Db, device: string, since: number) => d.$count(uploads, and(eq(uploads.deviceId, device), gt(uploads.createdAt, since)));
 
 export const insertUpload = (d: Db, v: typeof uploads.$inferInsert) => d.insert(uploads).values(v).onConflictDoNothing();
 

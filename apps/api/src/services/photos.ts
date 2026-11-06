@@ -14,7 +14,7 @@ export async function putImage(env: Env, a: { uuid: string; kind: PhotoKind; dev
   const { uuid, kind } = a;
   if (await photoExists(d, uuid)) fail(409, "exists");
   if (!(await findUpload(d, uuid))) {
-    if ((await countUploadsByIp(d, a.ip, Date.now() - LIMIT_MS)) >= PHOTO_IP_N || (await countUploadsByDevice(d, a.device)) >= PHOTO_DEVICE_MAX)
+    if ((await countUploadsByIp(d, a.ip, Date.now() - LIMIT_MS)) >= PHOTO_IP_N || (await countUploadsByDevice(d, a.device, Date.now() - LIMIT_MS)) >= PHOTO_DEVICE_MAX)
       fail(429, "too many uploads");
     if ((await maxUploadRowid(d)) >= (Number(env.PHOTO_TOTAL_N) || PHOTO_TOTAL_N)) fail(403, "full");
   }
