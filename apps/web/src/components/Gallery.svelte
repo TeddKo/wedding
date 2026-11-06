@@ -25,8 +25,10 @@
     need?: (i: number) => "pw" | "confirm" | null;
     /** 라이트박스를 붙일 요소. 열린 모달 dialog 위에 띄울 때 그 dialog 지정(top layer) */
     host?: HTMLElement;
+    /** 라이트박스가 완전히 닫힌 뒤 */
+    onclose?: () => void;
   };
-  let { items, bare = false, thumbAt, more = false, onindex, total, remove, need, host }: Props = $props();
+  let { items, bare = false, thumbAt, more = false, onindex, total, remove, need, host, onclose }: Props = $props();
 
   const n = $derived(items.length);
 
@@ -161,6 +163,7 @@
     open = false;
     setInert(false);
     (bare ? thumbAt?.(back) : btns[back])?.focus({ preventScroll: true });
+    onclose?.();
   }
 
   let delOpen = $state(false);

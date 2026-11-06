@@ -153,7 +153,7 @@ export function preview(file: File, size = 112, stale?: () => boolean): Promise<
   return serial(async () => {
     if (stale?.()) throw new Error("stale");
     if (workerOk()) {
-      const m = await viaWorker(file, size);
+      const m = await viaWorker(file, { prev: size });
       if (m) {
         if (m.err !== undefined) throw new Error(m.err);
         return m.blob!;
@@ -163,13 +163,28 @@ export function preview(file: File, size = 112, stale?: () => boolean): Promise<
   }, true);
 }
 
+/** 비율 유지·긴 변 long 의 화면용 미리보기(원본·업로드 팩 미사용). 결과 blob 은 호출 쪽이 해제. */
+export function fit(file: File, long: number, stale?: () => boolean): Promise<{ blob: Blob; w: number; h: number }> {
+  return serial(async () => {
+    if (stale?.()) throw new Error("stale");
+    if (workerOk()) {
+      const m = await viaWorker(file, { fit: long });
+      if (m) {
+        if (m.err !== undefined) throw new Error(m.err);
+        return { blob: m.blob!, w: m.w!, h: m.h! };
+      }
+    }
+    return fitMain(file, long);
+  }, true);
+}
+
 const workerOk = () =>
   typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof OffscreenCanvas.prototype.convertToBlob === "function" && !workerDead;
 
 let worker: Worker | undefined;
 let workerDead = false;
 let seq = 0;
-type Msg = { id: number; ok?: Compressed; blob?: Blob; err?: string; needMain?: true };
+type Msg = { id: number; ok?: Compressed; blob?: Blob; w?: number; h?: number; err?: string; needMain?: true };
 let pending: { id: number; res: (m: Msg) => void; rej: (e: Error) => void } | null = null;
 
 function getWorker() {
@@ -190,11 +205,11 @@ const call = (msg: object, id: number, transfer: Transferable[] = []) =>
     getWorker().postMessage({ id, ...msg }, transfer);
   });
 
-/** prev 가 있으면 미리보기 모드. 워커가 죽으면 null(호출자가 메인 스레드로 대체). */
-async function viaWorker(file: File, prev?: number): Promise<Msg | null> {
+/** prev·fit 이 있으면 미리보기 모드. 워커가 죽으면 null(호출자가 메인 스레드로 대체). */
+async function viaWorker(file: File, o: { prev?: number; fit?: number } = {}): Promise<Msg | null> {
   const id = ++seq;
   try {
-    let m = await call({ file, prev }, id);
+    let m = await call({ file, ...o }, id);
     if (m.needMain) {
       let bmp: ImageBitmap;
       try {
@@ -202,7 +217,7 @@ async function viaWorker(file: File, prev?: number): Promise<Msg | null> {
       } catch {
         throw new Error(UNSUPPORTED);
       }
-      m = await call({ bitmap: bmp, size: file.size, prev }, id, [bmp]);
+      m = await call({ bitmap: bmp, size: file.size, ...o }, id, [bmp]);
     }
     return m;
   } catch (e) {
@@ -224,6 +239,19 @@ async function previewMain(file: File, size: number): Promise<Blob> {
     c.width = c.height = 0;
     if (!blob) throw new Error("encode");
     return blob;
+  } finally {
+    bmp.close();
+  }
+}
+
+async function fitMain(file: File, long: number) {
+  const bmp = await decode(file);
+  try {
+    const c = resize(bmp, long);
+    const { w, h } = { w: c.width, h: c.height };
+    const { blob } = await encode(c, 0.8);
+    c.width = c.height = 0;
+    return { blob, w, h };
   } finally {
     bmp.close();
   }

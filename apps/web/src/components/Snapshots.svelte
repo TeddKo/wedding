@@ -3,7 +3,7 @@
   import { reduced } from "../lib/motion";
   import Gallery from "./Gallery.svelte";
   import Toast from "./ui/Toast.svelte";
-  import { compress, preview, warm, type Compressed } from "../lib/compress";
+  import { compress, fit, preview, warm, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
   import { PHOTO } from "@wedding/shared";
   import type { Photo, PhotoList } from "@wedding/shared/schemas";
@@ -41,8 +41,9 @@
   let tileSeq = 0;
   const newTile = (): Tile => ({ id: ++tileSeq, url: "", ok: false, fell: false, bad: false });
   let pgal = $state<{ openAt(i: number): void }>();
-  /* 모달 크게 보기용 압축본(긴 변 2560·EXIF 회전 반영·HEIC 변환). 원본을 직접 그리면 대용량 디코드로 일그러짐·깨짐 → 업로드용 압축 결과를 미리 만들어 재사용 */
-  const packs = new WeakMap<File, Promise<Compressed>>();
+  /* 크게 보기용 화면 크기 축소본(EXIF 회전 반영·HEIC 변환). 원본 직접 표시 금지, 현재 ±1 슬라이딩 윈도우만 보관 */
+  const win = new Set<File>();
+  const loading = new Set<File>();
   let views = $state(new Map<File, { url: string; w: number; h: number }>());
   let opening = $state(-1);
   const picks = $derived(
@@ -74,15 +75,6 @@
   const compressSerial = (f: File) => {
     const p = zq.then(() => compress(f));
     zq = p.then(() => {}, () => {});
-    return p;
-  };
-  const packOf = (f: File) => {
-    let p = packs.get(f);
-    if (!p) {
-      p = compressSerial(f);
-      packs.set(f, p);
-      p.catch(() => packs.delete(f));
-    }
     return p;
   };
 
@@ -340,23 +332,48 @@
     pending = pending.filter((_, k) => k !== i);
   }
 
-  async function ensureView(f: File | undefined) {
-    if (!f || views.has(f)) return;
-    const c = await packOf(f);
-    if (views.has(f) || !pending.includes(f)) return;
-    views = new Map(views).set(f, { url: URL.createObjectURL(c.full.blob), w: c.w, h: c.h });
-  }
-  const near = (i: number) => [i + 1, i - 1, i + 2].forEach((k) => void ensureView(pending[k]).catch(() => {}));
+  const fitLong = () => Math.min(1600, Math.ceil(Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2)));
 
-  /** 크게 보기: 갤러리 라이트박스(스와이프 넘기기·드래그 닫기·핀치 확대) 재사용. 압축본 준비 후 열고 이웃 사진 미리 준비 */
+  async function ensureView(f: File | undefined) {
+    if (!f || views.has(f) || loading.has(f)) return;
+    loading.add(f);
+    try {
+      const r = await fit(f, fitLong(), () => !win.has(f));
+      const url = URL.createObjectURL(r.blob);
+      if (!win.has(f)) return void URL.revokeObjectURL(url);
+      views = new Map(views).set(f, { url, w: r.w, h: r.h });
+    } finally {
+      loading.delete(f);
+    }
+  }
+
+  function window3(i: number) {
+    win.clear();
+    [i - 1, i, i + 1].forEach((k) => pending[k] && win.add(pending[k]));
+    const next = new Map(views);
+    views.forEach((v, f) => win.has(f) || (URL.revokeObjectURL(v.url), next.delete(f)));
+    if (next.size !== views.size) views = next;
+    win.forEach((f) => void ensureView(f).catch(() => {}));
+  }
+
+  function dropViews() {
+    win.clear();
+    views.forEach((v) => URL.revokeObjectURL(v.url));
+    views = new Map();
+  }
+
+  /** 크게 보기: 갤러리 라이트박스 재사용. i 번째 축소본(w·h) 준비 후 열어 늘어남 방지 */
   async function zoom(i: number) {
     if (opening >= 0) return;
     opening = i;
+    win.clear();
+    win.add(pending[i]);
     try {
       await ensureView(pending[i]);
-      if (dlg?.open) pgal?.openAt(i);
-      near(i);
+      if (dlg?.open && views.has(pending[i])) pgal?.openAt(i);
+      else if (dlg?.open) throw new Error("fit");
     } catch {
+      dropViews();
       notify("이 사진은 미리 볼 수 없어요", true);
     } finally {
       opening = -1;
@@ -365,8 +382,7 @@
 
   function onclose() {
     previewGen++;
-    views.forEach((v) => URL.revokeObjectURL(v.url));
-    views = new Map();
+    dropViews();
     tiles.forEach((t) => t.url && URL.revokeObjectURL(t.url));
     tiles = [];
     pending = [];
@@ -443,7 +459,7 @@
     try {
       let c = packed.get(j.id);
       if (!c) {
-        c = await packOf(j.file);
+        c = await compressSerial(j.file);
         packed.set(j.id, c);
       }
       if (!j.url) j.url = URL.createObjectURL(c.thumb.blob);
@@ -544,7 +560,7 @@
       <button type="submit" class="go" disabled={!Math.min(pending.length, allow)}>{Math.min(pending.length, allow)}장 올리기</button>
       <button type="button" class="no" onclick={() => dlg?.close()}>취소</button>
     </form>
-    {#if dlg}<Gallery bind:this={pgal} bare items={picks} host={dlg} thumbAt={(i) => dlg?.querySelectorAll<HTMLElement>(".pv-open")[i]} onindex={near} />{/if}
+    {#if dlg}<Gallery bind:this={pgal} bare items={picks} host={dlg} thumbAt={(i) => dlg?.querySelectorAll<HTMLElement>(".pv-open")[i]} onindex={window3} onclose={dropViews} />{/if}
   </dialog>
 
 

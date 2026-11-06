@@ -9,7 +9,10 @@ const TOO_LARGE = "이 사진은 너무 커서 처리할 수 없어요. 다른 �
 const HEIC_BRANDS = ["heic", "heix", "hevc", "heim", "heis", "hevm", "hevs", "mif1", "msf1"];
 
 type Packed = { blob: Blob; type: string };
-type In = { warm: true } | { id: number; file: File; prev?: number } | { id: number; bitmap: ImageBitmap; size: number; prev?: number };
+type In =
+  | { warm: true }
+  | { id: number; file: File; prev?: number; fit?: number }
+  | { id: number; bitmap: ImageBitmap; size: number; prev?: number; fit?: number };
 const ctx = self as unknown as { postMessage(m: unknown, t?: Transferable[]): void; onmessage: ((e: MessageEvent<In>) => void) | null };
 
 let webpOk = true;
@@ -110,6 +113,19 @@ async function square(bmp: ImageBitmap, size: number) {
   }
 }
 
+/** 비율 유지 화면용 미리보기(긴 변 long). */
+async function fit(bmp: ImageBitmap, long: number) {
+  try {
+    const c = resize(bmp, long);
+    const { w, h } = { w: c.width, h: c.height };
+    const { blob } = await encode(c, 0.8);
+    c.width = c.height = 0;
+    return { blob, w, h };
+  } finally {
+    bmp.close();
+  }
+}
+
 ctx.onmessage = async (e) => {
   const m = e.data;
   if ("warm" in m) {
@@ -118,7 +134,8 @@ ctx.onmessage = async (e) => {
     } catch {}
     return;
   }
-  const run = (b: ImageBitmap, n: number) => (m.prev ? square(b, m.prev).then((blob) => ({ blob })) : pack(b, n).then((ok) => ({ ok })));
+  const run = (b: ImageBitmap, n: number) =>
+    m.fit ? fit(b, m.fit) : m.prev ? square(b, m.prev).then((blob) => ({ blob })) : pack(b, n).then((ok) => ({ ok }));
   try {
     if ("bitmap" in m) return ctx.postMessage({ id: m.id, ...(await run(m.bitmap, m.size)) });
     const bmp = await decode(m.file);
