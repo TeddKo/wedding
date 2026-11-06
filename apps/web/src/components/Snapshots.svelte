@@ -3,7 +3,7 @@
   import { reduced } from "../lib/motion";
   import Gallery from "./Gallery.svelte";
   import Toast from "./ui/Toast.svelte";
-  import { compress, isHeicFile, preview, warm, type Compressed } from "../lib/compress";
+  import { compress, preview, warm, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
   import { PHOTO } from "@wedding/shared";
   import type { Photo, PhotoList } from "@wedding/shared/schemas";
@@ -267,11 +267,8 @@
     dlgTitle?.focus();
   }
 
-  /** 기본 object URL 을 먼저 시도하고, HEIC 이거나 <img> 가 실패하면 preview() 결과로 교체. 닫힌 뒤 도착한 결과는 무시. */
-  async function fill(f: File, t: Tile, gen: number) {
-    if (await isHeicFile(f).catch(() => false)) return swap(f, t, gen);
-    if (gen === previewGen) t.url = URL.createObjectURL(f);
-  }
+  /** 원본 object URL 은 장마다 메인 스레드 풀해상도 디코드라 여러 장이면 버벅임 → 워커에서 112px 축소본 생성(직렬). 닫힌 뒤 도착한 결과는 무시. */
+  const fill = (f: File, t: Tile, gen: number) => swap(f, t, gen);
 
   async function swap(f: File, t: Tile, gen: number) {
     if (t.fell) return;
