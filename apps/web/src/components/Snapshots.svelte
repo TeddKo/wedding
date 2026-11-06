@@ -13,7 +13,6 @@
   type Job = { id: number; file: File; uuid: string; state: State; pct: number; err: string; url: string; pw: string };
   let { api, cdn = "" }: { api: string; cdn?: string } = $props();
 
-  const MAX_PICK = 20;
   const CONCURRENCY = 2;
   const RETRIES = 3;
   const PAGE = PHOTO.defaultLimit;
@@ -41,7 +40,8 @@
   type Tile = { url: string; ok: boolean; fell: boolean; bad: boolean };
   let tiles = $state<Tile[]>([]);
   let previewGen = 0;
-  let overPick = $state(false);
+  let left = $state<number>(PHOTO.perDevice);
+  const allow = $derived(Math.max(0, left - jobs.filter((j) => j.state === "wait" || j.state === "compress").length));
   let sheetPw = $state("");
   let sheetShow = $state(false);
   let sheetErr = $state("");
@@ -242,18 +242,25 @@
     if (okN) notify(`${okN}장 올렸어요. ${batchPw ? "정한 비밀번호로" : "이 휴대폰에서"} 지울 수 있어요`);
   });
 
-  const PREVIEW_N = 6;
+  /* 기기별 남은 업로드 수. 실패 시 기존 값 유지(서버가 최종 한도 판정) */
+  async function refreshQuota() {
+    try {
+      const r = await request<{ left?: number }>(api, "/photos/quota", { headers: { "X-Device": deviceId() } });
+      if (r.status === 200 && typeof r.body.left === "number") left = r.body.left;
+    } catch {
+      /* 네트워크 오류: 기존 값 유지 */
+    }
+  }
 
   function pick(e: Event) {
     const el = e.currentTarget as HTMLInputElement;
     const files = [...(el.files ?? [])];
     el.value = "";
     if (!files.length) return;
-    overPick = files.length > MAX_PICK;
-    pending = files.slice(0, MAX_PICK);
+    pending = files;
     const gen = ++previewGen;
-    tiles = pending.slice(0, PREVIEW_N).map(() => ({ url: "", ok: false, fell: false, bad: false }));
-    pending.slice(0, PREVIEW_N).forEach((f, i) => void fill(f, tiles[i], gen));
+    tiles = pending.map(() => ({ url: "", ok: false, fell: false, bad: false }));
+    pending.forEach((f, i) => void fill(f, tiles[i], gen));
     sheetPw = sheetErr = "";
     pickBtn?.focus();
     dlg?.showModal();
@@ -281,12 +288,13 @@
   }
 
   function submit() {
+    if (!allow) return;
     const v = sheetPw.trim();
     if (v && (v.length < 4 || v.length > 64)) {
       sheetErr = "비밀번호는 4~64자로 입력해 주세요";
       return;
     }
-    const add = pending.map(
+    const add = pending.slice(0, allow).map(
       (file): Job => ({ id: ++seq, file, uuid: crypto.randomUUID(), state: "wait", pct: 0, err: "", url: "", pw: v }),
     );
     if (!busy) (batchN = okN = 0), (batchPw = false);
@@ -400,7 +408,7 @@
         e instanceof Error && s === -1 && e.message.startsWith("이 사진") ? e.message
         : s === 413 || s === 415 || s === 422 ? "이 사진은 올릴 수 없어요. 다른 사진을 선택해 주세요."
         : s === 403 ? "업로드 가능한 사진 수를 모두 채웠어요."
-        : s === 429 ? "업로드 한도에 도달했어요. 잠시 후 다시 시도해 주세요."
+        : s === 429 ? `한 휴대폰에서 ${PHOTO.perDevice}장까지 올릴 수 있어요.`
         : GENERIC;
       j.state = "fail";
       if (s === -1 || s === 413 || s === 415 || s === 422) packed.delete(j.id);
@@ -445,21 +453,21 @@
   {#if mounted}
     <div class="up">
       <input bind:this={input} class="file" type="file" accept="image/*,.heic,.heif" multiple tabindex="-1" aria-hidden="true" onchange={pick} />
-      <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => (warm(), input?.click())}>사진 올리기</button>
-      <p class="hint">한 번에 {MAX_PICK}장까지 올릴 수 있어요</p>
+      <button type="button" class="btn-outline pick" bind:this={pickBtn} data-press onclick={() => (warm(), void refreshQuota(), input?.click())}>사진 올리기</button>
+      <p class="hint">한 휴대폰에서 {PHOTO.perDevice}장까지 올릴 수 있어요</p>
     </div>
   {/if}
 
   <dialog bind:this={dlg} class="sheet" aria-labelledby="snap-t" {onclose} onkeydown={trap}>
     <form method="dialog" onsubmit={(e) => (e.preventDefault(), submit())}>
-      <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>사진 {pending.length}장을 올릴까요?</h2>
+      <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>{allow ? `사진 ${Math.min(pending.length, allow)}장을 올릴까요?` : "더 올릴 수 없어요"}</h2>
       <div class="pvs" aria-hidden="true">
         {#each tiles as t, i (i)}
-          <span class="pvt" class:ld={!t.ok && !t.bad}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</span>
+          <span class="pvt" class:ld={!t.ok && !t.bad} class:over={i >= allow}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}{#if i >= allow}<b class="x">!</b>{/if}</span>
         {/each}
-        {#if pending.length > PREVIEW_N}<span class="more">외 {pending.length - PREVIEW_N}장</span>{/if}
       </div>
-      {#if overPick}<p class="hint">한 번에 {MAX_PICK}장까지라 앞의 {MAX_PICK}장만 올라가요</p>{/if}
+      <p class="hint">한 휴대폰에서 {PHOTO.perDevice}장까지 올릴 수 있어요 · 남은 {allow}장</p>
+      {#if pending.length > allow}<p class="err">빨간 표시 {pending.length - allow}장은 한도를 넘어 올라가지 않아요</p>{/if}
       <label for="snap-pw">삭제 비밀번호 (선택)</label>
       <div class="pwbox">
         <input id="snap-pw" type={sheetShow ? "text" : "password"} bind:value={sheetPw} maxlength="64" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-invalid={!!sheetErr} aria-describedby={sheetErr ? "snap-pw-e snap-pw-h" : "snap-pw-h"} />
@@ -467,7 +475,7 @@
       </div>
       <p class="hint" id="snap-pw-h">정해 두면 나중에 어느 휴대폰에서든 이 비밀번호로 지울 수 있어요. 비워 두면 지금 이 휴대폰에서만 지울 수 있어요.</p>
       {#if sheetErr}<p class="err" id="snap-pw-e" role="alert">{sheetErr}</p>{/if}
-      <button type="submit" class="go">{pending.length}장 올리기</button>
+      <button type="submit" class="go" disabled={!allow}>{Math.min(pending.length, allow)}장 올리기</button>
       <button type="button" class="no" onclick={() => dlg?.close()}>취소</button>
     </form>
   </dialog>
@@ -580,12 +588,15 @@
   .pvt img.on { opacity: 1; }
   @keyframes pv-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
   @media (prefers-reduced-motion: reduce) { .pvt.ld { animation: none; background-image: none; } .pvt img { transition: none; } }
-  .more { font-size: 14px; color: var(--ink-2); padding-left: 4px; }
+  .pvs { max-height: 188px; overflow-y: auto; }
+  .pvt.over::after { content: ""; position: absolute; inset: 0; border: 2px solid #c0392b; border-radius: inherit; background: rgb(192 57 43 / 0.25); }
+  .pvt .x { position: absolute; z-index: 1; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: #c0392b; color: #fff; font: 700 11px/16px system-ui, sans-serif; text-align: center; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
   .sheet input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
   .sheet input[aria-invalid="true"] { border-color: #c0392b; }
   .go, .no { min-height: 48px; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; border: 1px solid var(--line); }
   .go { background: var(--ink); color: var(--surface); border-color: var(--ink); margin-top: 6px; }
+  .go:disabled { opacity: 0.4; cursor: not-allowed; }
   .no { background: transparent; color: var(--ink); }
   .go:focus-visible, .no:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @keyframes sheet-in { from { opacity: 0; transform: translateY(8px); } }

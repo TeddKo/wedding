@@ -191,8 +191,20 @@ describe("photos", () => {
     expect(s3[PHOTO_DEVICE_MAX]).toBe(429);
     const uSame = crypto.randomUUID();
     expect((await put(uSame, "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
-    for (let i = 0; i < 29; i++) expect((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
+    for (let i = 0; i < PHOTO_DEVICE_MAX - 1; i++) expect((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
     expect((await put(uSame, "thumb", webp(300, 400, 300), { d: "device-limit-2", ip: "4.5.0.1" })).status, "known uuid is not re-counted").toBe(204);
+  });
+
+  it("기기별 남은 업로드 수: 업로드·삭제 반영, 기기 헤더 필수", async () => {
+    const quota = async (d?: string) => exports.default.fetch(new Request(`${BASE}/photos/quota`, { headers: { Origin: OK, ...(d ? dev(d) : {}) } }));
+    expect((await quota()).status).toBe(400);
+    const d = "device-quota-1";
+    expect(await json<{ left: number }>(await quota(d))).toEqual({ left: PHOTO_DEVICE_MAX });
+    const [u, r] = await upload({}, { d, ip: "6.6.6.6" });
+    expect(r.status).toBe(201);
+    expect(await json<{ left: number }>(await quota(d))).toEqual({ left: PHOTO_DEVICE_MAX - 1 });
+    expect((await del(u, { d })).status).toBe(204);
+    expect(await json<{ left: number }>(await quota(d))).toEqual({ left: PHOTO_DEVICE_MAX });
   });
 
   it("확장자 불일치", async () => {

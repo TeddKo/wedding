@@ -1,7 +1,9 @@
+import { PHOTO } from "@wedding/shared";
+
 export const LIMIT_MS = 10 * 60 * 1000;
 export const ENTRY_IP_N = 20;
 export const PHOTO_IP_N = 400;
-export const PHOTO_DEVICE_MAX = 30;
+export const PHOTO_DEVICE_MAX = PHOTO.perDevice;
 export const PHOTO_TOTAL_N = 2500;
 export const PW_FAIL_N = 10;
 export const PW_ITER = 5_000;
