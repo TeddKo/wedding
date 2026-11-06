@@ -46,8 +46,9 @@
   const loading = new Set<File>();
   let views = $state(new Map<File, { url: string; w: number; h: number }>());
   let opening = $state(-1);
+  /* 업로드 대상(앞 allow 장)만 크게 보기·스와이프 대상. 한도 초과 사진은 미리보기 불가로 정책 일원화 */
   const picks = $derived(
-    pending.map((f, i) => {
+    pending.slice(0, allow).map((f, i) => {
       const v = views.get(f);
       return { thumb: v?.url ?? tiles[i]?.url ?? "", srcset: "", full: v?.url ?? "", w: v?.w ?? 1, h: v?.h ?? 1 };
     }),
@@ -349,7 +350,7 @@
 
   function window3(i: number) {
     win.clear();
-    [i - 1, i, i + 1].forEach((k) => pending[k] && win.add(pending[k]));
+    [i - 1, i, i + 1].forEach((k) => k >= 0 && k < allow && pending[k] && win.add(pending[k]));
     const next = new Map(views);
     views.forEach((v, f) => win.has(f) || (URL.revokeObjectURL(v.url), next.delete(f)));
     if (next.size !== views.size) views = next;
@@ -364,7 +365,7 @@
 
   /** 크게 보기: 갤러리 라이트박스 재사용. i 번째 축소본(w·h) 준비 후 열어 늘어남 방지 */
   async function zoom(i: number) {
-    if (opening >= 0) return;
+    if (opening >= 0 || i >= allow) return;
     opening = i;
     win.clear();
     win.add(pending[i]);
@@ -540,7 +541,7 @@
       <div class="pvs">
         {#each tiles as t, i (t.id)}
           <span class="pvt" class:ld={(!t.ok && !t.bad) || opening === i} class:over={i >= allow}>
-            <button type="button" class="pv-open" aria-label="사진 {i + 1} 크게 보기" onclick={() => zoom(i)}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</button>
+            <button type="button" class="pv-open" aria-label={i < allow ? `사진 ${i + 1} 크게 보기` : `사진 ${i + 1}, 한도 초과로 올라가지 않음`} disabled={i >= allow} onclick={() => zoom(i)}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</button>
             {#if i >= allow}<b class="x" aria-hidden="true">!</b>{/if}
             <button type="button" class="pv-del" aria-label="사진 {i + 1} 빼기" onclick={() => unpick(i)}>×</button>
           </span>
@@ -676,6 +677,7 @@
   .pv-open { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: zoom-in; }
   .pv-del { position: absolute; z-index: 2; top: 2px; right: 2px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.6); color: #fff; font: 600 14px/20px system-ui, sans-serif; cursor: pointer; }
   .pv-add { display: grid; place-items: center; padding: 0; border: 1px dashed var(--line); background: transparent; color: var(--ink-2); font: 300 26px/1 system-ui, sans-serif; cursor: pointer; }
+  .pv-open:disabled { cursor: not-allowed; }
   .pv-open:focus-visible, .pv-del:focus-visible, .pv-add:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .pvt .x { position: absolute; z-index: 1; bottom: 3px; left: 3px; pointer-events: none; width: 16px; height: 16px; border-radius: 50%; background: #c0392b; color: #fff; font: 700 11px/16px system-ui, sans-serif; text-align: center; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
