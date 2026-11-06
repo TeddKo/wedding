@@ -1,7 +1,7 @@
 import { url } from "../lib/url";
 
 const KEY = "bgm-state";
-const FADE_MS = 2000;
+const FADE_MS = 600;
 const MAX_VOLUME = 0.6;
 
 let audio: HTMLAudioElement | null = null;
@@ -36,7 +36,14 @@ function fadeTo(target: number, done?: () => void) {
       a.volume = target;
       clearInterval(fade);
       done?.();
-    } else a.volume = v;
+    } else {
+      a.volume = v;
+      /* iOS: volume 읽기 전용(항상 1) — 페이드 불가, 즉시 완료 처리 */
+      if (Math.abs(a.volume - v) > 0.01) {
+        clearInterval(fade);
+        done?.();
+      }
+    }
   }, 50);
 }
 
