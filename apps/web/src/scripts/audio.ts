@@ -25,25 +25,22 @@ const store = (v: "on" | "off") => {
   }
 };
 
+/**
+ * 시간 기준 페이드. FADE_MS 경과 시 볼륨 상태와 무관하게 done 호출.
+ * iOS WebKit 은 volume 대입 직후엔 그 값을 돌려주지만 다음 틱엔 1로 되돌리므로 읽은 값으로 종료를 판단하면 영원히 끝나지 않는다.
+ */
 function fadeTo(target: number, done?: () => void) {
   if (!audio) return;
   clearInterval(fade);
   const a = audio;
-  const step = ((target - a.volume) / FADE_MS) * 50;
+  const from = a.volume;
+  const start = performance.now();
   fade = window.setInterval(() => {
-    const v = a.volume + step;
-    if ((step > 0 && v >= target) || (step <= 0 && v <= target)) {
-      a.volume = target;
-      clearInterval(fade);
-      done?.();
-    } else {
-      a.volume = v;
-      /* iOS: volume 읽기 전용(항상 1) — 페이드 불가, 즉시 완료 처리 */
-      if (Math.abs(a.volume - v) > 0.01) {
-        clearInterval(fade);
-        done?.();
-      }
-    }
+    const p = Math.min(1, (performance.now() - start) / FADE_MS);
+    a.volume = from + (target - from) * p;
+    if (p < 1) return;
+    clearInterval(fade);
+    done?.();
   }, 50);
 }
 
