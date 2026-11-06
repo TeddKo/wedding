@@ -5,6 +5,7 @@
   import Toast from "./ui/Toast.svelte";
   import { compress, fit, preview, warm, type Compressed } from "../lib/compress";
   import { portal } from "../lib/portal";
+  import { exifThumb } from "../lib/exif-thumb";
   import { PHOTO } from "@wedding/shared";
   import type { Photo, PhotoList } from "@wedding/shared/schemas";
   import { request } from "../lib/api";
@@ -37,9 +38,9 @@
   let liveTimer: ReturnType<typeof setTimeout> | undefined;
   let jobs = $state<Job[]>([]);
   let pending = $state<File[]>([]);
-  type Tile = { id: number; url: string; ok: boolean; fell: boolean; bad: boolean };
+  type Tile = { id: number; url: string; ok: boolean; fell: boolean; bad: boolean; rot: string };
   let tileSeq = 0;
-  const newTile = (): Tile => ({ id: ++tileSeq, url: "", ok: false, fell: false, bad: false });
+  const newTile = (): Tile => ({ id: ++tileSeq, url: "", ok: false, fell: false, bad: false, rot: "" });
   let pgal = $state<{ openAt(i: number): void }>();
   /* 크게 보기용 화면 크기 축소본(EXIF 회전 반영·HEIC 변환). 원본 직접 표시 금지, 현재 ±1 슬라이딩 윈도우만 보관 */
   const win = new Set<File>();
@@ -291,16 +292,24 @@
   }
 
   /** 원본 object URL 은 장마다 메인 스레드 풀해상도 디코드라 여러 장이면 버벅임 → 워커에서 112px 축소본 생성(직렬). 닫힌 뒤 도착한 결과는 무시. */
-  const fill = (f: File, t: Tile, gen: number) => swap(f, t, gen);
+  /* 썸네일: JPEG 내장 EXIF 썸네일(앞 128KB 만 읽음, 디코드 없음) 우선, 없으면 워커 축소(직렬, 메모리 보호) */
+  async function fill(f: File, t: Tile, gen: number) {
+    const e = await exifThumb(f).catch(() => null);
+    if (gen !== previewGen || !tiles.includes(t)) return;
+    if (!e) return swap(f, t, gen);
+    t.rot = e.rot;
+    t.url = URL.createObjectURL(e.blob);
+  }
 
   async function swap(f: File, t: Tile, gen: number) {
     if (t.fell) return;
     t.fell = true;
     try {
-      const b = await preview(f, 112, () => gen !== previewGen);
+      const b = await preview(f, 112, () => gen !== previewGen || !tiles.includes(t));
       if (gen !== previewGen) return;
       if (t.url) URL.revokeObjectURL(t.url);
       t.ok = false;
+      t.rot = "";
       t.url = URL.createObjectURL(b);
     } catch {
       if (gen === previewGen) t.bad = true;
@@ -541,7 +550,7 @@
       <div class="pvs">
         {#each tiles as t, i (t.id)}
           <span class="pvt" class:ld={(!t.ok && !t.bad) || opening === i} class:over={i >= allow}>
-            <button type="button" class="pv-open" aria-label={i < allow ? `사진 ${i + 1} 크게 보기` : `사진 ${i + 1}, 한도 초과로 올라가지 않음`} disabled={i >= allow} onclick={() => zoom(i)}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</button>
+            <button type="button" class="pv-open" aria-label={i < allow ? `사진 ${i + 1} 크게 보기` : `사진 ${i + 1}, 한도 초과로 올라가지 않음`} disabled={i >= allow} onclick={() => zoom(i)}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" style:transform={t.rot || null} onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</button>
             {#if i >= allow}<b class="x" aria-hidden="true">!</b>{/if}
             <button type="button" class="pv-del" aria-label="사진 {i + 1} 빼기" onclick={() => unpick(i)}>×</button>
           </span>
