@@ -40,8 +40,12 @@
   type Tile = { id: number; url: string; ok: boolean; fell: boolean; bad: boolean };
   let tileSeq = 0;
   const newTile = (): Tile => ({ id: ++tileSeq, url: "", ok: false, fell: false, bad: false });
-  let zdlg = $state<HTMLDialogElement>();
-  let zoomUrl = $state("");
+  let pgal = $state<{ openAt(i: number): void }>();
+  /* 모달 사진 크게 보기용 원본 object URL·크기. 모달 닫힐 때 해제 */
+  const fullUrls = new Map<File, string>();
+  let dims = $state(new Map<File, { w: number; h: number }>());
+  const fullOf = (f: File) => fullUrls.get(f) ?? (fullUrls.set(f, URL.createObjectURL(f)), fullUrls.get(f)!);
+  const picks = $derived(pending.map((f, i) => ({ thumb: tiles[i]?.url ?? "", srcset: "", full: fullOf(f), w: dims.get(f)?.w ?? 4, h: dims.get(f)?.h ?? 3 })));
   let addInput = $state<HTMLInputElement>();
   let tiles = $state<Tile[]>([]);
   let previewGen = 0;
@@ -323,35 +327,22 @@
   }
 
   /** 원본 크게 보기. 브라우저가 못 그리는 형식(HEIC 등)은 워커 미리보기로 대체 */
-  let zoomFile: File | null = null;
+  /** 크게 보기: 갤러리 라이트박스(스와이프 넘기기·드래그 닫기·핀치 확대) 재사용. 원본 크기는 헤더 로드로 지연 측정 */
   function zoom(i: number) {
-    zoomFile = pending[i] ?? null;
-    if (!zoomFile) return;
-    zoomUrl = URL.createObjectURL(zoomFile);
-    zdlg?.showModal();
-  }
-
-  async function zoomFallback() {
-    const f = zoomFile;
-    if (!f || !zoomUrl) return;
-    URL.revokeObjectURL(zoomUrl);
-    zoomUrl = "";
-    try {
-      const b = await preview(f, 1080);
-      if (zoomFile === f && zdlg?.open) zoomUrl = URL.createObjectURL(b);
-    } catch {
-      zdlg?.close();
+    for (const f of pending) {
+      if (dims.has(f)) continue;
+      const im = new Image();
+      im.onload = () => (dims = new Map(dims).set(f, { w: im.naturalWidth, h: im.naturalHeight }));
+      im.src = fullOf(f);
     }
-  }
-
-  function onZoomClose() {
-    if (zoomUrl) URL.revokeObjectURL(zoomUrl);
-    zoomUrl = "";
-    zoomFile = null;
+    pgal?.openAt(i);
   }
 
   function onclose() {
     previewGen++;
+    fullUrls.forEach((u) => URL.revokeObjectURL(u));
+    fullUrls.clear();
+    dims = new Map();
     tiles.forEach((t) => t.url && URL.revokeObjectURL(t.url));
     tiles = [];
     pending = [];
@@ -529,12 +520,9 @@
       <button type="submit" class="go" disabled={!Math.min(pending.length, allow)}>{Math.min(pending.length, allow)}장 올리기</button>
       <button type="button" class="no" onclick={() => dlg?.close()}>취소</button>
     </form>
+    {#if dlg}<Gallery bind:this={pgal} bare items={picks} host={dlg} thumbAt={(i) => dlg?.querySelectorAll<HTMLElement>(".pv-open")[i]} />{/if}
   </dialog>
 
-  <dialog bind:this={zdlg} class="zoom" aria-label="사진 크게 보기" onclose={onZoomClose} onclick={() => zdlg?.close()}>
-    {#if zoomUrl}<img src={zoomUrl} alt="" onerror={zoomFallback} />{/if}
-    <button type="button" class="z-close" aria-label="닫기">×</button>
-  </dialog>
 
   {#if jobs.length}
     <div class="queue">
@@ -649,10 +637,6 @@
   .pv-del { position: absolute; z-index: 2; top: 2px; right: 2px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.6); color: #fff; font: 600 14px/20px system-ui, sans-serif; cursor: pointer; }
   .pv-add { display: grid; place-items: center; padding: 0; border: 1px dashed var(--line); background: transparent; color: var(--ink-2); font: 300 26px/1 system-ui, sans-serif; cursor: pointer; }
   .pv-open:focus-visible, .pv-del:focus-visible, .pv-add:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .zoom { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: rgb(0 0 0 / 0.96); }
-  .zoom::backdrop { background: transparent; }
-  .zoom img { width: 100%; height: 100%; object-fit: contain; }
-  .z-close { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.15); color: #fff; font: 400 26px/40px system-ui, sans-serif; cursor: pointer; }
   .pvt .x { position: absolute; z-index: 1; bottom: 3px; left: 3px; pointer-events: none; width: 16px; height: 16px; border-radius: 50%; background: #c0392b; color: #fff; font: 700 11px/16px system-ui, sans-serif; text-align: center; }
   .sheet input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; box-sizing: border-box; }
   .sheet input.file { width: 1px; min-height: 0; padding: 0; border: 0; }

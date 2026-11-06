@@ -23,8 +23,10 @@
     remove?: (i: number, pw?: string) => Promise<string | null>;
     /** i 번째 사진 삭제에 필요한 확인: "pw" 비밀번호 입력, "confirm" 확인만, null 삭제 버튼 숨김 */
     need?: (i: number) => "pw" | "confirm" | null;
+    /** 라이트박스를 붙일 요소. 열린 모달 dialog 위에 띄울 때 그 dialog 지정(top layer) */
+    host?: HTMLElement;
   };
-  let { items, bare = false, thumbAt, more = false, onindex, total, remove, need }: Props = $props();
+  let { items, bare = false, thumbAt, more = false, onindex, total, remove, need, host }: Props = $props();
 
   const n = $derived(items.length);
 
@@ -391,7 +393,7 @@
 {#if open && cur}
   <div
     bind:this={lb}
-    use:portal
+    use:portal={host}
     class="lb"
     role="dialog"
     aria-modal="true"
