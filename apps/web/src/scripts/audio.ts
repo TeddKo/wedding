@@ -9,6 +9,8 @@ let toggle: HTMLButtonElement | null = null;
 let fade = 0;
 let hiding = false;
 let priming = false;
+/** 페이드아웃 진행 중(아직 paused 아님). 이 동안의 재생 요청은 정지 취소로 처리 */
+let stopping = false;
 
 const stored = () => {
   try {
@@ -25,25 +27,22 @@ const store = (v: "on" | "off") => {
   }
 };
 
+/**
+ * 시간 기준 페이드. FADE_MS 경과 시 볼륨 상태와 무관하게 done 호출.
+ * iOS WebKit 은 volume 대입 직후엔 그 값을 돌려주지만 다음 틱엔 1로 되돌리므로 읽은 값으로 종료를 판단하면 영원히 끝나지 않는다.
+ */
 function fadeTo(target: number, done?: () => void) {
   if (!audio) return;
   clearInterval(fade);
   const a = audio;
-  const step = ((target - a.volume) / FADE_MS) * 50;
+  const from = a.volume;
+  const start = performance.now();
   fade = window.setInterval(() => {
-    const v = a.volume + step;
-    if ((step > 0 && v >= target) || (step <= 0 && v <= target)) {
-      a.volume = target;
-      clearInterval(fade);
-      done?.();
-    } else {
-      a.volume = v;
-      /* iOS: volume 읽기 전용(항상 1) — 페이드 불가, 즉시 완료 처리 */
-      if (Math.abs(a.volume - v) > 0.01) {
-        clearInterval(fade);
-        done?.();
-      }
-    }
+    const p = Math.min(1, (performance.now() - start) / FADE_MS);
+    a.volume = from + (target - from) * p;
+    if (p < 1) return;
+    clearInterval(fade);
+    done?.();
   }, 50);
 }
 
@@ -64,6 +63,13 @@ function onPlay() {
 
 async function resume() {
   if (!audio) return;
+  clearInterval(fade);
+  if (stopping && !audio.paused) {
+    stopping = false;
+    onPlay();
+    return;
+  }
+  stopping = false;
   audio.volume = 0;
   try {
     await audio.play();
@@ -76,7 +82,11 @@ async function resume() {
 
 function stop() {
   store("off");
-  fadeTo(0, () => audio?.pause());
+  stopping = true;
+  fadeTo(0, () => {
+    stopping = false;
+    audio?.pause();
+  });
 }
 
 /** 트랙이 없으면(src 빈 문자열) 아무것도 하지 않고 토글도 숨김. */
@@ -113,8 +123,9 @@ export function initAudio(button: HTMLButtonElement | null, src: string) {
     ms.setActionHandler("pause", stop);
   }
   toggle.addEventListener("click", () => {
-    toggle?.classList.toggle("is-off", !a.paused);
-    if (a.paused) void resume();
+    const off = a.paused || stopping;
+    toggle?.classList.toggle("is-off", !off);
+    if (off) void resume();
     else stop();
   });
   document.addEventListener("visibilitychange", () => {
