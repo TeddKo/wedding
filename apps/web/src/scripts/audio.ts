@@ -9,6 +9,8 @@ let toggle: HTMLButtonElement | null = null;
 let fade = 0;
 let hiding = false;
 let priming = false;
+/** 페이드아웃 진행 중(아직 paused 아님). 이 동안의 재생 요청은 정지 취소로 처리 */
+let stopping = false;
 
 const stored = () => {
   try {
@@ -61,6 +63,13 @@ function onPlay() {
 
 async function resume() {
   if (!audio) return;
+  clearInterval(fade);
+  if (stopping && !audio.paused) {
+    stopping = false;
+    onPlay();
+    return;
+  }
+  stopping = false;
   audio.volume = 0;
   try {
     await audio.play();
@@ -73,7 +82,11 @@ async function resume() {
 
 function stop() {
   store("off");
-  fadeTo(0, () => audio?.pause());
+  stopping = true;
+  fadeTo(0, () => {
+    stopping = false;
+    audio?.pause();
+  });
 }
 
 /** 트랙이 없으면(src 빈 문자열) 아무것도 하지 않고 토글도 숨김. */
@@ -110,8 +123,9 @@ export function initAudio(button: HTMLButtonElement | null, src: string) {
     ms.setActionHandler("pause", stop);
   }
   toggle.addEventListener("click", () => {
-    toggle?.classList.toggle("is-off", !a.paused);
-    if (a.paused) void resume();
+    const off = a.paused || stopping;
+    toggle?.classList.toggle("is-off", !off);
+    if (off) void resume();
     else stop();
   });
   document.addEventListener("visibilitychange", () => {
