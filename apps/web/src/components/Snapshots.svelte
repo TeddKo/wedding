@@ -41,11 +41,16 @@
   let tileSeq = 0;
   const newTile = (): Tile => ({ id: ++tileSeq, url: "", ok: false, fell: false, bad: false });
   let pgal = $state<{ openAt(i: number): void }>();
-  /* 모달 사진 크게 보기용 원본 object URL·크기. 모달 닫힐 때 해제 */
-  const fullUrls = new Map<File, string>();
-  let dims = $state(new Map<File, { w: number; h: number }>());
-  const fullOf = (f: File) => fullUrls.get(f) ?? (fullUrls.set(f, URL.createObjectURL(f)), fullUrls.get(f)!);
-  const picks = $derived(pending.map((f, i) => ({ thumb: tiles[i]?.url ?? "", srcset: "", full: fullOf(f), w: dims.get(f)?.w ?? 4, h: dims.get(f)?.h ?? 3 })));
+  /* 모달 크게 보기용 압축본(긴 변 2560·EXIF 회전 반영·HEIC 변환). 원본을 직접 그리면 대용량 디코드로 일그러짐·깨짐 → 업로드용 압축 결과를 미리 만들어 재사용 */
+  const packs = new WeakMap<File, Promise<Compressed>>();
+  let views = $state(new Map<File, { url: string; w: number; h: number }>());
+  let opening = $state(-1);
+  const picks = $derived(
+    pending.map((f, i) => {
+      const v = views.get(f);
+      return { thumb: v?.url ?? tiles[i]?.url ?? "", srcset: "", full: v?.url ?? "", w: v?.w ?? 1, h: v?.h ?? 1 };
+    }),
+  );
   let addInput = $state<HTMLInputElement>();
   let tiles = $state<Tile[]>([]);
   let previewGen = 0;
@@ -69,6 +74,15 @@
   const compressSerial = (f: File) => {
     const p = zq.then(() => compress(f));
     zq = p.then(() => {}, () => {});
+    return p;
+  };
+  const packOf = (f: File) => {
+    let p = packs.get(f);
+    if (!p) {
+      p = compressSerial(f);
+      packs.set(f, p);
+      p.catch(() => packs.delete(f));
+    }
     return p;
   };
 
@@ -326,23 +340,33 @@
     pending = pending.filter((_, k) => k !== i);
   }
 
-  /** 원본 크게 보기. 브라우저가 못 그리는 형식(HEIC 등)은 워커 미리보기로 대체 */
-  /** 크게 보기: 갤러리 라이트박스(스와이프 넘기기·드래그 닫기·핀치 확대) 재사용. 원본 크기는 헤더 로드로 지연 측정 */
-  function zoom(i: number) {
-    for (const f of pending) {
-      if (dims.has(f)) continue;
-      const im = new Image();
-      im.onload = () => (dims = new Map(dims).set(f, { w: im.naturalWidth, h: im.naturalHeight }));
-      im.src = fullOf(f);
+  async function ensureView(f: File | undefined) {
+    if (!f || views.has(f)) return;
+    const c = await packOf(f);
+    if (views.has(f) || !pending.includes(f)) return;
+    views = new Map(views).set(f, { url: URL.createObjectURL(c.full.blob), w: c.w, h: c.h });
+  }
+  const near = (i: number) => [i + 1, i - 1, i + 2].forEach((k) => void ensureView(pending[k]).catch(() => {}));
+
+  /** 크게 보기: 갤러리 라이트박스(스와이프 넘기기·드래그 닫기·핀치 확대) 재사용. 압축본 준비 후 열고 이웃 사진 미리 준비 */
+  async function zoom(i: number) {
+    if (opening >= 0) return;
+    opening = i;
+    try {
+      await ensureView(pending[i]);
+      if (dlg?.open) pgal?.openAt(i);
+      near(i);
+    } catch {
+      notify("이 사진은 미리 볼 수 없어요", true);
+    } finally {
+      opening = -1;
     }
-    pgal?.openAt(i);
   }
 
   function onclose() {
     previewGen++;
-    fullUrls.forEach((u) => URL.revokeObjectURL(u));
-    fullUrls.clear();
-    dims = new Map();
+    views.forEach((v) => URL.revokeObjectURL(v.url));
+    views = new Map();
     tiles.forEach((t) => t.url && URL.revokeObjectURL(t.url));
     tiles = [];
     pending = [];
@@ -419,7 +443,7 @@
     try {
       let c = packed.get(j.id);
       if (!c) {
-        c = await compressSerial(j.file);
+        c = await packOf(j.file);
         packed.set(j.id, c);
       }
       if (!j.url) j.url = URL.createObjectURL(c.thumb.blob);
@@ -499,7 +523,7 @@
       <h2 id="snap-t" class="ttl" tabindex="-1" bind:this={dlgTitle}>{!allow ? "10분 뒤 다시 올려 주세요" : pending.length ? `사진 ${Math.min(pending.length, allow)}장을 올릴까요?` : "올릴 사진을 골라 주세요"}</h2>
       <div class="pvs">
         {#each tiles as t, i (t.id)}
-          <span class="pvt" class:ld={!t.ok && !t.bad} class:over={i >= allow}>
+          <span class="pvt" class:ld={(!t.ok && !t.bad) || opening === i} class:over={i >= allow}>
             <button type="button" class="pv-open" aria-label="사진 {i + 1} 크게 보기" onclick={() => zoom(i)}>{#if t.url}<img class:on={t.ok} src={t.url} alt="" width="56" height="56" onload={() => (t.ok = true)} onerror={() => swap(pending[i], t, previewGen)} />{/if}</button>
             {#if i >= allow}<b class="x" aria-hidden="true">!</b>{/if}
             <button type="button" class="pv-del" aria-label="사진 {i + 1} 빼기" onclick={() => unpick(i)}>×</button>
@@ -520,7 +544,7 @@
       <button type="submit" class="go" disabled={!Math.min(pending.length, allow)}>{Math.min(pending.length, allow)}장 올리기</button>
       <button type="button" class="no" onclick={() => dlg?.close()}>취소</button>
     </form>
-    {#if dlg}<Gallery bind:this={pgal} bare items={picks} host={dlg} thumbAt={(i) => dlg?.querySelectorAll<HTMLElement>(".pv-open")[i]} />{/if}
+    {#if dlg}<Gallery bind:this={pgal} bare items={picks} host={dlg} thumbAt={(i) => dlg?.querySelectorAll<HTMLElement>(".pv-open")[i]} onindex={near} />{/if}
   </dialog>
 
 
