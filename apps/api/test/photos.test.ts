@@ -191,7 +191,8 @@ describe("photos", () => {
     expect(s3[PHOTO_DEVICE_MAX]).toBe(429);
     const uSame = crypto.randomUUID();
     expect((await put(uSame, "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
-    for (let i = 0; i < PHOTO_DEVICE_MAX - 1; i++) expect((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
+    for (let i = 0; i < PHOTO_DEVICE_MAX - 1; i++)
+      expect((await put(crypto.randomUUID(), "full", webp(300), { d: "device-limit-2", ip: "4.5.0.1" })).status).toBe(204);
     expect((await put(uSame, "thumb", webp(300, 400, 300), { d: "device-limit-2", ip: "4.5.0.1" })).status, "known uuid is not re-counted").toBe(204);
   });
 
