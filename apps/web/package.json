@@ -14,7 +14,7 @@
     "@astrojs/svelte": "9.1.2",
     "@wedding/shared": "workspace:*",
     "astro": "7.4.4",
-    "heic-to": "1.6.6",
+    "heic-to": "1.6.7",
     "sharp": "0.35.5",
     "svelte": "5.57.3"
   },
