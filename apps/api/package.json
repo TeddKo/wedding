@@ -10,14 +10,14 @@
     "types": "wrangler types"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.4.9",
+    "@cloudflare/vitest-plugin": "1.7.0",
     "vitest": "4.1.12",
-    "wrangler": "4.154.0"
+    "wrangler": "4.160.0"
   },
   "dependencies": {
     "@wedding/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
-    "hono": "4.13.16",
+    "hono": "4.13.18",
     "zod": "4.6.7"
   }
 }

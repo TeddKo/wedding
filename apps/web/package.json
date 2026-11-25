@@ -11,9 +11,9 @@
     "typecheck": "astro check"
   },
   "dependencies": {
-    "@astrojs/svelte": "9.1.2",
+    "@astrojs/svelte": "9.1.4",
     "@wedding/shared": "workspace:*",
-    "astro": "7.4.4",
+    "astro": "7.4.10",
     "heic-to": "1.6.7",
     "sharp": "0.35.5",
     "svelte": "5.57.3"
